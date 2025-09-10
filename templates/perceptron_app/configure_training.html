@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Configurar Entrenamiento - Perceptrón Simple{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden animate-fadeInUp">
+        <div class="bg-gradient-to-r from-primary-500 to-primary-600 px-8 py-6">
+            <h4 class="text-2xl font-bold text-white flex items-center">
+                <i class="fas fa-cogs mr-3"></i>Configurar Parámetros de Entrenamiento
+            </h4>
+        </div>
+        <div class="p-8">
+            <!-- Información del archivo cargado -->
+            <div class="bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-500 p-6 rounded-r-xl mb-8 animate-slideInRight">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-file text-blue-600 text-xl"></i>
+                    <div>
+                        <h6 class="font-semibold text-blue-800">Archivo Cargado: {{ uploaded_data.filename }}</h6>
+                        <p class="text-blue-700">Dimensiones: {{ uploaded_data.shape.0 }} filas × {{ uploaded_data.shape.1 }} columnas</p>
+                    </div>
+                </div>
+            </div>
+                
+            <form method="post" class="space-y-8">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Configuración básica -->
+                    <div class="space-y-6">
+                        <div class="bg-gradient-to-r from-primary-50 to-primary-100 rounded-xl p-6">
+                            <h5 class="text-xl font-bold text-primary-800 mb-6 flex items-center">
+                                <i class="fas fa-sliders-h mr-3"></i>Parámetros de Entrenamiento
+                            </h5>
+                            
+                            <div class="space-y-6">
+                                <div>
+                                    <label for="{{ form.training_name.id_for_label }}" class="block text-sm font-semibold text-accent-700 mb-2">
+                                        <i class="fas fa-tag mr-2 text-primary-600"></i>Nombre del Entrenamiento
+                                    </label>
+                                    {{ form.training_name }}
+                                    {% if form.training_name.errors %}
+                                        <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                            {% for error in form.training_name.errors %}
+                                                <p class="text-red-700 text-sm">{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div>
+                                    <label for="{{ form.learning_rate.id_for_label }}" class="block text-sm font-semibold text-accent-700 mb-2">
+                                        <i class="fas fa-tachometer-alt mr-2 text-primary-600"></i>Tasa de Aprendizaje (η)
+                                    </label>
+                                    {{ form.learning_rate }}
+                                    {% if form.learning_rate.help_text %}
+                                        <p class="mt-2 text-sm text-accent-600">{{ form.learning_rate.help_text }}</p>
+                                    {% endif %}
+                                    {% if form.learning_rate.errors %}
+                                        <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                            {% for error in form.learning_rate.errors %}
+                                                <p class="text-red-700 text-sm">{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div>
+                                    <label for="{{ form.epochs.id_for_label }}" class="block text-sm font-semibold text-accent-700 mb-2">
+                                        <i class="fas fa-repeat mr-2 text-primary-600"></i>Número de Épocas
+                                    </label>
+                                    {{ form.epochs }}
+                                    {% if form.epochs.help_text %}
+                                        <p class="mt-2 text-sm text-accent-600">{{ form.epochs.help_text }}</p>
+                                    {% endif %}
+                                    {% if form.epochs.errors %}
+                                        <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                            {% for error in form.epochs.errors %}
+                                                <p class="text-red-700 text-sm">{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div>
+                                    <label for="{{ form.max_error.id_for_label }}" class="block text-sm font-semibold text-accent-700 mb-2">
+                                        <i class="fas fa-bullseye mr-2 text-primary-600"></i>Error Máximo Permitido
+                                    </label>
+                                    {{ form.max_error }}
+                                    {% if form.max_error.help_text %}
+                                        <p class="mt-2 text-sm text-accent-600">{{ form.max_error.help_text }}</p>
+                                    {% endif %}
+                                    {% if form.max_error.errors %}
+                                        <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                            {% for error in form.max_error.errors %}
+                                                <p class="text-red-700 text-sm">{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                        
+                    <!-- Selección de columnas -->
+                    <div class="space-y-6">
+                        <div class="bg-gradient-to-r from-accent-50 to-accent-100 rounded-xl p-6">
+                            <h5 class="text-xl font-bold text-accent-800 mb-6 flex items-center">
+                                <i class="fas fa-columns mr-3"></i>Selección de Columnas
+                            </h5>
+                            
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-semibold text-accent-700 mb-3">
+                                        <i class="fas fa-arrow-right mr-2 text-primary-600"></i>Columnas de Entrada (X)
+                                    </label>
+                                    <div class="bg-white border border-accent-200 rounded-xl p-4 max-h-48 overflow-y-auto shadow-inner">
+                                        <div class="space-y-3">
+                                            {% for choice in form.input_columns %}
+                                                <label for="{{ choice.id_for_label }}" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-primary-50 transition-colors duration-200 cursor-pointer group">
+                                                    {{ choice.tag }}
+                                                    <span class="text-accent-700 group-hover:text-primary-700 font-medium">{{ choice.choice_label }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% if form.input_columns.help_text %}
+                                        <p class="mt-2 text-sm text-accent-600">{{ form.input_columns.help_text }}</p>
+                                    {% endif %}
+                                    {% if form.input_columns.errors %}
+                                        <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                            {% for error in form.input_columns.errors %}
+                                                <p class="text-red-700 text-sm">{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-semibold text-accent-700 mb-3">
+                                        <i class="fas fa-arrow-left mr-2 text-primary-600"></i>Columnas de Salida (Y)
+                                    </label>
+                                    <div class="bg-white border border-accent-200 rounded-xl p-4 max-h-48 overflow-y-auto shadow-inner">
+                                        <div class="space-y-3">
+                                            {% for choice in form.output_columns %}
+                                                <label for="{{ choice.id_for_label }}" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-primary-50 transition-colors duration-200 cursor-pointer group">
+                                                    {{ choice.tag }}
+                                                    <span class="text-accent-700 group-hover:text-primary-700 font-medium">{{ choice.choice_label }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% if form.output_columns.help_text %}
+                                        <p class="mt-2 text-sm text-accent-600">{{ form.output_columns.help_text }}</p>
+                                    {% endif %}
+                                    {% if form.output_columns.errors %}
+                                        <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                            {% for error in form.output_columns.errors %}
+                                                <p class="text-red-700 text-sm">{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    
+                <!-- Vista previa de datos -->
+                <div class="bg-gradient-to-r from-accent-50 to-accent-100 rounded-xl p-6">
+                    <h5 class="text-xl font-bold text-accent-800 mb-6 flex items-center">
+                        <i class="fas fa-eye mr-3"></i>Vista Previa de los Datos
+                    </h5>
+                    <div class="bg-white rounded-xl overflow-hidden shadow-inner">
+                        <div class="overflow-x-auto">
+                            {{ uploaded_data.preview|safe }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botones de acción -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-between pt-6">
+                    <a href="{% url 'perceptron_app:upload_data' %}" class="bg-accent-100 text-accent-700 px-6 py-3 rounded-lg font-semibold hover:bg-accent-200 transition-colors duration-200 flex items-center justify-center space-x-2">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Volver a Cargar Datos</span>
+                    </a>
+                    <button type="submit" class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <i class="fas fa-play"></i>
+                        <span>Iniciar Entrenamiento</span>
+                    </button>
+                </div>
+            </form>
+            </div>
+        </div>
+        
+        <!-- Información sobre parámetros -->
+        <div class="mt-8">
+            <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden">
+                <div class="bg-gradient-to-r from-accent-500 to-accent-600 px-8 py-6">
+                    <h5 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-info-circle mr-3"></i>Guía de Parámetros
+                    </h5>
+                </div>
+                <div class="p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-6">
+                            <div class="bg-gradient-to-r from-primary-50 to-primary-100 rounded-xl p-6">
+                                <h6 class="font-semibold text-primary-800 mb-4 flex items-center">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>Tasa de Aprendizaje
+                                </h6>
+                                <ul class="space-y-2 text-primary-700">
+                                    <li class="flex items-start space-x-2">
+                                        <span class="font-semibold">0.1</span>
+                                        <span>- Valor recomendado para la mayoría de casos</span>
+                                    </li>
+                                    <li class="flex items-start space-x-2">
+                                        <span class="font-semibold">0.01-0.05</span>
+                                        <span>- Para datos complejos o inestables</span>
+                                    </li>
+                                    <li class="flex items-start space-x-2">
+                                        <span class="font-semibold">0.5-1.0</span>
+                                        <span>- Para problemas simples como compuertas lógicas</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6">
+                                <h6 class="font-semibold text-green-800 mb-4 flex items-center">
+                                    <i class="fas fa-repeat mr-2"></i>Número de Épocas
+                                </h6>
+                                <ul class="space-y-2 text-green-700">
+                                    <li class="flex items-start space-x-2">
+                                        <span class="font-semibold">100-500</span>
+                                        <span>- Para problemas simples</span>
+                                    </li>
+                                    <li class="flex items-start space-x-2">
+                                        <span class="font-semibold">1000-5000</span>
+                                        <span>- Para datos más complejos</span>
+                                    </li>
+                                    <li class="flex items-start space-x-2">
+                                        <i class="fas fa-info-circle text-green-600 mt-1"></i>
+                                        <span>El entrenamiento se detiene automáticamente al converger</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6">
+                                <h6 class="font-semibold text-purple-800 mb-4 flex items-center">
+                                    <i class="fas fa-bullseye mr-2"></i>Error Máximo Permitido
+                                </h6>
+                                <ul class="space-y-2 text-purple-700">
+                                    <li class="flex items-start space-x-2">
+                                        <span class="font-semibold">0.1</span>
+                                        <span>- Valor máximo permitido (10% de error)</span>
+                                    </li>
+                                    <li class="flex items-start space-x-2">
+                                        <span class="font-semibold">0.05</span>
+                                        <span>- Para mayor precisión (5% de error)</span>
+                                    </li>
+                                    <li class="flex items-start space-x-2">
+                                        <span class="font-semibold">0.01</span>
+                                        <span>- Para máxima precisión (1% de error)</span>
+                                    </li>
+                                    <li class="flex items-start space-x-2">
+                                        <span class="font-semibold">0.001</span>
+                                        <span>- Para precisión extrema (0.1% de error)</span>
+                                    </li>
+                                    <li class="flex items-start space-x-2">
+                                        <i class="fas fa-info-circle text-purple-600 mt-1"></i>
+                                        <span>El entrenamiento se detiene cuando el error es menor o igual a este valor (máximo 0.1)</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6">
+                                <h6 class="font-semibold text-blue-800 mb-4 flex items-center">
+                                    <i class="fas fa-columns mr-2"></i>Selección de Columnas
+                                </h6>
+                                <ul class="space-y-2 text-blue-700">
+                                    <li class="flex items-start space-x-2">
+                                        <span class="font-semibold">Entrada (X):</span>
+                                        <span>Características que usa el perceptrón para predecir</span>
+                                    </li>
+                                    <li class="flex items-start space-x-2">
+                                        <span class="font-semibold">Salida (Y):</span>
+                                        <span>Variable objetivo que queremos predecir</span>
+                                    </li>
+                                    <li class="flex items-start space-x-2">
+                                        <i class="fas fa-exclamation-triangle text-blue-600 mt-1"></i>
+                                        <span>El perceptrón simple solo maneja una variable de salida</span>
+                                    </li>
+                                    <li class="flex items-start space-x-2">
+                                        <i class="fas fa-check-circle text-blue-600 mt-1"></i>
+                                        <span>Puede manejar múltiples variables de entrada</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validación en tiempo real
+document.addEventListener('DOMContentLoaded', function() {
+    const learningRateInput = document.getElementById('{{ form.learning_rate.id_for_label }}');
+    const epochsInput = document.getElementById('{{ form.epochs.id_for_label }}');
+    const maxErrorInput = document.getElementById('{{ form.max_error.id_for_label }}');
+    
+    learningRateInput.addEventListener('input', function() {
+        const value = parseFloat(this.value);
+        if (value < 0.001 || value > 1.0) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
+    });
+    
+    epochsInput.addEventListener('input', function() {
+        const value = parseInt(this.value);
+        if (value < 1 || value > 10000) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
+    });
+    
+    maxErrorInput.addEventListener('input', function() {
+        const value = parseFloat(this.value);
+        if (value < 0 || value > 0.1) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Resultados del Entrenamiento - Perceptrón Simple{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Encabezado de resultados -->
+    <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden mb-8 animate-fadeInUp">
+        <div class="bg-gradient-to-r from-green-500 to-green-600 px-8 py-6">
+            <h4 class="text-2xl font-bold text-white flex items-center">
+                <i class="fas fa-check-circle mr-3"></i>Entrenamiento Completado
+            </h4>
+        </div>
+        <div class="p-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div class="mb-4 md:mb-0">
+                    <h5 class="text-2xl font-bold text-accent-800 mb-2">{{ training_record.name }}</h5>
+                    <p class="text-accent-600 flex items-center">
+                        <i class="fas fa-calendar mr-2"></i>
+                        {{ training_record.created_at|date:"d/m/Y H:i" }}
+                    </p>
+                </div>
+                <div class="text-center md:text-right">
+                    <div class="text-6xl font-bold text-{% if training_record.accuracy >= 90 %}green-600{% elif training_record.accuracy >= 70 %}yellow-600{% else %}red-600{% endif %} mb-2">
+                        {{ training_record.accuracy|floatformat:1 }}%
+                    </div>
+                    <p class="text-accent-600 font-semibold">Precisión Final</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Resumen del entrenamiento -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden h-full animate-slideInRight">
+                <div class="bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-4">
+                    <h5 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-info-circle mr-3"></i>Resumen del Entrenamiento
+                    </h5>
+                </div>
+                <div class="p-6 space-y-6">
+                    <div>
+                        <h6 class="text-lg font-semibold text-accent-800 mb-3 flex items-center">
+                            <i class="fas fa-cogs mr-2 text-primary-600"></i>Parámetros
+                        </h6>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center p-2 bg-primary-50 rounded-lg">
+                                <span class="text-primary-700 font-medium">Tasa de aprendizaje:</span>
+                                <span class="text-primary-800 font-semibold">{{ training_record.learning_rate }}</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 bg-primary-50 rounded-lg">
+                                <span class="text-primary-700 font-medium">Épocas utilizadas:</span>
+                                <span class="text-primary-800 font-semibold">{{ epochs_used }}</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 bg-primary-50 rounded-lg">
+                                <span class="text-primary-700 font-medium">Error máximo permitido:</span>
+                                <span class="text-primary-800 font-semibold">{{ training_record.max_error }}</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 bg-primary-50 rounded-lg">
+                                <span class="text-primary-700 font-medium">Convergencia:</span>
+                                {% if converged %}
+                                    <span class="text-green-600 font-semibold flex items-center">
+                                        <i class="fas fa-check mr-1"></i>Sí
+                                    </span>
+                                {% else %}
+                                    <span class="text-yellow-600 font-semibold flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>No
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h6 class="text-lg font-semibold text-accent-800 mb-3 flex items-center">
+                            <i class="fas fa-columns mr-2 text-primary-600"></i>Datos
+                        </h6>
+                        <div class="space-y-2">
+                            <div class="p-2 bg-accent-50 rounded-lg">
+                                <span class="text-accent-700 font-medium">Entradas:</span>
+                                <span class="text-accent-800">{{ training_record.input_columns|join:", " }}</span>
+                            </div>
+                            <div class="p-2 bg-accent-50 rounded-lg">
+                                <span class="text-accent-700 font-medium">Salida:</span>
+                                <span class="text-accent-800">{{ training_record.output_columns|join:", " }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h6 class="text-lg font-semibold text-accent-800 mb-3 flex items-center">
+                            <i class="fas fa-brain mr-2 text-primary-600"></i>Pesos Finales
+                        </h6>
+                        <div class="bg-accent-50 p-4 rounded-xl">
+                            <div class="space-y-2 font-mono text-sm">
+                                {% for weight in training_record.final_weights %}
+                                    <div class="flex justify-between">
+                                        <span class="text-accent-700">w{{ forloop.counter }}:</span>
+                                        <span class="text-accent-800 font-semibold">{{ weight|floatformat:3 }}</span>
+                                    </div>
+                                {% endfor %}
+                                <div class="flex justify-between border-t border-accent-200 pt-2 mt-2">
+                                    <span class="text-accent-700 font-semibold">bias:</span>
+                                    <span class="text-accent-800 font-bold">{{ training_record.final_bias|floatformat:3 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4">
+                        <a href="{% url 'perceptron_app:make_prediction' %}" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl">
+                            <i class="fas fa-calculator"></i>
+                            <span>Hacer Predicciones</span>
+                        </a>
+                        <a href="{% url 'perceptron_app:download_weights' training_record.id %}" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl mt-3">
+                            <i class="fas fa-download"></i>
+                            <span>Descargar Pesos</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+        <!-- Gráficos -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden h-full animate-slideInRight" style="animation-delay: 0.2s;">
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+                    <h5 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-chart-line mr-3"></i>Visualizaciones del Entrenamiento
+                    </h5>
+                </div>
+                <div class="p-6">
+                    <!-- Pestañas para los gráficos -->
+                    <div class="flex space-x-1 bg-accent-100 p-1 rounded-lg mb-6">
+                        <button class="flex-1 bg-white text-accent-800 px-4 py-2 rounded-md font-semibold transition-all duration-200 shadow-sm" id="error-tab">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>Evolución del Error
+                        </button>
+                        <button class="flex-1 text-accent-600 px-4 py-2 rounded-md font-semibold transition-all duration-200 hover:bg-white hover:text-accent-800" id="weights-tab">
+                            <i class="fas fa-weight mr-2"></i>Evolución de Pesos
+                        </button>
+                    </div>
+                
+                    <div class="tab-content" id="chartTabContent">
+                        <!-- Gráfico de errores -->
+                        <div class="tab-pane fade show active" id="error-chart" role="tabpanel">
+                            {% if error_plot %}
+                                <div class="bg-gradient-to-r from-red-50 to-red-100 rounded-xl p-6">
+                                    <div class="text-center">
+                                        <img src="data:image/png;base64,{{ error_plot }}" 
+                                             class="w-full rounded-lg shadow-lg" alt="Evolución del Error">
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-center text-accent-500 py-12">
+                                    <i class="fas fa-chart-line text-6xl mb-4"></i>
+                                    <p class="text-lg">No hay datos de error disponibles</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Gráfico de pesos -->
+                        <div class="tab-pane fade" id="weights-chart" role="tabpanel">
+                            {% if weights_plot %}
+                                <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6">
+                                    <div class="text-center">
+                                        <img src="data:image/png;base64,{{ weights_plot }}" 
+                                             class="w-full rounded-lg shadow-lg" alt="Evolución de Pesos">
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-center text-accent-500 py-12">
+                                    <i class="fas fa-weight text-6xl mb-4"></i>
+                                    <p class="text-lg">No hay datos de pesos disponibles</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Log detallado del entrenamiento -->
+    <div class="mt-8">
+        <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden animate-fadeInUp" style="animation-delay: 0.4s;">
+            <div class="bg-gradient-to-r from-accent-800 to-accent-900 px-8 py-6">
+                <h5 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-terminal mr-3"></i>Log Detallado del Entrenamiento
+                </h5>
+            </div>
+            <div class="p-6">
+                <div class="bg-accent-900 text-green-400 p-6 rounded-xl font-mono text-sm h-80 overflow-y-auto shadow-inner">
+                    <pre class="mb-0">{{ summary }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones adicionales -->
+    <div class="mt-8">
+        <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden animate-fadeInUp" style="animation-delay: 0.6s;">
+            <div class="p-8 text-center">
+                <h5 class="text-2xl font-bold text-accent-800 mb-8">¿Qué quieres hacer ahora?</h5>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <a href="{% url 'perceptron_app:make_prediction' %}" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <i class="fas fa-calculator text-xl"></i>
+                        <span>Probar con Nuevos Datos</span>
+                    </a>
+                    <a href="{% url 'perceptron_app:upload_data' %}" class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <i class="fas fa-upload text-xl"></i>
+                        <span>Entrenar Otro Perceptrón</span>
+                    </a>
+                    <a href="{% url 'perceptron_app:training_history' %}" class="bg-gradient-to-r from-accent-500 to-accent-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-accent-600 hover:to-accent-700 transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <i class="fas fa-history text-xl"></i>
+                        <span>Ver Historial</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar las pestañas de gráficos
+    const errorTab = document.getElementById('error-tab');
+    const weightsTab = document.getElementById('weights-tab');
+    const errorChart = document.getElementById('error-chart');
+    const weightsChart = document.getElementById('weights-chart');
+    
+    errorTab.addEventListener('click', function() {
+        // Actualizar estilos de pestañas
+        errorTab.classList.add('bg-white', 'text-accent-800', 'shadow-sm');
+        errorTab.classList.remove('text-accent-600');
+        weightsTab.classList.remove('bg-white', 'text-accent-800', 'shadow-sm');
+        weightsTab.classList.add('text-accent-600');
+        
+        // Mostrar/ocultar contenido
+        errorChart.classList.add('show', 'active');
+        weightsChart.classList.remove('show', 'active');
+    });
+    
+    weightsTab.addEventListener('click', function() {
+        // Actualizar estilos de pestañas
+        weightsTab.classList.add('bg-white', 'text-accent-800', 'shadow-sm');
+        weightsTab.classList.remove('text-accent-600');
+        errorTab.classList.remove('bg-white', 'text-accent-800', 'shadow-sm');
+        errorTab.classList.add('text-accent-600');
+        
+        // Mostrar/ocultar contenido
+        weightsChart.classList.add('show', 'active');
+        errorChart.classList.remove('show', 'active');
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-actualizar gráficos cuando se cambia de pestaña
+document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('[data-bs-toggle="tab"]');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('shown.bs.tab', function(event) {
+            // Aquí podrías agregar lógica para actualizar gráficos si fuera necesario
+            console.log('Tab activado:', event.target.getAttribute('data-bs-target'));
+        });
+    });
+});
+</script>
+{% endblock %}

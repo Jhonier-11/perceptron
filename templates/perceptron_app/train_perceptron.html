@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Entrenar Perceptrón - Perceptrón Simple{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden animate-fadeInUp">
+        <div class="bg-gradient-to-r from-yellow-500 to-orange-500 px-8 py-6">
+            <h4 class="text-2xl font-bold text-white flex items-center">
+                <i class="fas fa-brain mr-3"></i>Entrenar Perceptrón Simple
+            </h4>
+        </div>
+        <div class="p-8">
+            <!-- Resumen de configuración -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 animate-slideInRight">
+                    <h6 class="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+                        <i class="fas fa-file mr-2"></i>Archivo de Datos
+                    </h6>
+                    <p class="text-blue-700 font-medium">{{ uploaded_data.filename }}</p>
+                    <p class="text-blue-600 text-sm">Dimensiones: {{ uploaded_data.shape.0 }} × {{ uploaded_data.shape.1 }}</p>
+                </div>
+                <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6 animate-slideInRight" style="animation-delay: 0.2s;">
+                    <h6 class="text-lg font-semibold text-green-800 mb-4 flex items-center">
+                        <i class="fas fa-cogs mr-2"></i>Parámetros
+                    </h6>
+                    <div class="space-y-2 text-green-700">
+                        <p class="flex justify-between">
+                            <span class="font-medium">Tasa de aprendizaje:</span>
+                            <span class="font-semibold">{{ training_config.learning_rate }}</span>
+                        </p>
+                        <p class="flex justify-between">
+                            <span class="font-medium">Épocas:</span>
+                            <span class="font-semibold">{{ training_config.epochs }}</span>
+                        </p>
+                        <p class="flex justify-between">
+                            <span class="font-medium">Entradas:</span>
+                            <span class="font-semibold">{{ training_config.input_columns|join:", " }}</span>
+                        </p>
+                        <p class="flex justify-between">
+                            <span class="font-medium">Salida:</span>
+                            <span class="font-semibold">{{ training_config.output_columns|join:", " }}</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+                
+            <!-- Información sobre el algoritmo -->
+            <div class="bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-500 p-6 rounded-r-xl mb-8">
+                <h6 class="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i>¿Cómo funciona el entrenamiento?
+                </h6>
+                <p class="text-blue-700 mb-4">El perceptrón simple aprende usando la <strong>regla del perceptrón</strong>:</p>
+                <ol class="space-y-2 text-blue-700">
+                    <li class="flex items-start space-x-3">
+                        <span class="bg-blue-200 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold flex-shrink-0">1</span>
+                        <span><strong>Inicialización:</strong> Los pesos se inicializan aleatoriamente</span>
+                    </li>
+                    <li class="flex items-start space-x-3">
+                        <span class="bg-blue-200 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold flex-shrink-0">2</span>
+                        <span><strong>Predicción:</strong> Para cada muestra, calcula: y = f(w₁x₁ + w₂x₂ + ... + wₙxₙ + b)</span>
+                    </li>
+                    <li class="flex items-start space-x-3">
+                        <span class="bg-blue-200 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold flex-shrink-0">3</span>
+                        <span><strong>Error:</strong> Calcula la diferencia entre predicción y valor real</span>
+                    </li>
+                    <li class="flex items-start space-x-3">
+                        <span class="bg-blue-200 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold flex-shrink-0">4</span>
+                        <span><strong>Actualización:</strong> Si hay error, actualiza pesos: w = w + η × error × x</span>
+                    </li>
+                    <li class="flex items-start space-x-3">
+                        <span class="bg-blue-200 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold flex-shrink-0">5</span>
+                        <span><strong>Repetición:</strong> Repite hasta converger o alcanzar el máximo de épocas</span>
+                    </li>
+                </ol>
+            </div>
+            
+            <!-- Formulario de entrenamiento -->
+            <form method="post" id="trainingForm">
+                {% csrf_token %}
+                
+                <div class="text-center mb-8">
+                    <button type="submit" class="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-12 py-4 rounded-xl font-bold text-lg hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl flex items-center space-x-3 mx-auto" id="trainButton">
+                        <i class="fas fa-play text-xl"></i>
+                        <span>Iniciar Entrenamiento</span>
+                    </button>
+                </div>
+            </form>
+                
+            <!-- Área de progreso (se muestra durante el entrenamiento) -->
+            <div id="trainingProgress" class="hidden">
+                <div class="bg-gradient-to-r from-accent-50 to-accent-100 rounded-2xl p-8 shadow-lg border border-accent-200">
+                    <h5 class="text-center text-2xl font-bold text-accent-800 mb-8 flex items-center justify-center">
+                        <i class="fas fa-cog fa-spin mr-3 text-primary-600"></i>Entrenando Perceptrón...
+                    </h5>
+                    
+                    <!-- Barra de progreso -->
+                    <div class="mb-8">
+                        <div class="bg-white rounded-full h-8 shadow-inner overflow-hidden">
+                            <div id="progressBar" class="bg-gradient-to-r from-primary-500 to-primary-600 h-full transition-all duration-500 ease-out flex items-center justify-center" 
+                                 style="width: 0%">
+                                <span id="progressText" class="text-white font-bold text-sm">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-white rounded-xl p-6 shadow-sm">
+                            <h6 class="text-lg font-semibold text-accent-800 mb-4 flex items-center">
+                                <i class="fas fa-terminal mr-2"></i>Progreso del Entrenamiento
+                            </h6>
+                            <div id="trainingLog" class="bg-accent-900 text-green-400 p-4 rounded-lg font-mono text-sm h-48 overflow-y-auto">
+                                <div>Iniciando entrenamiento...</div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl p-6 shadow-sm">
+                            <h6 class="text-lg font-semibold text-accent-800 mb-4 flex items-center">
+                                <i class="fas fa-chart-line mr-2"></i>Estado Actual
+                            </h6>
+                            <div id="currentStatus" class="space-y-3">
+                                <div class="flex justify-between items-center p-3 bg-primary-50 rounded-lg">
+                                    <span class="font-semibold text-primary-800">Época:</span>
+                                    <span id="currentEpoch" class="text-2xl font-bold text-primary-600">0</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                                    <span class="font-semibold text-red-800">Errores:</span>
+                                    <span id="currentErrors" class="text-2xl font-bold text-red-600">0</span>
+                                </div>
+                                <div class="p-3 bg-accent-50 rounded-lg">
+                                    <span class="font-semibold text-accent-800 block mb-2">Pesos:</span>
+                                    <span id="currentWeights" class="text-accent-700 font-mono">-</span>
+                                </div>
+                                <div class="p-3 bg-accent-50 rounded-lg">
+                                    <span class="font-semibold text-accent-800 block mb-2">Sesgo:</span>
+                                    <span id="currentBias" class="text-accent-700 font-mono">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+        
+        <!-- Información técnica -->
+        <div class="mt-8">
+            <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden">
+                <div class="bg-gradient-to-r from-accent-500 to-accent-600 px-8 py-6">
+                    <h5 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-microscope mr-3"></i>Detalles Técnicos del Algoritmo
+                    </h5>
+                </div>
+                <div class="p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-6">
+                            <div class="bg-gradient-to-r from-primary-50 to-primary-100 rounded-xl p-6">
+                                <h6 class="text-lg font-semibold text-primary-800 mb-4 flex items-center">
+                                    <i class="fas fa-function mr-2"></i>Función de Activación
+                                </h6>
+                                <p class="text-primary-700">
+                                    <strong>Escalón (Step):</strong> f(x) = 1 si x ≥ 0, 0 en caso contrario
+                                </p>
+                            </div>
+                            
+                            <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6">
+                                <h6 class="text-lg font-semibold text-green-800 mb-4 flex items-center">
+                                    <i class="fas fa-calculator mr-2"></i>Regla de Actualización
+                                </h6>
+                                <div class="text-green-700 space-y-2">
+                                    <p><strong>Pesos:</strong> wᵢ = wᵢ + η × error × xᵢ</p>
+                                    <p><strong>Sesgo:</strong> b = b + η × error</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6">
+                                <h6 class="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+                                    <i class="fas fa-chart-line mr-2"></i>Convergencia
+                                </h6>
+                                <p class="text-blue-700">
+                                    El algoritmo converge cuando no hay errores en una época completa.
+                                    Esto garantiza que el perceptrón ha aprendido correctamente.
+                                </p>
+                            </div>
+                            
+                            <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-xl p-6">
+                                <h6 class="text-lg font-semibold text-yellow-800 mb-4 flex items-center">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>Limitaciones
+                                </h6>
+                                <p class="text-yellow-700">
+                                    Solo puede aprender problemas <strong>linealmente separables</strong>.
+                                    No puede resolver XOR sin capas adicionales.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('trainingForm');
+    const progressDiv = document.getElementById('trainingProgress');
+    const trainButton = document.getElementById('trainButton');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const trainingLog = document.getElementById('trainingLog');
+    const currentEpoch = document.getElementById('currentEpoch');
+    const currentErrors = document.getElementById('currentErrors');
+    const currentWeights = document.getElementById('currentWeights');
+    const currentBias = document.getElementById('currentBias');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Mostrar área de progreso
+        progressDiv.classList.remove('d-none');
+        trainButton.disabled = true;
+        trainButton.innerHTML = '<i class="fas fa-cog fa-spin me-2"></i>Entrenando...';
+        
+        // Simular progreso (en una implementación real, esto sería AJAX)
+        simulateTraining();
+    });
+    
+    function simulateTraining() {
+        let epoch = 0;
+        const maxEpochs = {{ training_config.epochs }};
+        const learningRate = {{ training_config.learning_rate }};
+        
+        const interval = setInterval(() => {
+            epoch++;
+            const progress = (epoch / maxEpochs) * 100;
+            
+            // Actualizar barra de progreso
+            progressBar.style.width = progress + '%';
+            progressText.textContent = Math.round(progress) + '%';
+            
+            // Simular errores (decrecientes)
+            const errors = Math.max(0, Math.floor(Math.random() * (maxEpochs - epoch + 1)));
+            
+            // Actualizar estado
+            currentEpoch.textContent = epoch;
+            currentErrors.textContent = errors;
+            currentWeights.textContent = `[${(Math.random() * 2 - 1).toFixed(3)}, ${(Math.random() * 2 - 1).toFixed(3)}]`;
+            currentBias.textContent = (Math.random() * 2 - 1).toFixed(3);
+            
+            // Agregar log
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `Época ${epoch}: ${errors} errores`;
+            trainingLog.appendChild(logEntry);
+            trainingLog.scrollTop = trainingLog.scrollHeight;
+            
+            // Verificar si terminó
+            if (epoch >= maxEpochs || errors === 0) {
+                clearInterval(interval);
+                
+                // Mostrar resultado final
+                const finalLog = document.createElement('div');
+                finalLog.className = 'text-success fw-bold';
+                if (errors === 0) {
+                    finalLog.textContent = `¡Convergencia alcanzada en la época ${epoch}!`;
+                } else {
+                    finalLog.textContent = `Entrenamiento completado después de ${epoch} épocas.`;
+                }
+                trainingLog.appendChild(finalLog);
+                
+                // Redirigir a resultados
+                setTimeout(() => {
+                    form.submit();
+                }, 2000);
+            }
+        }, 500); // Actualizar cada 500ms
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cargar Datos - Perceptrón Simple{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-primary-500 to-primary-600 px-8 py-6">
+            <h4 class="text-2xl font-bold text-white flex items-center">
+                <i class="fas fa-upload mr-3"></i>Cargar Archivo de Datos
+            </h4>
+        </div>
+        <div class="p-8">
+            <p class="text-accent-700 text-lg mb-8">
+                Selecciona un archivo de datos para entrenar el perceptrón. 
+                El archivo debe contener datos numéricos organizados en filas y columnas.
+            </p>
+                
+            <form method="post" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Área de carga de archivos -->
+                <div class="border-2 border-dashed border-primary-300 rounded-xl p-8 text-center hover:border-primary-400 transition-colors duration-200">
+                    <div class="mb-4">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-primary-500 mb-4"></i>
+                        <h5 class="text-lg font-semibold text-accent-800 mb-2">Selecciona tu archivo</h5>
+                        <p class="text-accent-600 mb-4">Arrastra y suelta tu archivo aquí o haz clic para seleccionar</p>
+                    </div>
+                    
+                    <div class="relative">
+                        {{ form.data_file }}
+                        <div class="mt-4">
+                            <label for="{{ form.data_file.id_for_label }}" class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-200 cursor-pointer inline-flex items-center space-x-2 shadow-lg hover:shadow-xl">
+                                <i class="fas fa-file mr-2"></i>
+                                <span>Seleccionar Archivo</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    {% if form.data_file.help_text %}
+                        <p class="text-sm text-accent-500 mt-3">{{ form.data_file.help_text }}</p>
+                    {% endif %}
+                    
+                    {% if form.data_file.errors %}
+                        <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                            {% for error in form.data_file.errors %}
+                                <p class="text-red-700 text-sm">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Botones de acción -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-end">
+                    <a href="{% url 'perceptron_app:home' %}" class="bg-accent-100 text-accent-700 px-6 py-3 rounded-lg font-semibold hover:bg-accent-200 transition-colors duration-200 flex items-center justify-center space-x-2">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Volver</span>
+                    </a>
+                    <button type="submit" class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl">
+                        <i class="fas fa-upload"></i>
+                        <span>Cargar Archivo</span>
+                    </button>
+                </div>
+            </form>
+            </div>
+        </div>
+        
+        <!-- Archivo cargado -->
+        {% if uploaded_data %}
+        <div class="mt-8">
+            <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden animate-fadeInUp">
+                <div class="bg-gradient-to-r from-green-500 to-green-600 px-8 py-6">
+                    <h5 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-check-circle mr-3"></i>Archivo Cargado Exitosamente
+                    </h5>
+                </div>
+                <div class="p-8">
+                    <div class="flex items-center space-x-4 mb-6">
+                        <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center">
+                            <i class="fas fa-file text-green-600 text-2xl"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-lg font-semibold text-accent-800">{{ uploaded_data.filename }}</h6>
+                            <p class="text-accent-600">{{ uploaded_data.shape.0 }} filas × {{ uploaded_data.shape.1 }} columnas</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h6 class="font-semibold text-accent-800 mb-3">Columnas del archivo:</h6>
+                            <div class="flex flex-wrap gap-2">
+                                {% for column in uploaded_data.columns %}
+                                    <span class="px-3 py-1 bg-accent-100 text-accent-700 rounded-full text-sm font-medium">{{ column }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div>
+                            <h6 class="font-semibold text-accent-800 mb-3">Vista previa:</h6>
+                            <div class="bg-accent-50 rounded-lg p-4 max-h-40 overflow-y-auto">
+                                <div class="text-sm text-accent-600">
+                                    {{ uploaded_data.preview|safe }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-between">
+                        <a href="?clear=true" class="bg-accent-100 text-accent-700 px-6 py-3 rounded-lg font-semibold hover:bg-accent-200 transition-colors duration-200 flex items-center space-x-2">
+                            <i class="fas fa-trash"></i>
+                            <span>Cargar Otro Archivo</span>
+                        </a>
+                        <a href="{% url 'perceptron_app:configure_training' %}" class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl">
+                            <i class="fas fa-cog"></i>
+                            <span>Configurar Entrenamiento</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Información sobre formatos soportados -->
+        <div class="mt-8">
+            <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden">
+                <div class="bg-gradient-to-r from-accent-500 to-accent-600 px-8 py-6">
+                    <h5 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-info-circle mr-3"></i>Formatos Soportados
+                    </h5>
+                </div>
+                <div class="p-8">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                        <div class="text-center group">
+                            <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                                <i class="fas fa-file-csv text-green-600 text-2xl"></i>
+                            </div>
+                            <h6 class="font-semibold text-accent-800">CSV</h6>
+                            <p class="text-sm text-accent-600">Separado por comas</p>
+                        </div>
+                        <div class="text-center group">
+                            <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                                <i class="fas fa-file-excel text-blue-600 text-2xl"></i>
+                            </div>
+                            <h6 class="font-semibold text-accent-800">XLSX</h6>
+                            <p class="text-sm text-accent-600">Excel 2007+</p>
+                        </div>
+                        <div class="text-center group">
+                            <div class="w-16 h-16 bg-yellow-100 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                                <i class="fas fa-file-code text-yellow-600 text-2xl"></i>
+                            </div>
+                            <h6 class="font-semibold text-accent-800">JSON</h6>
+                            <p class="text-sm text-accent-600">JavaScript Object</p>
+                        </div>
+                        <div class="text-center group">
+                            <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                                <i class="fas fa-file-alt text-purple-600 text-2xl"></i>
+                            </div>
+                            <h6 class="font-semibold text-accent-800">TXT</h6>
+                            <p class="text-sm text-accent-600">Separado por tabulador</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-primary-50 to-primary-100 border-l-4 border-primary-500 p-6 rounded-r-xl">
+                        <h6 class="font-semibold text-primary-800 mb-4 flex items-center">
+                            <i class="fas fa-lightbulb mr-2"></i>Consejos para preparar tus datos:
+                        </h6>
+                        <ul class="space-y-2 text-primary-700">
+                            <li class="flex items-start space-x-2">
+                                <i class="fas fa-check-circle text-primary-500 mt-1"></i>
+                                <span>Usa la primera fila para los nombres de las columnas</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <i class="fas fa-check-circle text-primary-500 mt-1"></i>
+                                <span>Asegúrate de que todos los valores sean numéricos</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <i class="fas fa-check-circle text-primary-500 mt-1"></i>
+                                <span>Evita valores faltantes (NaN) en los datos</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <i class="fas fa-check-circle text-primary-500 mt-1"></i>
+                                <span>Para problemas de clasificación, usa 0 y 1 como etiquetas</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ejemplo de datos -->
+        <div class="mt-8">
+            <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden">
+                <div class="bg-gradient-to-r from-primary-500 to-primary-600 px-8 py-6">
+                    <h5 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-table mr-3"></i>Ejemplo: Compuerta AND
+                    </h5>
+                </div>
+                <div class="p-8">
+                    <p class="text-accent-700 text-lg mb-6">Aquí tienes un ejemplo de cómo debería verse tu archivo CSV para la compuerta lógica AND:</p>
+                    
+                    <div class="bg-accent-50 rounded-xl p-6 mb-6">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-accent-200">
+                                        <th class="text-left py-3 px-4 font-semibold text-accent-800">x1</th>
+                                        <th class="text-left py-3 px-4 font-semibold text-accent-800">x2</th>
+                                        <th class="text-left py-3 px-4 font-semibold text-accent-800">y</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-accent-200">
+                                    <tr class="hover:bg-primary-50 transition-colors duration-200">
+                                        <td class="py-3 px-4 text-accent-700">0</td>
+                                        <td class="py-3 px-4 text-accent-700">0</td>
+                                        <td class="py-3 px-4 text-accent-700">0</td>
+                                    </tr>
+                                    <tr class="hover:bg-primary-50 transition-colors duration-200">
+                                        <td class="py-3 px-4 text-accent-700">0</td>
+                                        <td class="py-3 px-4 text-accent-700">1</td>
+                                        <td class="py-3 px-4 text-accent-700">0</td>
+                                    </tr>
+                                    <tr class="hover:bg-primary-50 transition-colors duration-200">
+                                        <td class="py-3 px-4 text-accent-700">1</td>
+                                        <td class="py-3 px-4 text-accent-700">0</td>
+                                        <td class="py-3 px-4 text-accent-700">0</td>
+                                    </tr>
+                                    <tr class="hover:bg-primary-50 transition-colors duration-200">
+                                        <td class="py-3 px-4 text-accent-700">1</td>
+                                        <td class="py-3 px-4 text-accent-700">1</td>
+                                        <td class="py-3 px-4 text-accent-700 font-semibold text-primary-600">1</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button onclick="downloadExample()" class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl mx-auto">
+                            <i class="fas fa-download"></i>
+                            <span>Descargar Ejemplo CSV</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function downloadExample() {
+    const csvContent = "x1,x2,y\n0,0,0\n0,1,0\n1,0,0\n1,1,1";
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ejemplo_and.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

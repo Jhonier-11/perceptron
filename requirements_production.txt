@@ -1,0 +1,10 @@
+# Dependencias para producción
+Django==5.2.6
+numpy==2.2.1
+pandas==2.3.2
+matplotlib==3.10.0
+openpyxl==3.1.5
+gunicorn==21.2.0
+whitenoise==6.6.0
+psycopg2-binary==2.9.9
+python-decouple==3.8
