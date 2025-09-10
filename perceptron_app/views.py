@@ -20,7 +20,74 @@ from .perceptron import PerceptronSimple
 from .forms import DataUploadForm, TrainingConfigForm, PredictionForm
 
 
-def home(request):
+def detectar_separador_csv_y_leer(archivo):
+    """
+    Detecta automáticamente el separador de un archivo CSV y lo lee
+    """
+    # Lista de separadores comunes a probar
+    separadores = [',', ';', '|', '\t', ' ', ':', '~']
+    
+    # Leer las primeras líneas para detectar el separador
+    archivo.seek(0)
+    try:
+        # Intentar leer como texto directamente
+        sample = archivo.read(1024)
+        if isinstance(sample, bytes):
+            sample = sample.decode('utf-8', errors='ignore')
+    except:
+        # Si falla, intentar con diferentes encodings
+        archivo.seek(0)
+        try:
+            sample = archivo.read(1024).decode('latin-1', errors='ignore')
+        except:
+            sample = archivo.read(1024).decode('utf-8', errors='ignore')
+    
+    archivo.seek(0)
+    
+    # Contar ocurrencias de cada separador
+    separador_counts = {}
+    for sep in separadores:
+        separador_counts[sep] = sample.count(sep)
+    
+    # Encontrar el separador más común
+    mejor_separador = max(separador_counts, key=separador_counts.get)
+    
+    # Si no hay separadores detectados, usar coma por defecto
+    if separador_counts[mejor_separador] == 0:
+        mejor_separador = ','
+    
+    try:
+        # Intentar leer con el separador detectado
+        df = pd.read_csv(archivo, sep=mejor_separador)
+        
+        # Verificar que el DataFrame tiene al menos 2 columnas
+        if df.shape[1] < 2:
+            # Si solo tiene 1 columna, probar con otros separadores
+            for sep in separadores:
+                if sep != mejor_separador:
+                    archivo.seek(0)
+                    try:
+                        df_test = pd.read_csv(archivo, sep=sep)
+                        if df_test.shape[1] > df.shape[1]:
+                            df = df_test
+                            mejor_separador = sep
+                    except:
+                        continue
+        
+        return df
+        
+    except Exception as e:
+        # Si falla, intentar con coma por defecto
+        archivo.seek(0)
+        try:
+            return pd.read_csv(archivo, sep=',')
+        except:
+            # Si todo falla, intentar con tabulador
+            archivo.seek(0)
+            return pd.read_csv(archivo, sep='\t')
+
+
+def inicio(request):
     """
     Vista principal que muestra el dashboard
     """
@@ -36,7 +103,7 @@ def home(request):
     return render(request, 'perceptron_app/home.html', context)
 
 
-def upload_data(request):
+def cargar_datos(request):
     """
     Vista para cargar archivos de datos
     """
@@ -55,7 +122,7 @@ def upload_data(request):
                 print(f"Error al eliminar archivo: {e}")
             del request.session['file_path']
         messages.info(request, 'Sesión limpiada. Puedes cargar un nuevo archivo.')
-        return redirect('perceptron_app:upload_data')
+        return redirect('perceptron_app:cargar_datos')
     
     if request.method == 'POST':
         form = DataUploadForm(request.POST, request.FILES)
@@ -67,14 +134,15 @@ def upload_data(request):
             try:
                 # Leer el archivo según su extensión
                 if file_extension == 'csv':
-                    df = pd.read_csv(file)
+                    # Detectar automáticamente el separador del CSV
+                    df = detectar_separador_csv_y_leer(file)
                 elif file_extension == 'xlsx':
                     df = pd.read_excel(file)
                 elif file_extension == 'json':
                     df = pd.read_json(file)
                 elif file_extension == 'txt':
-                    # Asumir que es CSV con separador de tabulador
-                    df = pd.read_csv(file, sep='\t')
+                    # Detectar automáticamente el separador del archivo de texto
+                    df = detectar_separador_csv_y_leer(file)
                 else:
                     messages.error(request, 'Formato de archivo no soportado.')
                     return render(request, 'perceptron_app/upload_data.html', {'form': form})
@@ -92,12 +160,23 @@ def upload_data(request):
                     for chunk in file.chunks():
                         destination.write(chunk)
                 
+                # Analizar tipos de datos de las columnas
+                column_info = []
+                for col in df.columns:
+                    is_numeric = pd.api.types.is_numeric_dtype(df[col])
+                    column_info.append({
+                        'name': col,
+                        'is_numeric': is_numeric,
+                        'sample_values': df[col].head(3).tolist()
+                    })
+                
                 # Guardar información del archivo en la sesión (sin los datos completos)
                 request.session['uploaded_data'] = {
                     'filename': file.name,
                     'columns': df.columns.tolist(),
                     'shape': df.shape,
-                    'preview': df.head(10).to_html(classes='table table-striped', table_id='data-preview')
+                    'preview': df.head(10).to_html(classes='table table-striped', table_id='data-preview'),
+                    'column_info': column_info
                 }
                 
                 # Guardar la ruta del archivo
@@ -105,7 +184,7 @@ def upload_data(request):
                 
                 
                 messages.success(request, f'Archivo cargado exitosamente. {df.shape[0]} filas, {df.shape[1]} columnas.')
-                return redirect('perceptron_app:configure_training')
+                return redirect('perceptron_app:configurar_entrenamiento')
                 
             except Exception as e:
                 messages.error(request, f'Error al procesar el archivo: {str(e)}')
@@ -123,13 +202,13 @@ def upload_data(request):
     return render(request, 'perceptron_app/upload_data.html', context)
 
 
-def configure_training(request):
+def configurar_entrenamiento(request):
     """
     Vista para configurar los parámetros de entrenamiento
     """
     if 'uploaded_data' not in request.session:
         messages.warning(request, 'Primero debes cargar un archivo de datos.')
-        return redirect('perceptron_app:upload_data')
+        return redirect('perceptron_app:cargar_datos')
     
     # No limpiar el archivo aquí, se necesita para el entrenamiento
     
@@ -141,16 +220,16 @@ def configure_training(request):
         if form.is_valid():
             # Guardar configuración en la sesión
             request.session['training_config'] = {
-                'learning_rate': form.cleaned_data['learning_rate'],
-                'epochs': form.cleaned_data['epochs'],
-                'max_error': form.cleaned_data['max_error'],
-                'input_columns': form.cleaned_data['input_columns'],
-                'output_columns': form.cleaned_data['output_columns'],
-                'training_name': form.cleaned_data['training_name']
+                'tasa_aprendizaje': form.cleaned_data['learning_rate'],
+                'iteraciones': form.cleaned_data['epochs'],
+                'error_maximo': form.cleaned_data['max_error'],
+                'columnas_entrada': form.cleaned_data['input_columns'],
+                'columnas_salida': form.cleaned_data['output_columns'],
+                'nombre_entrenamiento': form.cleaned_data['training_name']
             }
             
             messages.success(request, 'Configuración guardada. Listo para entrenar.')
-            return redirect('perceptron_app:train_perceptron')
+            return redirect('perceptron_app:entrenar_perceptron')
     else:
         form = TrainingConfigForm(columns=columns)
     
@@ -163,13 +242,13 @@ def configure_training(request):
     return render(request, 'perceptron_app/configure_training.html', context)
 
 
-def train_perceptron(request):
+def entrenar_perceptron(request):
     """
     Vista para entrenar el perceptrón
     """
     if 'uploaded_data' not in request.session or 'training_config' not in request.session:
         messages.warning(request, 'Debes cargar datos y configurar el entrenamiento primero.')
-        return redirect('perceptron_app:upload_data')
+        return redirect('perceptron_app:cargar_datos')
     
     uploaded_data = request.session['uploaded_data']
     training_config = request.session['training_config']
@@ -181,75 +260,106 @@ def train_perceptron(request):
             
             if not file_path:
                 messages.error(request, 'No se encontró la ruta del archivo en la sesión.')
-                return redirect('perceptron_app:upload_data')
+                return redirect('perceptron_app:cargar_datos')
                 
             if not os.path.exists(file_path):
                 messages.error(request, f'El archivo no existe en la ruta: {file_path}')
-                return redirect('perceptron_app:upload_data')
+                return redirect('perceptron_app:cargar_datos')
             
             # Leer datos desde el archivo
             file_extension = uploaded_data['filename'].split('.')[-1].lower()
             if file_extension == 'csv':
-                df = pd.read_csv(file_path)
+                # Usar detección automática de separador
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        df = detectar_separador_csv_y_leer(f)
+                except UnicodeDecodeError:
+                    # Si falla con UTF-8, intentar con latin-1
+                    with open(file_path, 'r', encoding='latin-1') as f:
+                        df = detectar_separador_csv_y_leer(f)
             elif file_extension == 'xlsx':
                 df = pd.read_excel(file_path)
             elif file_extension == 'json':
                 df = pd.read_json(file_path)
             elif file_extension == 'txt':
-                df = pd.read_csv(file_path, sep='\t')
+                # Usar detección automática de separador
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        df = detectar_separador_csv_y_leer(f)
+                except UnicodeDecodeError:
+                    # Si falla con UTF-8, intentar con latin-1
+                    with open(file_path, 'r', encoding='latin-1') as f:
+                        df = detectar_separador_csv_y_leer(f)
             
             
             # Preparar datos de entrenamiento
-            X = df[training_config['input_columns']].values
-            y = df[training_config['output_columns']].values.flatten()
+            # Verificar que las columnas seleccionadas contengan solo datos numéricos
+            columnas_entrada = training_config['columnas_entrada']
+            columnas_salida = training_config['columnas_salida']
+            
+            # Verificar columnas de entrada
+            for col in columnas_entrada:
+                if not pd.api.types.is_numeric_dtype(df[col]):
+                    messages.error(request, f'La columna "{col}" contiene datos no numéricos. El perceptrón solo puede trabajar con datos numéricos.')
+                    return redirect('perceptron_app:configurar_entrenamiento')
+            
+            # Verificar columnas de salida
+            for col in columnas_salida:
+                if not pd.api.types.is_numeric_dtype(df[col]):
+                    messages.error(request, f'La columna "{col}" contiene datos no numéricos. El perceptrón solo puede trabajar con datos numéricos.')
+                    return redirect('perceptron_app:configurar_entrenamiento')
+            
+            # Convertir a arrays numéricos
+            X = df[columnas_entrada].values.astype(float)
+            y = df[columnas_salida].values.flatten().astype(float)
             
             # Crear y entrenar el perceptrón
             perceptron = PerceptronSimple(
-                learning_rate=training_config['learning_rate'],
-                max_epochs=training_config['epochs'],
-                max_error=training_config['max_error']
+                tasa_aprendizaje=training_config['tasa_aprendizaje'],
+                max_iteraciones=training_config['iteraciones'],
+                error_maximo=training_config['error_maximo']
             )
             
             # Inicializar pesos con el número correcto de características
-            perceptron._initialize_weights(X.shape[1])
+            perceptron._inicializar_pesos(X.shape[1])
             
             # Entrenar
-            training_results = perceptron.fit(X, y)
+            training_results = perceptron.entrenar(X, y)
             
             # Los datos ya vienen convertidos desde el perceptrón
-            final_weights = training_results['final_weights']
-            final_bias = training_results['final_bias']
-            training_errors = training_results['training_errors']
-            weight_evolution = training_results['weight_evolution']
+            pesos_finales = training_results['pesos_finales']
+            sesgo_final = training_results['sesgo_final']
+            errores_entrenamiento = training_results['errores_entrenamiento']
+            evolucion_pesos = training_results['evolucion_pesos']
             
             # Guardar en la base de datos
             training_record = PerceptronTraining.objects.create(
-                name=training_config['training_name'],
-                learning_rate=training_config['learning_rate'],
-                epochs=training_config['epochs'],
-                max_error=training_config['max_error'],
-                input_columns=training_config['input_columns'],
-                output_columns=training_config['output_columns'],
-                final_weights=final_weights,
-                final_bias=final_bias,
-                accuracy=training_results['accuracy'],
-                training_errors=training_errors,
-                weight_evolution=weight_evolution,
-                data_file=None  # No guardamos el archivo original en la base de datos
+                nombre=training_config['nombre_entrenamiento'],
+                tasa_aprendizaje=training_config['tasa_aprendizaje'],
+                iteraciones=training_config['iteraciones'],
+                error_maximo=training_config['error_maximo'],
+                columnas_entrada=training_config['columnas_entrada'],
+                columnas_salida=training_config['columnas_salida'],
+                pesos_finales=pesos_finales,
+                sesgo_final=sesgo_final,
+                precision=training_results['precision'],
+                errores_entrenamiento=errores_entrenamiento,
+                evolucion_pesos=evolucion_pesos,
+                archivo_datos=None  # No guardamos el archivo original en la base de datos
             )
             
             # Generar gráficos
-            error_plot = perceptron.create_error_plot()
-            weights_plot = perceptron.create_weights_plot()
+            error_plot = perceptron.crear_grafico_errores()
+            weights_plot = perceptron.crear_grafico_pesos()
             
             # Guardar gráficos en la sesión
             request.session['training_results'] = {
                 'training_id': training_record.id,
                 'error_plot': error_plot,
                 'weights_plot': weights_plot,
-                'summary': perceptron.get_training_summary(),
+                'summary': perceptron.obtener_resumen_entrenamiento(),
                 'converged': training_results['converged'],
-                'epochs_used': training_results['epochs_used']
+                'iteraciones_utilizadas': training_results['iteraciones_utilizadas']
             }
             
             # Limpiar archivo temporal después del entrenamiento
@@ -264,7 +374,7 @@ def train_perceptron(request):
                 del request.session['file_path']
             
             messages.success(request, '¡Entrenamiento completado exitosamente!')
-            return redirect('perceptron_app:training_results')
+            return redirect('perceptron_app:resultados_entrenamiento')
             
         except Exception as e:
             messages.error(request, f'Error durante el entrenamiento: {str(e)}')
@@ -277,13 +387,13 @@ def train_perceptron(request):
     return render(request, 'perceptron_app/train_perceptron.html', context)
 
 
-def training_results(request):
+def resultados_entrenamiento(request):
     """
     Vista para mostrar los resultados del entrenamiento
     """
     if 'training_results' not in request.session:
         messages.warning(request, 'No hay resultados de entrenamiento disponibles.')
-        return redirect('perceptron_app:home')
+        return redirect('perceptron_app:inicio')
     
     training_results = request.session['training_results']
     training_record = get_object_or_404(PerceptronTraining, id=training_results['training_id'])
@@ -294,13 +404,13 @@ def training_results(request):
         'weights_plot': training_results['weights_plot'],
         'summary': training_results['summary'],
         'converged': training_results['converged'],
-        'epochs_used': training_results['epochs_used']
+        'epochs_used': training_results['iteraciones_utilizadas']
     }
     
     return render(request, 'perceptron_app/training_results.html', context)
 
 
-def make_prediction(request, training_id=None):
+def hacer_prediccion(request, training_id=None):
     """
     Vista para hacer predicciones con el perceptrón entrenado
     """
@@ -312,52 +422,52 @@ def make_prediction(request, training_id=None):
         training_record = get_object_or_404(PerceptronTraining, id=training_results['training_id'])
     else:
         messages.warning(request, 'Debes entrenar un perceptrón primero o seleccionar uno del historial.')
-        return redirect('perceptron_app:home')
+        return redirect('perceptron_app:inicio')
     
     if request.method == 'POST':
-        form = PredictionForm(request.POST, input_columns=training_record.input_columns)
+        form = PredictionForm(request.POST, input_columns=training_record.columnas_entrada)
         if form.is_valid():
             try:
                 # Obtener valores de entrada
-                input_values = []
-                for col in training_record.input_columns:
-                    input_values.append(form.cleaned_data[col])
+                valores_entrada = []
+                for col in training_record.columnas_entrada:
+                    valores_entrada.append(form.cleaned_data[col])
                 
                 # Crear perceptrón con los pesos entrenados
                 perceptron = PerceptronSimple()
-                perceptron.weights = np.array(training_record.final_weights)
-                perceptron.bias = training_record.final_bias
+                perceptron.pesos = np.array(training_record.pesos_finales)
+                perceptron.sesgo = training_record.sesgo_final
                 
                 # Hacer predicción
-                prediction = perceptron.predict(np.array([input_values]))[0]
+                prediccion = perceptron.predecir(np.array([valores_entrada], dtype=float))[0]
                 
                 # Guardar predicción en la base de datos
                 Prediction.objects.create(
-                    training=training_record,
-                    input_values=input_values,
-                    predicted_output=prediction
+                    entrenamiento=training_record,
+                    valores_entrada=valores_entrada,
+                    salida_predicha=prediccion
                 )
                 
-                messages.success(request, f'Predicción realizada: {prediction}')
+                messages.success(request, f'Predicción realizada: {prediccion}')
                 
                 # Pasar los datos de entrada al contexto para mostrar en el template
-                input_data = {col: form.cleaned_data[col] for col in training_record.input_columns}
+                datos_entrada = {col: form.cleaned_data[col] for col in training_record.columnas_entrada}
                 context = {
                     'form': form,
                     'training_record': training_record,
-                    'previous_predictions': Prediction.objects.filter(training=training_record).order_by('-created_at')[:10],
-                    'prediction': prediction,
-                    'input_data': input_data
+                    'previous_predictions': Prediction.objects.filter(entrenamiento=training_record).order_by('-fecha_prediccion')[:10],
+                    'prediction': prediccion,
+                    'input_data': datos_entrada
                 }
                 return render(request, 'perceptron_app/make_prediction.html', context)
                 
             except Exception as e:
                 messages.error(request, f'Error al hacer la predicción: {str(e)}')
     else:
-        form = PredictionForm(input_columns=training_record.input_columns)
+        form = PredictionForm(input_columns=training_record.columnas_entrada)
     
     # Obtener predicciones anteriores
-    previous_predictions = Prediction.objects.filter(training=training_record).order_by('-created_at')[:10]
+    previous_predictions = Prediction.objects.filter(entrenamiento=training_record).order_by('-fecha_prediccion')[:10]
     
     context = {
         'form': form,
@@ -368,40 +478,40 @@ def make_prediction(request, training_id=None):
     return render(request, 'perceptron_app/make_prediction.html', context)
 
 
-def training_history(request):
+def historial_entrenamientos(request):
     """
     Vista para mostrar el historial de entrenamientos
     """
-    trainings = PerceptronTraining.objects.all().order_by('-created_at')
+    entrenamientos = PerceptronTraining.objects.all().order_by('-fecha_creacion')
     
     context = {
-        'trainings': trainings
+        'trainings': entrenamientos
     }
     
     return render(request, 'perceptron_app/training_history.html', context)
 
 
-def download_weights(request, training_id):
+def descargar_pesos(request, training_id):
     """
     Vista para descargar los pesos entrenados
     """
     training = get_object_or_404(PerceptronTraining, id=training_id)
     
     # Crear archivo JSON con los pesos
-    weights_data = {
-        'training_name': training.name,
-        'created_at': training.created_at.isoformat(),
-        'learning_rate': training.learning_rate,
-        'epochs': training.epochs,
-        'input_columns': training.input_columns,
-        'output_columns': training.output_columns,
-        'final_weights': training.final_weights,
-        'final_bias': training.final_bias,
-        'accuracy': training.accuracy
+    datos_pesos = {
+        'training_name': training.nombre,
+        'created_at': training.fecha_creacion.isoformat(),
+        'learning_rate': training.tasa_aprendizaje,
+        'iteraciones': training.iteraciones,
+        'input_columns': training.columnas_entrada,
+        'output_columns': training.columnas_salida,
+        'final_weights': training.pesos_finales,
+        'final_bias': training.sesgo_final,
+        'accuracy': training.precision
     }
     
     response = HttpResponse(
-        json.dumps(weights_data, indent=2),
+        json.dumps(datos_pesos, indent=2),
         content_type='application/json'
     )
     response['Content-Disposition'] = f'attachment; filename="perceptron_weights_{training.id}.json"'
@@ -409,17 +519,17 @@ def download_weights(request, training_id):
     return response
 
 
-def delete_training(request, training_id):
+def eliminar_entrenamiento(request, training_id):
     """
     Vista para eliminar un entrenamiento del historial
     """
     if request.method == 'POST':
         try:
             training = get_object_or_404(PerceptronTraining, id=training_id)
-            training_name = training.name
+            training_name = training.nombre
             
             # Eliminar también las predicciones asociadas
-            Prediction.objects.filter(training=training).delete()
+            Prediction.objects.filter(entrenamiento=training).delete()
             
             # Eliminar el entrenamiento
             training.delete()
@@ -429,12 +539,12 @@ def delete_training(request, training_id):
         except Exception as e:
             messages.error(request, f'Error al eliminar el entrenamiento: {str(e)}')
     
-    return redirect('perceptron_app:training_history')
+    return redirect('perceptron_app:historial_entrenamientos')
 
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def ajax_train(request):
+def ajax_entrenar(request):
     """
     Vista AJAX para entrenar el perceptrón de forma asíncrona
     """
@@ -443,8 +553,8 @@ def ajax_train(request):
         
         # Crear perceptrón
         perceptron = PerceptronSimple(
-            learning_rate=data['learning_rate'],
-            max_epochs=data['epochs']
+            tasa_aprendizaje=data['learning_rate'],
+            max_iteraciones=data['iteraciones']
         )
         
         # Preparar datos
@@ -452,7 +562,7 @@ def ajax_train(request):
         y = np.array(data['y'])
         
         # Entrenar
-        results = perceptron.fit(X, y)
+        results = perceptron.entrenar(X, y)
         
         return JsonResponse({
             'success': True,

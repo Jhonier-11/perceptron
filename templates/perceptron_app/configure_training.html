@@ -68,7 +68,7 @@
                                 
                                 <div>
                                     <label for="{{ form.epochs.id_for_label }}" class="block text-sm font-semibold text-accent-700 mb-2">
-                                        <i class="fas fa-repeat mr-2 text-primary-600"></i>Número de Épocas
+                                        <i class="fas fa-repeat mr-2 text-primary-600"></i>Número de Iteraciones
                                     </label>
                                     {{ form.epochs }}
                                     {% if form.epochs.help_text %}
@@ -179,9 +179,39 @@
                     </div>
                 </div>
                 
+                <!-- Información de columnas -->
+                {% if uploaded_data.column_info %}
+                <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6">
+                    <h5 class="text-xl font-bold text-blue-800 mb-6 flex items-center">
+                        <i class="fas fa-info-circle mr-3"></i>Información de Columnas
+                    </h5>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for col_info in uploaded_data.column_info %}
+                        <div class="bg-white rounded-lg p-4 border-l-4 {% if col_info.is_numeric %}border-green-500{% else %}border-red-500{% endif %}">
+                            <div class="flex items-center justify-between mb-2">
+                                <h6 class="font-semibold text-accent-800">{{ col_info.name }}</h6>
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold {% if col_info.is_numeric %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                                    {% if col_info.is_numeric %}Numérico{% else %}No numérico{% endif %}
+                                </span>
+                            </div>
+                            <p class="text-sm text-accent-600">
+                                <strong>Muestra:</strong> {{ col_info.sample_values|join:", " }}
+                            </p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p class="text-sm text-yellow-800">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            <strong>Importante:</strong> Solo puedes seleccionar columnas numéricas para el entrenamiento del perceptrón.
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+                
                 <!-- Botones de acción -->
                 <div class="flex flex-col sm:flex-row gap-4 justify-between pt-6">
-                    <a href="{% url 'perceptron_app:upload_data' %}" class="bg-accent-100 text-accent-700 px-6 py-3 rounded-lg font-semibold hover:bg-accent-200 transition-colors duration-200 flex items-center justify-center space-x-2">
+                    <a href="{% url 'perceptron_app:cargar_datos' %}" class="bg-accent-100 text-accent-700 px-6 py-3 rounded-lg font-semibold hover:bg-accent-200 transition-colors duration-200 flex items-center justify-center space-x-2">
                         <i class="fas fa-arrow-left"></i>
                         <span>Volver a Cargar Datos</span>
                     </a>
@@ -227,7 +257,7 @@
                             
                             <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6">
                                 <h6 class="font-semibold text-green-800 mb-4 flex items-center">
-                                    <i class="fas fa-repeat mr-2"></i>Número de Épocas
+                                    <i class="fas fa-repeat mr-2"></i>Número de Iteraciones
                                 </h6>
                                 <ul class="space-y-2 text-green-700">
                                     <li class="flex items-start space-x-2">

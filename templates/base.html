@@ -58,7 +58,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <!-- Logo -->
-                <a href="{% url 'perceptron_app:home' %}" class="flex items-center space-x-3 group">
+                <a href="{% url 'perceptron_app:inicio' %}" class="flex items-center space-x-3 group">
                     <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
                         <i class="fas fa-brain text-white text-lg"></i>
                     </div>
@@ -69,19 +69,19 @@
                 
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="{% url 'perceptron_app:home' %}" class="text-accent-600 hover:text-primary-600 font-medium transition-colors duration-200 flex items-center space-x-2">
+                    <a href="{% url 'perceptron_app:inicio' %}" class="text-accent-600 hover:text-primary-600 font-medium transition-colors duration-200 flex items-center space-x-2">
                         <i class="fas fa-home"></i>
                         <span>Inicio</span>
                     </a>
-                    <a href="{% url 'perceptron_app:upload_data' %}" class="text-accent-600 hover:text-primary-600 font-medium transition-colors duration-200 flex items-center space-x-2">
+                    <a href="{% url 'perceptron_app:cargar_datos' %}" class="text-accent-600 hover:text-primary-600 font-medium transition-colors duration-200 flex items-center space-x-2">
                         <i class="fas fa-upload"></i>
                         <span>Cargar Datos</span>
                     </a>
-                    <a href="{% url 'perceptron_app:training_history' %}" class="text-accent-600 hover:text-primary-600 font-medium transition-colors duration-200 flex items-center space-x-2">
+                    <a href="{% url 'perceptron_app:historial_entrenamientos' %}" class="text-accent-600 hover:text-primary-600 font-medium transition-colors duration-200 flex items-center space-x-2">
                         <i class="fas fa-history"></i>
                         <span>Historial</span>
                     </a>
-                    <a href="{% url 'perceptron_app:make_prediction' %}" class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl">
+                    <a href="{% url 'perceptron_app:hacer_prediccion' %}" class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl">
                         <i class="fas fa-calculator"></i>
                         <span>Predecir</span>
                     </a>
@@ -98,16 +98,16 @@
             <!-- Mobile Navigation -->
             <div class="md:hidden hidden" id="mobile-menu">
                 <div class="px-2 pt-2 pb-3 space-y-1 bg-white/95 backdrop-blur-md rounded-lg mt-2 shadow-lg">
-                    <a href="{% url 'perceptron_app:home' %}" class="block px-3 py-2 text-accent-600 hover:text-primary-600 font-medium rounded-md hover:bg-primary-50 transition-colors duration-200">
+                    <a href="{% url 'perceptron_app:inicio' %}" class="block px-3 py-2 text-accent-600 hover:text-primary-600 font-medium rounded-md hover:bg-primary-50 transition-colors duration-200">
                         <i class="fas fa-home mr-2"></i>Inicio
                     </a>
-                    <a href="{% url 'perceptron_app:upload_data' %}" class="block px-3 py-2 text-accent-600 hover:text-primary-600 font-medium rounded-md hover:bg-primary-50 transition-colors duration-200">
+                    <a href="{% url 'perceptron_app:cargar_datos' %}" class="block px-3 py-2 text-accent-600 hover:text-primary-600 font-medium rounded-md hover:bg-primary-50 transition-colors duration-200">
                         <i class="fas fa-upload mr-2"></i>Cargar Datos
                     </a>
-                    <a href="{% url 'perceptron_app:training_history' %}" class="block px-3 py-2 text-accent-600 hover:text-primary-600 font-medium rounded-md hover:bg-primary-50 transition-colors duration-200">
+                    <a href="{% url 'perceptron_app:historial_entrenamientos' %}" class="block px-3 py-2 text-accent-600 hover:text-primary-600 font-medium rounded-md hover:bg-primary-50 transition-colors duration-200">
                         <i class="fas fa-history mr-2"></i>Historial
                     </a>
-                    <a href="{% url 'perceptron_app:make_prediction' %}" class="block px-3 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-md hover:from-primary-600 hover:to-primary-700 transition-all duration-200">
+                    <a href="{% url 'perceptron_app:hacer_prediccion' %}" class="block px-3 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-md hover:from-primary-600 hover:to-primary-700 transition-all duration-200">
                         <i class="fas fa-calculator mr-2"></i>Predecir
                     </a>
                 </div>

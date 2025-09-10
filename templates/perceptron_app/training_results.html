@@ -15,15 +15,15 @@
         <div class="p-8">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
                 <div class="mb-4 md:mb-0">
-                    <h5 class="text-2xl font-bold text-accent-800 mb-2">{{ training_record.name }}</h5>
+                    <h5 class="text-2xl font-bold text-accent-800 mb-2">{{ training_record.nombre }}</h5>
                     <p class="text-accent-600 flex items-center">
                         <i class="fas fa-calendar mr-2"></i>
-                        {{ training_record.created_at|date:"d/m/Y H:i" }}
+                        {{ training_record.fecha_creacion|date:"d/m/Y H:i" }}
                     </p>
                 </div>
                 <div class="text-center md:text-right">
-                    <div class="text-6xl font-bold text-{% if training_record.accuracy >= 90 %}green-600{% elif training_record.accuracy >= 70 %}yellow-600{% else %}red-600{% endif %} mb-2">
-                        {{ training_record.accuracy|floatformat:1 }}%
+                    <div class="text-6xl font-bold text-{% if training_record.precision >= 90 %}green-600{% elif training_record.precision >= 70 %}yellow-600{% else %}red-600{% endif %} mb-2">
+                        {{ training_record.precision|floatformat:1 }}%
                     </div>
                     <p class="text-accent-600 font-semibold">Precisión Final</p>
                 </div>
@@ -50,15 +50,15 @@
                         <div class="space-y-2">
                             <div class="flex justify-between items-center p-2 bg-primary-50 rounded-lg">
                                 <span class="text-primary-700 font-medium">Tasa de aprendizaje:</span>
-                                <span class="text-primary-800 font-semibold">{{ training_record.learning_rate }}</span>
+                                <span class="text-primary-800 font-semibold">{{ training_record.tasa_aprendizaje }}</span>
                             </div>
                             <div class="flex justify-between items-center p-2 bg-primary-50 rounded-lg">
-                                <span class="text-primary-700 font-medium">Épocas utilizadas:</span>
+                                <span class="text-primary-700 font-medium">Iteraciones utilizadas:</span>
                                 <span class="text-primary-800 font-semibold">{{ epochs_used }}</span>
                             </div>
                             <div class="flex justify-between items-center p-2 bg-primary-50 rounded-lg">
                                 <span class="text-primary-700 font-medium">Error máximo permitido:</span>
-                                <span class="text-primary-800 font-semibold">{{ training_record.max_error }}</span>
+                                <span class="text-primary-800 font-semibold">{{ training_record.error_maximo }}</span>
                             </div>
                             <div class="flex justify-between items-center p-2 bg-primary-50 rounded-lg">
                                 <span class="text-primary-700 font-medium">Convergencia:</span>
@@ -82,11 +82,11 @@
                         <div class="space-y-2">
                             <div class="p-2 bg-accent-50 rounded-lg">
                                 <span class="text-accent-700 font-medium">Entradas:</span>
-                                <span class="text-accent-800">{{ training_record.input_columns|join:", " }}</span>
+                                <span class="text-accent-800">{{ training_record.columnas_entrada|join:", " }}</span>
                             </div>
                             <div class="p-2 bg-accent-50 rounded-lg">
                                 <span class="text-accent-700 font-medium">Salida:</span>
-                                <span class="text-accent-800">{{ training_record.output_columns|join:", " }}</span>
+                                <span class="text-accent-800">{{ training_record.columnas_salida|join:", " }}</span>
                             </div>
                         </div>
                     </div>
@@ -97,7 +97,7 @@
                         </h6>
                         <div class="bg-accent-50 p-4 rounded-xl">
                             <div class="space-y-2 font-mono text-sm">
-                                {% for weight in training_record.final_weights %}
+                                {% for weight in training_record.pesos_finales %}
                                     <div class="flex justify-between">
                                         <span class="text-accent-700">w{{ forloop.counter }}:</span>
                                         <span class="text-accent-800 font-semibold">{{ weight|floatformat:3 }}</span>
@@ -105,18 +105,18 @@
                                 {% endfor %}
                                 <div class="flex justify-between border-t border-accent-200 pt-2 mt-2">
                                     <span class="text-accent-700 font-semibold">bias:</span>
-                                    <span class="text-accent-800 font-bold">{{ training_record.final_bias|floatformat:3 }}</span>
+                                    <span class="text-accent-800 font-bold">{{ training_record.sesgo_final|floatformat:3 }}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="pt-4">
-                        <a href="{% url 'perceptron_app:make_prediction' %}" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl">
+                        <a href="{% url 'perceptron_app:hacer_prediccion' %}" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl">
                             <i class="fas fa-calculator"></i>
                             <span>Hacer Predicciones</span>
                         </a>
-                        <a href="{% url 'perceptron_app:download_weights' training_record.id %}" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl mt-3">
+                        <a href="{% url 'perceptron_app:descargar_pesos' training_record.id %}" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl mt-3">
                             <i class="fas fa-download"></i>
                             <span>Descargar Pesos</span>
                         </a>
@@ -207,15 +207,15 @@
             <div class="p-8 text-center">
                 <h5 class="text-2xl font-bold text-accent-800 mb-8">¿Qué quieres hacer ahora?</h5>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <a href="{% url 'perceptron_app:make_prediction' %}" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-105">
+                    <a href="{% url 'perceptron_app:hacer_prediccion' %}" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-105">
                         <i class="fas fa-calculator text-xl"></i>
                         <span>Probar con Nuevos Datos</span>
                     </a>
-                    <a href="{% url 'perceptron_app:upload_data' %}" class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-105">
+                    <a href="{% url 'perceptron_app:cargar_datos' %}" class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-105">
                         <i class="fas fa-upload text-xl"></i>
                         <span>Entrenar Otro Perceptrón</span>
                     </a>
-                    <a href="{% url 'perceptron_app:training_history' %}" class="bg-gradient-to-r from-accent-500 to-accent-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-accent-600 hover:to-accent-700 transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-105">
+                    <a href="{% url 'perceptron_app:historial_entrenamientos' %}" class="bg-gradient-to-r from-accent-500 to-accent-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-accent-600 hover:to-accent-700 transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-105">
                         <i class="fas fa-history text-xl"></i>
                         <span>Ver Historial</span>
                     </a>

@@ -9,23 +9,23 @@ app_name = 'perceptron_app'
 
 urlpatterns = [
     # Vista principal
-    path('', views.home, name='home'),
+    path('', views.inicio, name='inicio'),
     
     # Flujo de entrenamiento
-    path('upload/', views.upload_data, name='upload_data'),
-    path('configure/', views.configure_training, name='configure_training'),
-    path('train/', views.train_perceptron, name='train_perceptron'),
-    path('results/', views.training_results, name='training_results'),
+    path('cargar-datos/', views.cargar_datos, name='cargar_datos'),
+    path('configurar-entrenamiento/', views.configurar_entrenamiento, name='configurar_entrenamiento'),
+    path('entrenar-perceptron/', views.entrenar_perceptron, name='entrenar_perceptron'),
+    path('resultados-entrenamiento/', views.resultados_entrenamiento, name='resultados_entrenamiento'),
     
     # Predicciones
-    path('predict/', views.make_prediction, name='make_prediction'),
-    path('predict/<int:training_id>/', views.make_prediction, name='make_prediction_with_id'),
+    path('hacer-prediccion/', views.hacer_prediccion, name='hacer_prediccion'),
+    path('hacer-prediccion/<int:training_id>/', views.hacer_prediccion, name='hacer_prediccion_con_id'),
     
     # Historial y gestión
-    path('history/', views.training_history, name='training_history'),
-    path('download/<int:training_id>/', views.download_weights, name='download_weights'),
-    path('delete/<int:training_id>/', views.delete_training, name='delete_training'),
+    path('historial-entrenamientos/', views.historial_entrenamientos, name='historial_entrenamientos'),
+    path('descargar-pesos/<int:training_id>/', views.descargar_pesos, name='descargar_pesos'),
+    path('eliminar-entrenamiento/<int:training_id>/', views.eliminar_entrenamiento, name='eliminar_entrenamiento'),
     
     # APIs AJAX
-    path('api/train/', views.ajax_train, name='ajax_train'),
+    path('api/entrenar/', views.ajax_entrenar, name='ajax_entrenar'),
 ]

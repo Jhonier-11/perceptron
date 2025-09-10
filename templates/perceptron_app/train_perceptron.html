@@ -31,7 +31,7 @@
                             <span class="font-semibold">{{ training_config.learning_rate }}</span>
                         </p>
                         <p class="flex justify-between">
-                            <span class="font-medium">Épocas:</span>
+                            <span class="font-medium">Iteraciones:</span>
                             <span class="font-semibold">{{ training_config.epochs }}</span>
                         </p>
                         <p class="flex justify-between">
@@ -71,7 +71,7 @@
                     </li>
                     <li class="flex items-start space-x-3">
                         <span class="bg-blue-200 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold flex-shrink-0">5</span>
-                        <span><strong>Repetición:</strong> Repite hasta converger o alcanzar el máximo de épocas</span>
+                        <span><strong>Repetición:</strong> Repite hasta converger o alcanzar el máximo de iteraciones</span>
                     </li>
                 </ol>
             </div>
@@ -265,9 +265,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const finalLog = document.createElement('div');
                 finalLog.className = 'text-success fw-bold';
                 if (errors === 0) {
-                    finalLog.textContent = `¡Convergencia alcanzada en la época ${epoch}!`;
+                    finalLog.textContent = `¡Convergencia alcanzada en la iteración ${epoch}!`;
                 } else {
-                    finalLog.textContent = `Entrenamiento completado después de ${epoch} épocas.`;
+                    finalLog.textContent = `Entrenamiento completado después de ${epoch} iteraciones.`;
                 }
                 trainingLog.appendChild(finalLog);
                 

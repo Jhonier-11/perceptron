@@ -15,31 +15,31 @@
             <!-- Información del perceptrón entrenado -->
             <div class="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-l-4 border-blue-500 p-6 rounded-r-xl mb-8">
                 <h6 class="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-4 flex items-center">
-                    <i class="fas fa-brain mr-2"></i>Perceptrón Entrenado: {{ training_record.name }}
+                    <i class="fas fa-brain mr-2"></i>Perceptrón Entrenado: {{ training_record.nombre }}
                 </h6>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">
                         <div class="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
                             <span class="text-blue-700 dark:text-blue-300 font-medium">Precisión:</span>
-                            <span class="text-blue-800 dark:text-blue-200 font-semibold">{{ training_record.accuracy|floatformat:1 }}%</span>
+                            <span class="text-blue-800 dark:text-blue-200 font-semibold">{{ training_record.precision|floatformat:1 }}%</span>
                         </div>
                         <div class="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
                             <span class="text-blue-700 dark:text-blue-300 font-medium">Entradas:</span>
-                            <span class="text-blue-800 dark:text-blue-200 font-semibold">{{ training_record.input_columns|join:", " }}</span>
+                            <span class="text-blue-800 dark:text-blue-200 font-semibold">{{ training_record.columnas_entrada|join:", " }}</span>
                         </div>
                     </div>
                     <div class="space-y-2">
                         <div class="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
                             <span class="text-blue-700 dark:text-blue-300 font-medium block mb-1">Pesos:</span>
                             <span class="text-blue-800 dark:text-blue-200 font-mono text-sm">
-                                {% for weight in training_record.final_weights %}
+                                {% for weight in training_record.pesos_finales %}
                                     {{ weight|floatformat:3 }}{% if not forloop.last %}, {% endif %}
                                 {% endfor %}
                             </span>
                         </div>
                         <div class="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
                             <span class="text-blue-700 dark:text-blue-300 font-medium">Sesgo:</span>
-                            <span class="text-blue-800 dark:text-blue-200 font-semibold">{{ training_record.final_bias|floatformat:3 }}</span>
+                            <span class="text-blue-800 dark:text-blue-200 font-semibold">{{ training_record.sesgo_final|floatformat:3 }}</span>
                         </div>
                     </div>
                 </div>
@@ -135,7 +135,7 @@
                             <table class="w-full">
                                 <thead>
                                     <tr class="border-b border-accent-200 dark:border-accent-600">
-                                        {% for col in training_record.input_columns %}
+                                        {% for col in training_record.columnas_entrada %}
                                             <th class="text-left py-3 px-4 font-semibold text-accent-800 dark:text-accent-200">{{ col }}</th>
                                         {% endfor %}
                                         <th class="text-left py-3 px-4 font-semibold text-accent-800 dark:text-accent-200">Predicción</th>
@@ -218,7 +218,7 @@
                                 <div class="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-3 border border-primary-200 dark:border-primary-800">
                                     <p class="text-primary-700 dark:text-primary-300 text-sm">
                                         <i class="fas fa-chart-line mr-1"></i>
-                                        La precisión del <strong>{{ training_record.accuracy|floatformat:1 }}%</strong> indica qué tan confiable es la predicción
+                                        La precisión del <strong>{{ training_record.precision|floatformat:1 }}%</strong> indica qué tan confiable es la predicción
                                     </p>
                                 </div>
                             </div>
@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
     exampleButton.onclick = function() {
         // Cargar ejemplo de compuerta AND
         const exampleValues = {
-            {% for col in training_record.input_columns %}
+            {% for col in training_record.columnas_entrada %}
                 '{{ col }}': 1{% if not forloop.last %},{% endif %}
             {% endfor %}
         };

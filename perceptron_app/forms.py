@@ -19,7 +19,7 @@ class DataUploadForm(forms.Form):
         })
     )
     
-    def clean_data_file(self):
+    def limpiar_archivo_datos(self):
         file = self.cleaned_data.get('data_file')
         if file:
             # Verificar extensión
@@ -66,7 +66,7 @@ class TrainingConfigForm(forms.Form):
     )
     
     epochs = forms.IntegerField(
-        label='Número de Épocas',
+        label='Número de Iteraciones',
         initial=100,
         validators=[MinValueValidator(1), MaxValueValidator(10000)],
         widget=forms.NumberInput(attrs={
@@ -116,8 +116,8 @@ class TrainingConfigForm(forms.Form):
                 help_text='Selecciona la columna que será la variable objetivo.'
             )
     
-    def clean(self):
-        cleaned_data = super().clean()
+    def limpiar(self):
+        cleaned_data = super().limpiar()
         input_columns = cleaned_data.get('input_columns', [])
         output_columns = cleaned_data.get('output_columns', [])
         
@@ -158,8 +158,8 @@ class PredictionForm(forms.Form):
                 help_text=f'Valor numérico para la característica {col}'
             )
     
-    def clean(self):
-        cleaned_data = super().clean()
+    def limpiar(self):
+        cleaned_data = super().limpiar()
         
         # Validar que todos los campos estén completos
         for field_name, value in cleaned_data.items():

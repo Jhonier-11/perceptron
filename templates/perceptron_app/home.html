@@ -25,11 +25,11 @@
             </p>
             
             <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                <a href="{% url 'perceptron_app:upload_data' %}" class="group bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-xl hover:shadow-2xl hover:from-primary-600 hover:to-primary-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-3">
+                <a href="{% url 'perceptron_app:cargar_datos' %}" class="group bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-xl hover:shadow-2xl hover:from-primary-600 hover:to-primary-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-3">
                     <i class="fas fa-upload text-xl"></i>
                     <span>Comenzar Entrenamiento</span>
                 </a>
-                <a href="{% url 'perceptron_app:training_history' %}" class="group bg-white text-primary-600 px-8 py-4 rounded-xl font-semibold text-lg border-2 border-primary-200 hover:border-primary-300 hover:bg-primary-50 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-3 shadow-lg">
+                <a href="{% url 'perceptron_app:historial_entrenamientos' %}" class="group bg-white text-primary-600 px-8 py-4 rounded-xl font-semibold text-lg border-2 border-primary-200 hover:border-primary-300 hover:bg-primary-50 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-3 shadow-lg">
                     <i class="fas fa-history text-xl"></i>
                     <span>Ver Historial</span>
                 </a>
@@ -121,7 +121,7 @@
                                 </div>
                                 <div>
                                     <h6 class="font-semibold text-accent-800 mb-2">Configuración Flexible</h6>
-                                    <p class="text-accent-600 text-sm">Ajusta la tasa de aprendizaje, épocas y selecciona columnas de entrada/salida.</p>
+                                    <p class="text-accent-600 text-sm">Ajusta la tasa de aprendizaje, iteraciones y selecciona columnas de entrada/salida.</p>
                                 </div>
                             </div>
                             
@@ -186,11 +186,11 @@
                             {% for training in recent_trainings %}
                                 <div class="flex items-center justify-between p-4 bg-accent-50 rounded-xl hover:bg-primary-50 transition-colors duration-200">
                                     <div class="flex-1">
-                                        <h6 class="font-semibold text-accent-800 mb-1">{{ training.name }}</h6>
-                                        <p class="text-sm text-accent-600">{{ training.created_at|date:"d/m/Y H:i" }}</p>
+                                        <h6 class="font-semibold text-accent-800 mb-1">{{ training.nombre }}</h6>
+                                        <p class="text-sm text-accent-600">{{ training.fecha_creacion|date:"d/m/Y H:i" }}</p>
                                     </div>
-                                    <span class="px-3 py-1 rounded-full text-sm font-semibold {% if training.accuracy >= 90 %}bg-green-100 text-green-700{% elif training.accuracy >= 70 %}bg-yellow-100 text-yellow-700{% else %}bg-red-100 text-red-700{% endif %}">
-                                        {{ training.accuracy|floatformat:1 }}%
+                                    <span class="px-3 py-1 rounded-full text-sm font-semibold {% if training.precision >= 90 %}bg-green-100 text-green-700{% elif training.precision >= 70 %}bg-yellow-100 text-yellow-700{% else %}bg-red-100 text-red-700{% endif %}">
+                                        {{ training.precision|floatformat:1 }}%
                                     </span>
                                 </div>
                             {% endfor %}

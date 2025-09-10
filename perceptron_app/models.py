@@ -11,51 +11,51 @@ class PerceptronTraining(models.Model):
     """
     Modelo para almacenar los resultados de entrenamiento del perceptrón
     """
-    name = models.CharField(max_length=100, verbose_name="Nombre del entrenamiento")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
+    nombre = models.CharField(max_length=100, verbose_name="Nombre del entrenamiento")
+    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
     
     # Parámetros de entrenamiento
-    learning_rate = models.FloatField(verbose_name="Tasa de aprendizaje")
-    epochs = models.IntegerField(verbose_name="Número de épocas")
-    max_error = models.FloatField(verbose_name="Error máximo permitido", default=0.1, validators=[MaxValueValidator(0.1)])
+    tasa_aprendizaje = models.FloatField(verbose_name="Tasa de aprendizaje")
+    iteraciones = models.IntegerField(verbose_name="Número de iteraciones")
+    error_maximo = models.FloatField(verbose_name="Error máximo permitido", default=0.1, validators=[MaxValueValidator(0.1)])
     
     # Datos de entrada
-    input_columns = models.JSONField(verbose_name="Columnas de entrada")
-    output_columns = models.JSONField(verbose_name="Columnas de salida")
+    columnas_entrada = models.JSONField(verbose_name="Columnas de entrada")
+    columnas_salida = models.JSONField(verbose_name="Columnas de salida")
     
     # Resultados del entrenamiento
-    final_weights = models.JSONField(verbose_name="Pesos finales")
-    final_bias = models.FloatField(verbose_name="Sesgo final")
-    accuracy = models.FloatField(verbose_name="Precisión final")
-    training_errors = models.JSONField(verbose_name="Errores por época")
-    weight_evolution = models.JSONField(verbose_name="Evolución de pesos")
+    pesos_finales = models.JSONField(verbose_name="Pesos finales")
+    sesgo_final = models.FloatField(verbose_name="Sesgo final")
+    precision = models.FloatField(verbose_name="Precisión final")
+    errores_entrenamiento = models.JSONField(verbose_name="Errores por época")
+    evolucion_pesos = models.JSONField(verbose_name="Evolución de pesos")
     
     # Archivo de datos original
-    data_file = models.FileField(upload_to='training_data/', verbose_name="Archivo de datos", null=True, blank=True)
+    archivo_datos = models.FileField(upload_to='training_data/', verbose_name="Archivo de datos", null=True, blank=True)
     
     class Meta:
         verbose_name = "Entrenamiento de Perceptrón"
         verbose_name_plural = "Entrenamientos de Perceptrón"
-        ordering = ['-created_at']
+        ordering = ['-fecha_creacion']
     
     def __str__(self):
-        return f"{self.name} - {self.created_at.strftime('%d/%m/%Y %H:%M')}"
+        return f"{self.nombre} - {self.fecha_creacion.strftime('%d/%m/%Y %H:%M')}"
 
 
 class Prediction(models.Model):
     """
     Modelo para almacenar predicciones individuales
     """
-    training = models.ForeignKey(PerceptronTraining, on_delete=models.CASCADE, 
-                               related_name='predictions', verbose_name="Entrenamiento")
-    input_values = models.JSONField(verbose_name="Valores de entrada")
-    predicted_output = models.FloatField(verbose_name="Salida predicha")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de predicción")
+    entrenamiento = models.ForeignKey(PerceptronTraining, on_delete=models.CASCADE, 
+                               related_name='predicciones', verbose_name="Entrenamiento")
+    valores_entrada = models.JSONField(verbose_name="Valores de entrada")
+    salida_predicha = models.FloatField(verbose_name="Salida predicha")
+    fecha_prediccion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de predicción")
     
     class Meta:
         verbose_name = "Predicción"
         verbose_name_plural = "Predicciones"
-        ordering = ['-created_at']
+        ordering = ['-fecha_prediccion']
     
     def __str__(self):
-        return f"Predicción {self.id} - {self.training.name}"
+        return f"Predicción {self.id} - {self.entrenamiento.nombre}"

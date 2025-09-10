@@ -21,21 +21,36 @@
                 {% csrf_token %}
                 
                 <!-- Área de carga de archivos -->
-                <div class="border-2 border-dashed border-primary-300 rounded-xl p-8 text-center hover:border-primary-400 transition-colors duration-200">
-                    <div class="mb-4">
+                <div id="fileDropZone" class="border-2 border-dashed border-primary-300 rounded-xl p-8 text-center hover:border-primary-400 transition-all duration-200 cursor-pointer">
+                    <div id="fileDropContent">
                         <i class="fas fa-cloud-upload-alt text-4xl text-primary-500 mb-4"></i>
                         <h5 class="text-lg font-semibold text-accent-800 mb-2">Selecciona tu archivo</h5>
                         <p class="text-accent-600 mb-4">Arrastra y suelta tu archivo aquí o haz clic para seleccionar</p>
-                    </div>
-                    
-                    <div class="relative">
-                        {{ form.data_file }}
                         <div class="mt-4">
                             <label for="{{ form.data_file.id_for_label }}" class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-200 cursor-pointer inline-flex items-center space-x-2 shadow-lg hover:shadow-xl">
                                 <i class="fas fa-file mr-2"></i>
                                 <span>Seleccionar Archivo</span>
                             </label>
                         </div>
+                    </div>
+                    
+                    <div id="fileSelectedContent" class="hidden">
+                        <i class="fas fa-file-check text-4xl text-green-500 mb-4"></i>
+                        <h5 class="text-lg font-semibold text-green-700 mb-2" id="fileName">Archivo seleccionado</h5>
+                        <p class="text-accent-600 mb-4" id="fileSize">Tamaño del archivo</p>
+                        <div class="flex justify-center space-x-4">
+                            <button type="button" id="changeFileBtn" class="bg-accent-100 text-accent-700 px-4 py-2 rounded-lg font-semibold hover:bg-accent-200 transition-colors duration-200">
+                                <i class="fas fa-edit mr-2"></i>Cambiar archivo
+                            </button>
+                            <button type="submit" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl">
+                                <i class="fas fa-upload"></i>
+                                <span>Subir Archivo</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="relative">
+                        {{ form.data_file }}
                     </div>
                     
                     {% if form.data_file.help_text %}
@@ -53,7 +68,7 @@
                 
                 <!-- Botones de acción -->
                 <div class="flex flex-col sm:flex-row gap-4 justify-end">
-                    <a href="{% url 'perceptron_app:home' %}" class="bg-accent-100 text-accent-700 px-6 py-3 rounded-lg font-semibold hover:bg-accent-200 transition-colors duration-200 flex items-center justify-center space-x-2">
+                    <a href="{% url 'perceptron_app:inicio' %}" class="bg-accent-100 text-accent-700 px-6 py-3 rounded-lg font-semibold hover:bg-accent-200 transition-colors duration-200 flex items-center justify-center space-x-2">
                         <i class="fas fa-arrow-left"></i>
                         <span>Volver</span>
                     </a>
@@ -110,7 +125,7 @@
                             <i class="fas fa-trash"></i>
                             <span>Cargar Otro Archivo</span>
                         </a>
-                        <a href="{% url 'perceptron_app:configure_training' %}" class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl">
+                        <a href="{% url 'perceptron_app:configurar_entrenamiento' %}" class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl">
                             <i class="fas fa-cog"></i>
                             <span>Configurar Entrenamiento</span>
                         </a>
@@ -261,5 +276,140 @@ function downloadExample() {
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
 }
+
+// Funcionalidad del selector de archivos
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('{{ form.data_file.id_for_label }}');
+    const fileDropZone = document.getElementById('fileDropZone');
+    const fileDropContent = document.getElementById('fileDropContent');
+    const fileSelectedContent = document.getElementById('fileSelectedContent');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const changeFileBtn = document.getElementById('changeFileBtn');
+    const submitBtn = document.querySelector('button[type="submit"]');
+
+    // Función para formatear el tamaño del archivo
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Función para mostrar el archivo seleccionado
+    function showSelectedFile(file) {
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        
+        // Cambiar el color del borde según el tipo de archivo
+        const validExtensions = ['.csv', '.xlsx', '.xls', '.json', '.txt'];
+        const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+        const isValidFile = validExtensions.includes(fileExtension);
+        
+        if (isValidFile) {
+            fileDropZone.classList.remove('border-red-300', 'bg-red-50');
+            fileDropZone.classList.add('border-green-300', 'bg-green-50');
+        } else {
+            fileDropZone.classList.remove('border-green-300', 'bg-green-50');
+            fileDropZone.classList.add('border-red-300', 'bg-red-50');
+        }
+        
+        fileDropContent.classList.add('hidden');
+        fileSelectedContent.classList.remove('hidden');
+        
+        // Ocultar el botón de submit original
+        if (submitBtn) {
+            submitBtn.style.display = 'none';
+        }
+    }
+
+    // Función para resetear la vista
+    function resetFileView() {
+        fileDropZone.classList.remove('border-green-300', 'bg-green-50', 'border-red-300', 'bg-red-50');
+        fileDropZone.classList.add('border-primary-300');
+        fileDropContent.classList.remove('hidden');
+        fileSelectedContent.classList.add('hidden');
+        
+        // Mostrar el botón de submit original
+        if (submitBtn) {
+            submitBtn.style.display = 'inline-flex';
+        }
+    }
+
+    // Evento cuando se selecciona un archivo
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            showSelectedFile(file);
+        }
+    });
+
+    // Evento para cambiar archivo
+    changeFileBtn.addEventListener('click', function() {
+        fileInput.click();
+    });
+
+    // Evento de clic en la zona de drop
+    fileDropZone.addEventListener('click', function(e) {
+        if (e.target === fileDropZone || e.target.closest('#fileDropContent')) {
+            fileInput.click();
+        }
+    });
+
+    // Eventos de drag and drop
+    fileDropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        fileDropZone.classList.add('border-primary-500', 'bg-primary-50');
+    });
+
+    fileDropZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        fileDropZone.classList.remove('border-primary-500', 'bg-primary-50');
+    });
+
+    fileDropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        fileDropZone.classList.remove('border-primary-500', 'bg-primary-50');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            fileInput.files = files;
+            showSelectedFile(file);
+        }
+    });
+
+    // Validación en tiempo real del tipo de archivo
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const validExtensions = ['.csv', '.xlsx', '.xls', '.json', '.txt'];
+            const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+            
+            if (!validExtensions.includes(fileExtension)) {
+                // Mostrar mensaje de error
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm';
+                errorMsg.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Formato de archivo no soportado. Por favor selecciona un archivo CSV, Excel, JSON o TXT.';
+                
+                // Remover mensaje anterior si existe
+                const existingError = fileDropZone.querySelector('.bg-red-50');
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                fileDropZone.appendChild(errorMsg);
+                
+                // Resetear después de 3 segundos
+                setTimeout(() => {
+                    errorMsg.remove();
+                    resetFileView();
+                    fileInput.value = '';
+                }, 3000);
+            }
+        }
+    });
+});
 </script>
 {% endblock %}

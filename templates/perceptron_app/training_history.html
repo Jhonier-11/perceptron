@@ -11,7 +11,7 @@
                 <h4 class="text-2xl font-bold text-white flex items-center">
                     <i class="fas fa-history mr-3"></i>Historial de Entrenamientos
                 </h4>
-                <a href="{% url 'perceptron_app:upload_data' %}" class="bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105">
+                <a href="{% url 'perceptron_app:cargar_datos' %}" class="bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105">
                     <i class="fas fa-plus"></i>
                     <span>Nuevo Entrenamiento</span>
                 </a>
@@ -27,7 +27,7 @@
                                 <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Nombre</th>
                                 <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Fecha</th>
                                 <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Precisión</th>
-                                <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Épocas</th>
+                                <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Iteraciones</th>
                                 <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Tasa de Aprendizaje</th>
                                 <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Error Máximo</th>
                                 <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Entradas</th>
@@ -40,34 +40,34 @@
                                 <tr class="hover:bg-accent-50 dark:hover:bg-accent-700/50 transition-colors duration-200 animate-fadeInUp" style="animation-delay: {{ forloop.counter0|add:0.1 }}s;">
                                     <td class="py-4 px-4">
                                         <div class="flex items-center space-x-2">
-                                            <strong class="text-accent-800 dark:text-accent-200">{{ training.name }}</strong>
-                                            {% if training.accuracy >= 90 %}
+                                            <strong class="text-accent-800 dark:text-accent-200">{{ training.nombre }}</strong>
+                                            {% if training.precision >= 90 %}
                                                 <i class="fas fa-star text-yellow-500" title="Excelente precisión"></i>
                                             {% endif %}
                                         </div>
                                     </td>
-                                    <td class="py-4 px-4 text-accent-700 dark:text-accent-300">{{ training.created_at|date:"d/m/Y H:i" }}</td>
+                                    <td class="py-4 px-4 text-accent-700 dark:text-accent-300">{{ training.fecha_creacion|date:"d/m/Y H:i" }}</td>
                                     <td class="py-4 px-4">
-                                        <span class="px-3 py-1 rounded-full text-sm font-semibold {% if training.accuracy >= 90 %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300{% elif training.accuracy >= 70 %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300{% else %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300{% endif %}">
-                                            {{ training.accuracy|floatformat:1 }}%
+                                        <span class="px-3 py-1 rounded-full text-sm font-semibold {% if training.precision >= 90 %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300{% elif training.precision >= 70 %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300{% else %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300{% endif %}">
+                                            {{ training.precision|floatformat:1 }}%
                                         </span>
                                     </td>
-                                    <td class="py-4 px-4 text-accent-700 dark:text-accent-300">{{ training.epochs }}</td>
-                                    <td class="py-4 px-4 text-accent-700 dark:text-accent-300">{{ training.learning_rate }}</td>
-                                    <td class="py-4 px-4 text-accent-700 dark:text-accent-300">{{ training.max_error }}</td>
+                                    <td class="py-4 px-4 text-accent-700 dark:text-accent-300">{{ training.iteraciones }}</td>
+                                    <td class="py-4 px-4 text-accent-700 dark:text-accent-300">{{ training.tasa_aprendizaje }}</td>
+                                    <td class="py-4 px-4 text-accent-700 dark:text-accent-300">{{ training.error_maximo }}</td>
                                     <td class="py-4 px-4">
                                         <span class="text-accent-600 dark:text-accent-400 text-sm">
-                                            {{ training.input_columns|join:", " }}
+                                            {{ training.columnas_entrada|join:", " }}
                                         </span>
                                     </td>
                                     <td class="py-4 px-4">
                                         <span class="text-accent-600 dark:text-accent-400 text-sm">
-                                            {{ training.output_columns|join:", " }}
+                                            {{ training.columnas_salida|join:", " }}
                                         </span>
                                     </td>
                                     <td class="py-4 px-4">
                                         <div class="flex space-x-2">
-                                            <a href="{% url 'perceptron_app:download_weights' training.id %}" 
+                                            <a href="{% url 'perceptron_app:descargar_pesos' training.id %}" 
                                                class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors duration-200" 
                                                title="Descargar pesos">
                                                 <i class="fas fa-download"></i>
@@ -86,7 +86,7 @@
                                             </button>
                                             <button type="button" 
                                                     class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-2 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors duration-200" 
-                                                    onclick="confirmDelete({{ training.id }}, '{{ training.name }}')"
+                                                    onclick="confirmDelete({{ training.id }}, '{{ training.nombre }}')"
                                                     title="Eliminar entrenamiento">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -132,7 +132,7 @@
                         <i class="fas fa-brain text-6xl text-accent-400 dark:text-accent-500 mb-6"></i>
                         <h5 class="text-xl font-semibold text-accent-600 dark:text-accent-400 mb-4">No hay entrenamientos registrados</h5>
                         <p class="text-accent-500 dark:text-accent-500 mb-8">Comienza entrenando tu primer perceptrón</p>
-                        <a href="{% url 'perceptron_app:upload_data' %}" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center space-x-3 mx-auto shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <a href="{% url 'perceptron_app:cargar_datos' %}" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center space-x-3 mx-auto shadow-lg hover:shadow-xl transform hover:scale-105">
                             <i class="fas fa-upload text-xl"></i>
                             <span>Cargar Datos</span>
                         </a>
@@ -150,7 +150,7 @@
             <div class="bg-gradient-to-r from-accent-500 to-accent-600 px-8 py-6 rounded-t-2xl">
                 <div class="flex justify-between items-center">
                     <h5 class="text-xl font-bold text-white flex items-center">
-                        <i class="fas fa-info-circle mr-3"></i>{{ training.name }}
+                        <i class="fas fa-info-circle mr-3"></i>{{ training.nombre }}
                     </h5>
                     <button type="button" class="text-white hover:text-accent-200 transition-colors duration-200" onclick="closeDetailsModal({{ training.id }})">
                         <i class="fas fa-times text-xl"></i>
@@ -167,20 +167,20 @@
                             <div class="space-y-3">
                                 <div class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
                                     <span class="text-accent-700 dark:text-accent-300 font-medium">Tasa de aprendizaje:</span>
-                                    <span class="text-accent-800 dark:text-accent-200 font-semibold">{{ training.learning_rate }}</span>
+                                    <span class="text-accent-800 dark:text-accent-200 font-semibold">{{ training.tasa_aprendizaje }}</span>
                                 </div>
                                 <div class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
-                                    <span class="text-accent-700 dark:text-accent-300 font-medium">Épocas:</span>
-                                    <span class="text-accent-800 dark:text-accent-200 font-semibold">{{ training.epochs }}</span>
+                                    <span class="text-accent-700 dark:text-accent-300 font-medium">Iteraciones:</span>
+                                    <span class="text-accent-800 dark:text-accent-200 font-semibold">{{ training.iteraciones }}</span>
                                 </div>
                                 <div class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
                                     <span class="text-accent-700 dark:text-accent-300 font-medium">Error máximo:</span>
-                                    <span class="text-accent-800 dark:text-accent-200 font-semibold">{{ training.max_error }}</span>
+                                    <span class="text-accent-800 dark:text-accent-200 font-semibold">{{ training.error_maximo }}</span>
                                 </div>
                                 <div class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
                                     <span class="text-accent-700 dark:text-accent-300 font-medium">Precisión:</span>
-                                    <span class="px-3 py-1 rounded-full text-sm font-semibold {% if training.accuracy >= 90 %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300{% elif training.accuracy >= 70 %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300{% else %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300{% endif %}">
-                                        {{ training.accuracy|floatformat:1 }}%
+                                    <span class="px-3 py-1 rounded-full text-sm font-semibold {% if training.precision >= 90 %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300{% elif training.precision >= 70 %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300{% else %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300{% endif %}">
+                                        {{ training.precision|floatformat:1 }}%
                                     </span>
                                 </div>
                             </div>
@@ -193,11 +193,11 @@
                             <div class="space-y-3">
                                 <div class="p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
                                     <span class="text-accent-700 dark:text-accent-300 font-medium block mb-1">Entradas:</span>
-                                    <span class="text-accent-800 dark:text-accent-200">{{ training.input_columns|join:", " }}</span>
+                                    <span class="text-accent-800 dark:text-accent-200">{{ training.columnas_entrada|join:", " }}</span>
                                 </div>
                                 <div class="p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
                                     <span class="text-accent-700 dark:text-accent-300 font-medium block mb-1">Salida:</span>
-                                    <span class="text-accent-800 dark:text-accent-200">{{ training.output_columns|join:", " }}</span>
+                                    <span class="text-accent-800 dark:text-accent-200">{{ training.columnas_salida|join:", " }}</span>
                                 </div>
                             </div>
                         </div>
@@ -210,7 +210,7 @@
                             </h6>
                             <div class="bg-accent-50 dark:bg-accent-700/50 rounded-xl p-4">
                                 <div class="space-y-2">
-                                    {% for weight in training.final_weights %}
+                                    {% for weight in training.pesos_finales %}
                                         <div class="flex justify-between items-center p-2 bg-white dark:bg-accent-800 rounded-lg">
                                             <span class="text-accent-700 dark:text-accent-300 font-medium">w{{ forloop.counter }}</span>
                                             <span class="text-primary-600 dark:text-primary-400 font-mono font-semibold">{{ weight|floatformat:3 }}</span>
@@ -218,7 +218,7 @@
                                     {% endfor %}
                                     <div class="flex justify-between items-center p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
                                         <span class="text-accent-700 dark:text-accent-300 font-medium">bias</span>
-                                        <span class="text-primary-600 dark:text-primary-400 font-mono font-bold">{{ training.final_bias|floatformat:3 }}</span>
+                                        <span class="text-primary-600 dark:text-primary-400 font-mono font-bold">{{ training.sesgo_final|floatformat:3 }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -231,11 +231,11 @@
                             <div class="space-y-3">
                                 <div class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
                                     <span class="text-accent-700 dark:text-accent-300 font-medium">Fecha:</span>
-                                    <span class="text-accent-800 dark:text-accent-200">{{ training.created_at|date:"d/m/Y H:i" }}</span>
+                                    <span class="text-accent-800 dark:text-accent-200">{{ training.fecha_creacion|date:"d/m/Y H:i" }}</span>
                                 </div>
                                 <div class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
                                     <span class="text-accent-700 dark:text-accent-300 font-medium">Archivo:</span>
-                                    <span class="text-accent-800 dark:text-accent-200">{{ training.data_file.name|default:"N/A" }}</span>
+                                    <span class="text-accent-800 dark:text-accent-200">{{ training.archivo_datos.name|default:"N/A" }}</span>
                                 </div>
                             </div>
                         </div>
@@ -246,7 +246,7 @@
                 <button type="button" class="px-6 py-3 bg-accent-200 dark:bg-accent-600 text-accent-700 dark:text-accent-300 rounded-lg font-semibold hover:bg-accent-300 dark:hover:bg-accent-500 transition-colors duration-200" onclick="closeDetailsModal({{ training.id }})">
                     Cerrar
                 </button>
-                <a href="{% url 'perceptron_app:download_weights' training.id %}" class="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105">
+                <a href="{% url 'perceptron_app:descargar_pesos' training.id %}" class="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105">
                     <i class="fas fa-download"></i>
                     <span>Descargar Pesos</span>
                 </a>
@@ -309,7 +309,7 @@
 <script>
 function loadForPrediction(trainingId) {
     // Redirigir a la página de predicciones con el ID específico del entrenamiento
-    window.location.href = "{% url 'perceptron_app:make_prediction_with_id' training_id=0 %}".replace('0', trainingId);
+    window.location.href = "{% url 'perceptron_app:hacer_prediccion_con_id' training_id=0 %}".replace('0', trainingId);
 }
 
 // Variables globales para el modal de eliminación
@@ -359,7 +359,7 @@ function confirmDeleteAction() {
         // Crear formulario para enviar la eliminación
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = "{% url 'perceptron_app:delete_training' training_id=0 %}".replace('0', currentTrainingId);
+        form.action = "{% url 'perceptron_app:eliminar_entrenamiento' training_id=0 %}".replace('0', currentTrainingId);
         
         // Agregar token CSRF
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
