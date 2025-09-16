@@ -297,6 +297,12 @@ def entrenar_perceptron(request):
             columnas_entrada = training_config['columnas_entrada']
             columnas_salida = training_config['columnas_salida']
             
+            print(f"DEBUG - Configuración de entrenamiento:")
+            print(f"  columnas_entrada: {columnas_entrada}")
+            print(f"  columnas_salida: {columnas_salida}")
+            print(f"  tipo de columnas_entrada: {type(columnas_entrada)}")
+            print(f"  longitud de columnas_entrada: {len(columnas_entrada) if columnas_entrada else 'None'}")
+            
             # Verificar columnas de entrada
             for col in columnas_entrada:
                 if not pd.api.types.is_numeric_dtype(df[col]):
@@ -313,17 +319,25 @@ def entrenar_perceptron(request):
             X = df[columnas_entrada].values.astype(float)
             y = df[columnas_salida].values.flatten().astype(float)
             
+            # Debug: verificar dimensiones de los datos
+            print(f"Columnas de entrada seleccionadas: {columnas_entrada}")
+            print(f"Columnas de salida seleccionadas: {columnas_salida}")
+            print(f"Shape de X (entrada): {X.shape}")
+            print(f"Shape de y (salida): {y.shape}")
+            print(f"Primera fila de X: {X[0] if len(X) > 0 else 'X vacío'}")
+            
             # Crear y entrenar el perceptrón
+            print("Creando nueva instancia del perceptrón...")
             perceptron = PerceptronSimple(
                 tasa_aprendizaje=training_config['tasa_aprendizaje'],
                 max_iteraciones=training_config['iteraciones'],
                 error_maximo=training_config['error_maximo']
             )
             
-            # Inicializar pesos con el número correcto de características
-            perceptron._inicializar_pesos(X.shape[1])
+            print(f"Perceptrón creado - pesos: {perceptron.pesos}")
+            print(f"Perceptrón creado - longitud de pesos: {len(perceptron.pesos) if perceptron.pesos is not None else 'None'}")
             
-            # Entrenar
+            # Entrenar (los pesos se inicializarán automáticamente en la función entrenar)
             training_results = perceptron.entrenar(X, y)
             
             # Los datos ya vienen convertidos desde el perceptrón

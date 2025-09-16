@@ -28,6 +28,18 @@ class PerceptronSimple:
         self.sesgo = 0.0
         self.errores_entrenamiento = []
         self.evolucion_pesos = []
+        print(f"Perceptrón inicializado - pesos: {self.pesos}")
+    
+    def _limpiar_estado(self):
+        """
+        Limpia el estado del perceptrón para un nuevo entrenamiento
+        """
+        print(f"Limpiando estado - pesos antes: {self.pesos}")
+        self.pesos = None
+        self.sesgo = 0.0
+        self.errores_entrenamiento = []
+        self.evolucion_pesos = []
+        print(f"Estado limpiado - pesos después: {self.pesos}")
         
     def _funcion_escalon(self, x: float) -> int:
         """
@@ -48,9 +60,15 @@ class PerceptronSimple:
         Args:
             num_caracteristicas (int): Número de características de entrada
         """
+        print(f"_inicializar_pesos llamado con num_caracteristicas = {num_caracteristicas}")
+        print(f"Pesos antes de inicializar: {self.pesos}")
+        
         # Inicialización aleatoria de pesos entre -1 y 1
         self.pesos = np.random.uniform(-1, 1, num_caracteristicas)
         self.sesgo = np.random.uniform(-1, 1)
+        
+        print(f"Pesos después de inicializar: {self.pesos}")
+        print(f"Longitud de pesos: {len(self.pesos)}")
         
     def _predecir_individual(self, X: np.ndarray) -> int:
         """
@@ -64,6 +82,16 @@ class PerceptronSimple:
         """
         # Asegurar que X es un array de NumPy
         X = np.array(X, dtype=float)
+        
+        # Debug: verificar dimensiones
+        if self.pesos is None:
+            raise ValueError("Los pesos no han sido inicializados")
+        
+        if len(self.pesos) != len(X):
+            print(f"Error de dimensiones: pesos tiene {len(self.pesos)} elementos, X tiene {len(X)} elementos")
+            print(f"Pesos: {self.pesos}")
+            print(f"X: {X}")
+            raise ValueError(f"Dimensiones no coinciden: pesos({len(self.pesos)}) vs X({len(X)})")
         
         # Cálculo de la suma ponderada: w1*x1 + w2*x2 + ... + wn*xn + sesgo
         salida_lineal = np.dot(self.pesos, X) + self.sesgo
@@ -105,9 +133,10 @@ class PerceptronSimple:
         
         num_muestras, num_caracteristicas = X.shape
         
-        # Inicializar pesos aleatoriamente solo si no están ya inicializados
-        if not hasattr(self, 'pesos') or len(self.pesos) != num_caracteristicas:
-            self._inicializar_pesos(num_caracteristicas)
+        # Limpiar estado anterior y inicializar pesos para el nuevo entrenamiento
+        self._limpiar_estado()
+        print(f"Inicializando pesos para {num_caracteristicas} características")
+        self._inicializar_pesos(num_caracteristicas)
         
         # Listas para almacenar el progreso del entrenamiento
         self.errores_entrenamiento = []
@@ -204,7 +233,7 @@ class PerceptronSimple:
                     Iteraciones utilizadas: {len(self.errores_entrenamiento)}
                     Pesos finales: {[f'{w:.3f}' for w in self.pesos]}
                     Sesgo final: {self.sesgo:.3f}
-                    Precisión final: {np.mean(self.predecir(np.array([[0,0],[0,1],[1,0],[1,1]])) == np.array([0,0,0,1])) * 100:.2f}%
+                    Número de características: {len(self.pesos)}
 
                     Evolución de errores por iteración:
                     """

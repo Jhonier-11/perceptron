@@ -145,15 +145,15 @@
                                 <tbody class="divide-y divide-accent-200 dark:divide-accent-600">
                                     {% for pred in previous_predictions %}
                                         <tr class="hover:bg-accent-50 dark:hover:bg-accent-700/50 transition-colors duration-200">
-                                            {% for value in pred.input_values %}
+                                            {% for value in pred.valores_entrada %}
                                                 <td class="py-3 px-4 text-accent-700 dark:text-accent-300">{{ value }}</td>
                                             {% endfor %}
                                             <td class="py-3 px-4">
-                                                <span class="px-3 py-1 rounded-full text-sm font-semibold {% if pred.predicted_output == 1 %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300{% else %}bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300{% endif %}">
-                                                    {{ pred.predicted_output }}
+                                                <span class="px-3 py-1 rounded-full text-sm font-semibold {% if pred.salida_predicha == 1 %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300{% else %}bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300{% endif %}">
+                                                    {{ pred.salida_predicha }}
                                                 </span>
                                             </td>
-                                            <td class="py-3 px-4 text-accent-700 dark:text-accent-300">{{ pred.created_at|date:"d/m/Y H:i" }}</td>
+                                            <td class="py-3 px-4 text-accent-700 dark:text-accent-300">{{ pred.fecha_prediccion|date:"d/m/Y H:i" }}</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>

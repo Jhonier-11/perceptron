@@ -33,7 +33,7 @@
     </div>
 </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Resumen del entrenamiento -->
         <div class="lg:col-span-1">
             <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden h-full animate-slideInRight">
@@ -124,62 +124,56 @@
                 </div>
             </div>
         </div>
-    </div>
-    
-        <!-- Gráficos -->
-        <div class="lg:col-span-2">
-            <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden h-full animate-slideInRight" style="animation-delay: 0.2s;">
-                <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+        
+        <!-- Gráfica de errores -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden h-full animate-slideInLeft">
+                <div class="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4">
                     <h5 class="text-xl font-bold text-white flex items-center">
-                        <i class="fas fa-chart-line mr-3"></i>Visualizaciones del Entrenamiento
+                        <i class="fas fa-chart-line mr-3"></i>Evolución del Error
                     </h5>
                 </div>
                 <div class="p-6">
-                    <!-- Pestañas para los gráficos -->
-                    <div class="flex space-x-1 bg-accent-100 p-1 rounded-lg mb-6">
-                        <button class="flex-1 bg-white text-accent-800 px-4 py-2 rounded-md font-semibold transition-all duration-200 shadow-sm" id="error-tab">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>Evolución del Error
-                        </button>
-                        <button class="flex-1 text-accent-600 px-4 py-2 rounded-md font-semibold transition-all duration-200 hover:bg-white hover:text-accent-800" id="weights-tab">
-                            <i class="fas fa-weight mr-2"></i>Evolución de Pesos
-                        </button>
-                    </div>
-                
-                    <div class="tab-content" id="chartTabContent">
-                        <!-- Gráfico de errores -->
-                        <div class="tab-pane fade show active" id="error-chart" role="tabpanel">
-                            {% if error_plot %}
-                                <div class="bg-gradient-to-r from-red-50 to-red-100 rounded-xl p-6">
-                                    <div class="text-center">
-                                        <img src="data:image/png;base64,{{ error_plot }}" 
-                                             class="w-full rounded-lg shadow-lg" alt="Evolución del Error">
-                                    </div>
-                                </div>
-                            {% else %}
-                                <div class="text-center text-accent-500 py-12">
-                                    <i class="fas fa-chart-line text-6xl mb-4"></i>
-                                    <p class="text-lg">No hay datos de error disponibles</p>
-                                </div>
-                            {% endif %}
+                    {% if error_plot %}
+                        <div class="bg-gradient-to-r from-red-50 to-red-100 rounded-xl p-6">
+                            <div class="text-center">
+                                <img src="data:image/png;base64,{{ error_plot }}" 
+                                     class="w-full rounded-lg shadow-lg" alt="Evolución del Error">
+                            </div>
                         </div>
-                        
-                        <!-- Gráfico de pesos -->
-                        <div class="tab-pane fade" id="weights-chart" role="tabpanel">
-                            {% if weights_plot %}
-                                <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6">
-                                    <div class="text-center">
-                                        <img src="data:image/png;base64,{{ weights_plot }}" 
-                                             class="w-full rounded-lg shadow-lg" alt="Evolución de Pesos">
-                                    </div>
-                                </div>
-                            {% else %}
-                                <div class="text-center text-accent-500 py-12">
-                                    <i class="fas fa-weight text-6xl mb-4"></i>
-                                    <p class="text-lg">No hay datos de pesos disponibles</p>
-                                </div>
-                            {% endif %}
+                    {% else %}
+                        <div class="text-center text-accent-500 py-12">
+                            <i class="fas fa-chart-line text-6xl mb-4"></i>
+                            <p class="text-lg">No hay datos de error disponibles</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráfico de evolución de pesos -->
+    <div class="mt-8">
+        <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden animate-fadeInUp" style="animation-delay: 0.2s;">
+            <div class="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-4">
+                <h5 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-weight mr-3"></i>Evolución de los Pesos durante el Entrenamiento
+                </h5>
+            </div>
+            <div class="p-6">
+                {% if weights_plot %}
+                    <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6">
+                        <div class="text-center">
+                            <img src="data:image/png;base64,{{ weights_plot }}" 
+                                 class="w-full rounded-lg shadow-lg" alt="Evolución de Pesos">
                         </div>
                     </div>
+                {% else %}
+                    <div class="text-center text-accent-500 py-12">
+                        <i class="fas fa-weight text-6xl mb-4"></i>
+                        <p class="text-lg">No hay datos de pesos disponibles</p>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -225,53 +219,4 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Configurar las pestañas de gráficos
-    const errorTab = document.getElementById('error-tab');
-    const weightsTab = document.getElementById('weights-tab');
-    const errorChart = document.getElementById('error-chart');
-    const weightsChart = document.getElementById('weights-chart');
-    
-    errorTab.addEventListener('click', function() {
-        // Actualizar estilos de pestañas
-        errorTab.classList.add('bg-white', 'text-accent-800', 'shadow-sm');
-        errorTab.classList.remove('text-accent-600');
-        weightsTab.classList.remove('bg-white', 'text-accent-800', 'shadow-sm');
-        weightsTab.classList.add('text-accent-600');
-        
-        // Mostrar/ocultar contenido
-        errorChart.classList.add('show', 'active');
-        weightsChart.classList.remove('show', 'active');
-    });
-    
-    weightsTab.addEventListener('click', function() {
-        // Actualizar estilos de pestañas
-        weightsTab.classList.add('bg-white', 'text-accent-800', 'shadow-sm');
-        weightsTab.classList.remove('text-accent-600');
-        errorTab.classList.remove('bg-white', 'text-accent-800', 'shadow-sm');
-        errorTab.classList.add('text-accent-600');
-        
-        // Mostrar/ocultar contenido
-        weightsChart.classList.add('show', 'active');
-        errorChart.classList.remove('show', 'active');
-    });
-});
-</script>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-// Auto-actualizar gráficos cuando se cambia de pestaña
-document.addEventListener('DOMContentLoaded', function() {
-    const tabButtons = document.querySelectorAll('[data-bs-toggle="tab"]');
-    
-    tabButtons.forEach(button => {
-        button.addEventListener('shown.bs.tab', function(event) {
-            // Aquí podrías agregar lógica para actualizar gráficos si fuera necesario
-            console.log('Tab activado:', event.target.getAttribute('data-bs-target'));
-        });
-    });
-});
-</script>
 {% endblock %}
