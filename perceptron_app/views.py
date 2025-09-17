@@ -396,12 +396,36 @@ def configurar_entrenamiento(request):
             sesgo_inicial = None
 
             if form.cleaned_data['weight_initialization'] == 'file':
-                weights_file = form.cleaned_data['weights_file']
+                weights_file = form.cleaned_data.get('weights_file')
+                
+                if weights_file is None:
+                    messages.error(request, 'Debes seleccionar un archivo de pesos cuando eliges "Cargar desde archivo".')
+                    return render(request, 'perceptron_app/configure_training.html', {'form': form, 'uploaded_data': uploaded_data, 'columns': columns})
+                
                 try:
                     # Leer y parsear el archivo JSON
                     weights_data = json.load(weights_file)
-                    pesos_iniciales = weights_data.get('weights', [])
-                    sesgo_inicial = weights_data.get('bias', 0.0)
+                    
+                    # Buscar pesos en diferentes formatos posibles del JSON
+                    if 'final_weights' in weights_data:
+                        # Formato del archivo descargado por la aplicación
+                        pesos_iniciales = weights_data.get('final_weights', [])
+                        sesgo_inicial = weights_data.get('final_bias', 0.0)
+                    elif 'weights' in weights_data:
+                        # Formato alternativo
+                        pesos_iniciales = weights_data.get('weights', [])
+                        sesgo_inicial = weights_data.get('bias', 0.0)
+                    else:
+                        # Intentar detectar automáticamente la estructura
+                        pesos_iniciales = []
+                        sesgo_inicial = 0.0
+                        for key, value in weights_data.items():
+                            if isinstance(value, list) and all(isinstance(x, (int, float)) for x in value):
+                                pesos_iniciales = value
+                                break
+                        
+                        if not pesos_iniciales:
+                            raise ValueError("No se encontraron pesos válidos en el archivo JSON.")
 
                     # Validar estructura del archivo
                     if not isinstance(pesos_iniciales, list):
@@ -569,6 +593,9 @@ def entrenar_perceptron(request):
             errores_patron = convertir_a_tipos_nativos(training_results['errores_patron'])
             evolucion_pesos = convertir_a_tipos_nativos(training_results['evolucion_pesos'])
             
+            # Convertir errores de iteración
+            errores_iteracion = convertir_a_tipos_nativos(perceptron.errores_iteracion)
+            
             # Guardar en la base de datos
             training_record = PerceptronTraining.objects.create(
                 nombre=training_config['nombre_entrenamiento'],
@@ -581,7 +608,7 @@ def entrenar_perceptron(request):
                 sesgo_final=sesgo_final,
                 precision=training_results['precision'],
                 errores_entrenamiento=errores_entrenamiento,
-                errores_patron=errores_patron,
+                errores_patron=errores_iteracion,  # Guardar errores de iteración en errores_patron
                 evolucion_pesos=evolucion_pesos,
                 archivo_datos=None  # No guardamos el archivo original en la base de datos
             )
@@ -590,6 +617,8 @@ def entrenar_perceptron(request):
             error_plot = perceptron.crear_grafico_errores()
             weights_plot = perceptron.crear_grafico_pesos()
             error_patron_plot = perceptron.crear_grafico_error_patron()
+            precision_plot = perceptron.crear_grafico_precision()
+            network_diagram = perceptron.crear_diagrama_red()
             
             # Guardar gráficos en la sesión
             training_results_session = {
@@ -597,6 +626,8 @@ def entrenar_perceptron(request):
                 'error_plot': error_plot,
                 'weights_plot': weights_plot,
                 'error_patron_plot': error_patron_plot,
+                'precision_plot': precision_plot,
+                'network_diagram': network_diagram,
                 'summary': perceptron.obtener_resumen_entrenamiento(),
                 'converged': training_results['converged'],
                 'iteraciones_utilizadas': training_results['iteraciones_utilizadas']
@@ -647,6 +678,8 @@ def resultados_entrenamiento(request):
         'error_plot': training_results['error_plot'],
         'weights_plot': training_results['weights_plot'],
         'error_patron_plot': training_results['error_patron_plot'],
+        'precision_plot': training_results['precision_plot'],
+        'network_diagram': training_results['network_diagram'],
         'summary': training_results['summary'],
         'converged': training_results['converged'],
         'epochs_used': training_results['iteraciones_utilizadas']
@@ -776,6 +809,7 @@ def detalles_entrenamiento(request, training_id):
     perceptron.sesgo = training.sesgo_final
     perceptron.errores_entrenamiento = training.errores_entrenamiento
     perceptron.errores_patron = training.errores_patron if training.errores_patron else []
+    perceptron.errores_iteracion = training.errores_patron if training.errores_patron else []  # Los errores de iteración están en errores_patron
     perceptron.evolucion_pesos = training.evolucion_pesos
 
     # Generar visualizaciones
@@ -783,6 +817,7 @@ def detalles_entrenamiento(request, training_id):
     weights_plot = perceptron.crear_grafico_pesos()
     network_diagram = perceptron.crear_diagrama_red()
     error_patron_plot = perceptron.crear_grafico_error_patron()
+    precision_plot = perceptron.crear_grafico_precision()
 
     # Calcular estadísticas adicionales
     total_iterations = len(training.errores_entrenamiento)
@@ -813,6 +848,7 @@ def detalles_entrenamiento(request, training_id):
         'error_plot': error_plot,
         'weights_plot': weights_plot,
         'error_patron_plot': error_patron_plot,
+        'precision_plot': precision_plot,
         'network_diagram': network_diagram,
         'total_iterations': total_iterations,
         'final_error': final_error,

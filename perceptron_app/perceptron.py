@@ -31,6 +31,7 @@ class PerceptronSimple:
         self.sesgo = sesgo_inicial if sesgo_inicial is not None else 0.0
         self.errores_entrenamiento = []
         self.errores_patron = []
+        self.errores_iteracion = []  # Lista para almacenar errores de iteración
         self.evolucion_pesos = []
         print(f"Perceptrón inicializado - pesos: {self.pesos}")
     
@@ -43,6 +44,7 @@ class PerceptronSimple:
         self.sesgo = 0.0
         self.errores_entrenamiento = []
         self.errores_patron = []
+        self.errores_iteracion = []  # Lista para almacenar errores de iteración
         self.evolucion_pesos = []
         print(f"Estado limpiado - pesos después: {self.pesos}")
         
@@ -158,6 +160,7 @@ class PerceptronSimple:
         # Listas para almacenar el progreso del entrenamiento
         self.errores_entrenamiento = []
         self.errores_patron = []
+        self.errores_iteracion = []  # Lista para almacenar errores de iteración
         self.evolucion_pesos = []
         
         print(f"Iniciando entrenamiento del perceptrón...")
@@ -171,7 +174,7 @@ class PerceptronSimple:
         # Entrenamiento por iteraciones
         for iteracion in range(self.max_iteraciones):
             errores_iteracion = 0
-            error_patron = 0
+            suma_errores_absolutos = 0  # Suma de todos los errores absolutos por patrón de la iteración
             # Guardar pesos actuales para visualización
             self.evolucion_pesos.append({
                 'iteracion': iteracion + 1,
@@ -179,32 +182,39 @@ class PerceptronSimple:
                 'sesgo': float(self.sesgo)
             })
             
-            # Entrenar con cada muestra
+            # Entrenar con cada muestra (patrón por patrón)
             for i in range(num_muestras):
                 # Predicción actual
                 prediccion = self._predecir_individual(X[i])
+                print(f"Predicción: {prediccion} aplicada a la muestra {X[i]}")
+                # Calcular error lineal para este patrón
+                error_patron = y[i] - prediccion
                 
-                # Calcular error lineal
-                error = y[i] - prediccion
+                # Acumular el valor absoluto del error del patrón para calcular error de iteración
+                suma_errores_absolutos += abs(error_patron)
                 
                 # Actualizar pesos y sesgo si hay error
-                if error != 0:
+                if error_patron != 0:
                     # Regla del perceptrón: w = w + eta * error * x
-                    self.pesos += self.tasa_aprendizaje * error * X[i]
-                    self.sesgo += self.tasa_aprendizaje * error
+                    self.pesos += self.tasa_aprendizaje * error_patron * X[i]
+                    self.sesgo += self.tasa_aprendizaje * error_patron
                     errores_iteracion += 1
-                    error_patron += error
             
-            # Guardar error de la iteración
-            self.errores_entrenamiento.append(errores_iteracion)
-            self.errores_patron.append(error_patron)
-            # Calcular error del patron (errores por muestra)
-            tasa_error = error_patron / num_muestras
+            # Calcular error de iteración: suma de |errores por patrón| / número total de patrones
+            error_iteracion = suma_errores_absolutos / num_muestras
+            
+            # Guardar errores de la iteración
+            self.errores_entrenamiento.append(errores_iteracion)  # Número de patrones con errores
+            self.errores_patron.append(error_iteracion)  # Error de iteración (para compatibilidad)
+            self.errores_iteracion.append(error_iteracion)  # Error de iteración para gráficos
+            
+            # Calcular tasa de error para criterio de parada
+            tasa_error = error_iteracion
             
             # Mostrar progreso cada 10 iteraciones
             if (iteracion + 1) % 10 == 0 or iteracion == 0:
-                print(f"Iteración {iteracion + 1:3d}: Errores = {errores_iteracion:2d}, "
-                      f"Tasa de error = {tasa_error:.3f}, "
+                print(f"Iteración {iteracion + 1:3d}: Patrones con errores = {errores_iteracion:2d}, "
+                      f"Error de iteración = {tasa_error:.3f}, "
                       f"Pesos = {[f'{w:.3f}' for w in self.pesos]}, "
                       f"Sesgo = {self.sesgo:.3f}")
             
@@ -214,7 +224,7 @@ class PerceptronSimple:
                     print(f"\n¡Convergencia total alcanzada en la iteración {iteracion + 1}!")
                 else:
                     print(f"\n¡Error objetivo alcanzado en la iteración {iteracion + 1}! "
-                          f"Tasa de error: {tasa_error:.3f} <= {self.error_maximo}")
+                          f"Error de iteración: {tasa_error:.3f} <= {self.error_maximo}")
                 break
         
         # Calcular precisión final
@@ -335,11 +345,11 @@ class PerceptronSimple:
             weight = self.pesos[i]
             color = 'red' if weight < 0 else 'blue'
             # Asegurar que las líneas sean visibles con transparencia mínima
-            alpha = min(1.0, abs(weight) / 2.0)  # Transparencia basada en magnitud del peso
-            linewidth = 1 + abs(weight) * 2  # Grosor basado en magnitud del peso       
+            # alpha = min(1.0, abs(weight) / 2.0)  # Transparencia basada en magnitud del peso
+            # linewidth = 1 + abs(weight) * 2  # Grosor basado en magnitud del peso       
 
-            # alpha = max(0.6, min(1.0, abs(weight) / 2.0))  # Transparencia basada en magnitud del peso
-            # linewidth = max(1.5, 1 + abs(weight) * 2)  # Grosor mínimo garantizado
+            alpha = max(0.6, min(1.0, abs(weight) / 2.0))  # Transparencia basada en magnitud del peso
+            linewidth = max(1.5, 1 + abs(weight) * 2)  # Grosor mínimo garantizado
 
             ax.plot([x, hidden_position[0]], [y, hidden_position[1]],
                    color=color, linewidth=linewidth, alpha=alpha)
@@ -383,24 +393,22 @@ class PerceptronSimple:
     def crear_grafico_precision(self) -> str:
         """
         Crea un gráfico de la evolución de la precisión durante el entrenamiento
+        
+        La precisión se calcula usando los errores de iteración:
+        Precisión = (1 - error_de_iteracion) * 100
 
         Returns:
             str: Imagen codificada en base64
         """
-        if not self.errores_entrenamiento:
+        if not self.errores_iteracion:
             return None
 
-        # Calcular precisión aproximada basada en errores
+        # Calcular precisión basada en errores de iteración
         precisiones = []
-        for errores in self.errores_entrenamiento:
-            # Asumiendo que cada error representa un error por muestra
-            # En un escenario real, esto debería calcularse con los datos reales
-            if hasattr(self, '_num_muestras') and self._num_muestras > 0:
-                tasa_error = errores / self._num_muestras
-            else:
-                # Estimación basada en número de características
-                tasa_error = min(1.0, errores / len(self.pesos)) if self.pesos else 0
-            precision = max(0, (1 - tasa_error) * 100)
+        for error_iteracion in self.errores_iteracion:
+            # La precisión es el complemento del error de iteración
+            # error_iteracion ya está normalizado (entre 0 y 1)
+            precision = max(0, (1 - error_iteracion) * 100)
             precisiones.append(precision)
 
         plt.figure(figsize=(10, 6))
@@ -463,21 +471,33 @@ class PerceptronSimple:
 
     def crear_grafico_error_patron(self) -> str:
         """
-        Crea un gráfico de la evolución del error patrón durante el entrenamiento
+        Crea un gráfico de la evolución del error de iteración durante el entrenamiento
         
         Returns:
             str: Imagen codificada en base64
         """
-        if not self.errores_patron:
+        if not self.errores_iteracion:
             return None
         
         plt.figure(figsize=(12, 8))
-        plt.plot(range(1, len(self.errores_patron) + 1), self.errores_patron, 'b-', linewidth=2)
-        plt.title('Evolución del Error por Patrón durante el Entrenamiento', fontsize=14, fontweight='bold')
-        plt.xlabel('Iteración', fontsize=12)
-        plt.ylabel('Error por Patrón', fontsize=12)
+        plt.plot(range(1, len(self.errores_iteracion) + 1), self.errores_iteracion, 'r-', linewidth=2, marker='o', markersize=4)
+        plt.title('Evolución del Error de Iteración durante el Entrenamiento', fontsize=14, fontweight='bold')
+        plt.xlabel('Número de Iteración', fontsize=12)
+        plt.ylabel('Error de Iteración', fontsize=12)
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
+        
+        # Agregar anotaciones para los primeros y últimos valores
+        if len(self.errores_iteracion) > 0:
+            plt.annotate(f'{self.errores_iteracion[0]:.3f}', 
+                        xy=(1, self.errores_iteracion[0]), 
+                        xytext=(1, self.errores_iteracion[0] + 0.1),
+                        fontsize=10, ha='center')
+            if len(self.errores_iteracion) > 1:
+                plt.annotate(f'{self.errores_iteracion[-1]:.3f}', 
+                            xy=(len(self.errores_iteracion), self.errores_iteracion[-1]), 
+                            xytext=(len(self.errores_iteracion), self.errores_iteracion[-1] + 0.1),
+                            fontsize=10, ha='center')
         
         # Convertir a base64
         buffer = io.BytesIO()

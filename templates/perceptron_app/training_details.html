@@ -196,6 +196,23 @@ Entrenamiento - {{ training.nombre }}{% endblock %} {% block content %}
         </div>
       </div>
       {% endif %}
+      
+      {% if precision_plot %}
+      <div
+        class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6 mb-8"
+      >
+        <h5 class="text-xl font-bold text-green-800 mb-6 flex items-center">
+          <i class="fas fa-chart-area mr-3"></i>Evolución de la Precisión
+        </h5>
+        <div class="bg-white rounded-lg p-4 shadow-inner">
+          <img
+            src="data:image/png;base64,{{ precision_plot }}"
+            alt="Gráfico de evolución de la precisión"
+            class="w-full rounded-lg"
+          />
+        </div>
+      </div>
+      {% endif %}
 
       <!-- Detailed Information -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">

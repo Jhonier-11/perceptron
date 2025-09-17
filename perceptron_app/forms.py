@@ -19,7 +19,7 @@ class DataUploadForm(forms.Form):
         })
     )
     
-    def limpiar_archivo_datos(self):
+    def clean_data_file(self):
         file = self.cleaned_data.get('data_file')
         if file:
             # Verificar extensión
@@ -139,8 +139,8 @@ class TrainingConfigForm(forms.Form):
                 help_text='Selecciona la columna que será la variable objetivo.'
             )
     
-    def limpiar(self):
-        cleaned_data = super().limpiar()
+    def clean(self):
+        cleaned_data = super().clean()
         input_columns = cleaned_data.get('input_columns', [])
         output_columns = cleaned_data.get('output_columns', [])
         weight_initialization = cleaned_data.get('weight_initialization')
@@ -196,8 +196,8 @@ class PredictionForm(forms.Form):
                 help_text=f'Valor numérico para la característica {col}'
             )
     
-    def limpiar(self):
-        cleaned_data = super().limpiar()
+    def clean(self):
+        cleaned_data = super().clean()
         
         # Validar que todos los campos estén completos
         for field_name, value in cleaned_data.items():
