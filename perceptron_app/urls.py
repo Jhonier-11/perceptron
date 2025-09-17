@@ -23,6 +23,7 @@ urlpatterns = [
     
     # Historial y gestión
     path('historial-entrenamientos/', views.historial_entrenamientos, name='historial_entrenamientos'),
+    path('detalles-entrenamiento/<int:training_id>/', views.detalles_entrenamiento, name='detalles_entrenamiento'),
     path('descargar-pesos/<int:training_id>/', views.descargar_pesos, name='descargar_pesos'),
     path('eliminar-entrenamiento/<int:training_id>/', views.eliminar_entrenamiento, name='eliminar_entrenamiento'),
     

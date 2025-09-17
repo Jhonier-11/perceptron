@@ -51,7 +51,30 @@ class TrainingConfigForm(forms.Form):
             'placeholder': 'Ej: Entrenamiento AND Gate'
         })
     )
-    
+
+    # Weight initialization choice
+    weight_initialization = forms.ChoiceField(
+        label='Inicialización de Pesos',
+        choices=[
+            ('random', 'Aleatoria (recomendado)'),
+            ('file', 'Cargar desde archivo'),
+        ],
+        initial='random',
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        help_text='Elige cómo inicializar los pesos del perceptrón.'
+    )
+
+    # File upload for pre-defined weights
+    weights_file = forms.FileField(
+        label='Archivo de Pesos Predefinidos',
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': '.json'
+        }),
+        help_text='Archivo JSON con pesos pre-entrenados. Solo requerido si eliges "Cargar desde archivo".'
+    )
+
     learning_rate = forms.FloatField(
         label='Tasa de Aprendizaje (η)',
         initial=0.1,
@@ -64,7 +87,7 @@ class TrainingConfigForm(forms.Form):
         }),
         help_text='Valor entre 0.001 y 1.0. Valores más altos = aprendizaje más rápido pero menos estable.'
     )
-    
+
     epochs = forms.IntegerField(
         label='Número de Iteraciones',
         initial=100,
@@ -76,7 +99,7 @@ class TrainingConfigForm(forms.Form):
         }),
         help_text='Número máximo de iteraciones de entrenamiento.'
     )
-    
+
     max_error = forms.FloatField(
         label='Error Máximo Permitido',
         initial=0.1,
@@ -93,7 +116,7 @@ class TrainingConfigForm(forms.Form):
     def __init__(self, *args, **kwargs):
         columns = kwargs.pop('columns', [])
         super().__init__(*args, **kwargs)
-        
+
         # Crear campos dinámicos para seleccionar columnas
         if columns:
             # Campo para columnas de entrada
@@ -105,7 +128,7 @@ class TrainingConfigForm(forms.Form):
                 }),
                 help_text='Selecciona las columnas que serán las características de entrada.'
             )
-            
+
             # Campo para columnas de salida
             self.fields['output_columns'] = forms.MultipleChoiceField(
                 label='Columnas de Salida (Y)',
@@ -120,21 +143,36 @@ class TrainingConfigForm(forms.Form):
         cleaned_data = super().limpiar()
         input_columns = cleaned_data.get('input_columns', [])
         output_columns = cleaned_data.get('output_columns', [])
-        
+        weight_initialization = cleaned_data.get('weight_initialization')
+        weights_file = cleaned_data.get('weights_file')
+
         # Validaciones
         if not input_columns:
             raise forms.ValidationError('Debes seleccionar al menos una columna de entrada.')
-        
+
         if not output_columns:
             raise forms.ValidationError('Debes seleccionar al menos una columna de salida.')
-        
+
         if len(output_columns) > 1:
             raise forms.ValidationError('El perceptrón simple solo puede manejar una variable de salida.')
-        
+
         # Verificar que no haya solapamiento entre entradas y salidas
         if set(input_columns) & set(output_columns):
             raise forms.ValidationError('Las columnas de entrada y salida no pueden ser las mismas.')
-        
+
+        # Validar archivo de pesos si se selecciona inicialización desde archivo
+        if weight_initialization == 'file':
+            if not weights_file:
+                raise forms.ValidationError('Debes seleccionar un archivo de pesos cuando eliges "Cargar desde archivo".')
+
+            # Validar extensión del archivo
+            if not weights_file.name.lower().endswith('.json'):
+                raise forms.ValidationError('El archivo de pesos debe tener extensión .json')
+
+            # Validar tamaño del archivo (máximo 5MB)
+            if weights_file.size > 5 * 1024 * 1024:
+                raise forms.ValidationError('El archivo de pesos es demasiado grande. Máximo 5MB.')
+
         return cleaned_data
 
 

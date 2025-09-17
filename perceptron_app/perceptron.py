@@ -12,20 +12,23 @@ class PerceptronSimple:
     Implementación del Perceptrón Simple
     """
     
-    def __init__(self, tasa_aprendizaje: float = 0.1, max_iteraciones: int = 100, error_maximo: float = 0.1):
+    def __init__(self, tasa_aprendizaje: float = 0.1, max_iteraciones: int = 100, error_maximo: float = 0.1,
+                 pesos_iniciales: List[float] = None, sesgo_inicial: float = None):
         """
         Inicializa el perceptrón simple
-        
+
         Args:
-            tasa_aprendizaje (float): Tasa de aprendizaje 
+            tasa_aprendizaje (float): Tasa de aprendizaje
             max_iteraciones (int): Número máximo de iteraciones de entrenamiento
             error_maximo (float): Error máximo permitido para detener el entrenamiento
+            pesos_iniciales (List[float], optional): Pesos iniciales predefinidos
+            sesgo_inicial (float, optional): Sesgo inicial predefinido
         """
         self.tasa_aprendizaje = tasa_aprendizaje
         self.max_iteraciones = max_iteraciones
         self.error_maximo = error_maximo
-        self.pesos = None
-        self.sesgo = 0.0
+        self.pesos = pesos_iniciales
+        self.sesgo = sesgo_inicial if sesgo_inicial is not None else 0.0
         self.errores_entrenamiento = []
         self.evolucion_pesos = []
         print(f"Perceptrón inicializado - pesos: {self.pesos}")
@@ -55,20 +58,32 @@ class PerceptronSimple:
     
     def _inicializar_pesos(self, num_caracteristicas: int) -> None:
         """
-        Inicializa los pesos aleatoriamente
-        
+        Inicializa los pesos (aleatoriamente si no están predefinidos)
+
         Args:
             num_caracteristicas (int): Número de características de entrada
         """
         print(f"_inicializar_pesos llamado con num_caracteristicas = {num_caracteristicas}")
         print(f"Pesos antes de inicializar: {self.pesos}")
-        
-        # Inicialización aleatoria de pesos entre -1 y 1
-        self.pesos = np.random.uniform(-1, 1, num_caracteristicas)
-        self.sesgo = np.random.uniform(-1, 1)
-        
+
+        # Si no hay pesos predefinidos, inicializar aleatoriamente
+        if self.pesos is None:
+            print("Inicializando pesos aleatoriamente...")
+            self.pesos = np.random.uniform(-1, 1, num_caracteristicas)
+            self.sesgo = np.random.uniform(-1, 1)
+        else:
+            print("Usando pesos predefinidos...")
+            # Validar que los pesos predefinidos coincidan con el número de características
+            if len(self.pesos) != num_caracteristicas:
+                raise ValueError(f"Los pesos predefinidos tienen {len(self.pesos)} elementos, "
+                               f"pero se necesitan {num_caracteristicas} para las características de entrada.")
+
+            # Convertir a numpy array si no lo es
+            self.pesos = np.array(self.pesos, dtype=float)
+
         print(f"Pesos después de inicializar: {self.pesos}")
         print(f"Longitud de pesos: {len(self.pesos)}")
+        print(f"Sesgo: {self.sesgo}")
         
     def _predecir_individual(self, X: np.ndarray) -> int:
         """
@@ -267,6 +282,133 @@ class PerceptronSimple:
         image_base64 = base64.b64encode(buffer.getvalue()).decode()
         plt.close()
         
+        return image_base64
+
+    def crear_diagrama_red(self) -> str:
+        """
+        Crea un diagrama simple de la estructura de la red neuronal
+
+        Returns:
+            str: Imagen codificada en base64
+        """
+        if self.pesos is None:
+            return None
+
+        fig, ax = plt.subplots(figsize=(12, 8))
+        ax.set_xlim(0, 10)
+        ax.set_ylim(0, 10)
+        ax.axis('off')
+
+        # Número de neuronas de entrada y salida
+        num_inputs = len(self.pesos)
+        num_outputs = 1  # Perceptrón simple tiene una salida
+
+        # Posiciones de las neuronas
+        input_positions = [(2, 9 - i * 8 / max(1, num_inputs - 1)) for i in range(num_inputs)]
+        hidden_position = (6, 5)
+        output_position = (10, 5)
+
+        # Dibujar neuronas de entrada
+        for i, (x, y) in enumerate(input_positions):
+            circle = plt.Circle((x, y), 0.3, fill=True, color='lightblue', ec='blue', linewidth=2)
+            ax.add_patch(circle)
+            ax.text(x, y, f'X{i+1}', ha='center', va='center', fontsize=10, fontweight='bold')
+
+        # Dibujar neurona oculta (perceptrón)
+        circle = plt.Circle(hidden_position, 0.4, fill=True, color='lightgreen', ec='green', linewidth=2)
+        ax.add_patch(circle)
+        ax.text(hidden_position[0], hidden_position[1], '∑', ha='center', va='center', fontsize=12, fontweight='bold')
+
+        # Dibujar neurona de salida
+        circle = plt.Circle(output_position, 0.3, fill=True, color='lightcoral', ec='red', linewidth=2)
+        ax.add_patch(circle)
+        ax.text(output_position[0], output_position[1], 'Y', ha='center', va='center', fontsize=10, fontweight='bold')
+
+        # Dibujar conexiones con colores basados en pesos
+        for i, (x, y) in enumerate(input_positions):
+            weight = self.pesos[i]
+            color = 'red' if weight < 0 else 'blue'
+            alpha = min(1.0, abs(weight) / 2.0)  # Transparencia basada en magnitud del peso
+            linewidth = 1 + abs(weight) * 2  # Grosor basado en magnitud del peso
+
+            ax.plot([x, hidden_position[0]], [y, hidden_position[1]],
+                   color=color, linewidth=linewidth, alpha=alpha)
+
+            # Etiqueta del peso
+            mid_x = (x + hidden_position[0]) / 2
+            mid_y = (y + hidden_position[1]) / 2
+            ax.text(mid_x, mid_y, f'{weight:.2f}', fontsize=8, ha='center', va='center',
+                   bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.8))
+
+        # Conexión a la salida
+        ax.plot([hidden_position[0], output_position[0]], [hidden_position[1], output_position[1]],
+               color='purple', linewidth=3, alpha=0.8)
+
+        # Etiqueta del sesgo
+        mid_x = (hidden_position[0] + output_position[0]) / 2
+        mid_y = (hidden_position[1] + output_position[1]) / 2
+        ax.text(mid_x, mid_y, f'bias: {self.sesgo:.2f}', fontsize=10, ha='center', va='center',
+               bbox=dict(boxstyle="round,pad=0.3", facecolor="yellow", alpha=0.8))
+
+        # Título
+        ax.set_title('Estructura del Perceptrón Simple', fontsize=16, fontweight='bold', pad=20)
+
+        # Leyenda
+        ax.text(1, 1, 'Entrada', fontsize=10, ha='center', va='center',
+               bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue"))
+        ax.text(6, 9.5, 'Perceptrón', fontsize=10, ha='center', va='center',
+               bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgreen"))
+        ax.text(10, 9.5, 'Salida', fontsize=10, ha='center', va='center',
+               bbox=dict(boxstyle="round,pad=0.3", facecolor="lightcoral"))
+
+        # Convertir a base64
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight')
+        buffer.seek(0)
+        image_base64 = base64.b64encode(buffer.getvalue()).decode()
+        plt.close()
+
+        return image_base64
+
+    def crear_grafico_precision(self) -> str:
+        """
+        Crea un gráfico de la evolución de la precisión durante el entrenamiento
+
+        Returns:
+            str: Imagen codificada en base64
+        """
+        if not self.errores_entrenamiento:
+            return None
+
+        # Calcular precisión aproximada basada en errores
+        precisiones = []
+        for errores in self.errores_entrenamiento:
+            # Asumiendo que cada error representa un error por muestra
+            # En un escenario real, esto debería calcularse con los datos reales
+            if hasattr(self, '_num_muestras') and self._num_muestras > 0:
+                tasa_error = errores / self._num_muestras
+            else:
+                # Estimación basada en número de características
+                tasa_error = min(1.0, errores / len(self.pesos)) if self.pesos else 0
+            precision = max(0, (1 - tasa_error) * 100)
+            precisiones.append(precision)
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(range(1, len(precisiones) + 1), precisiones, 'g-', linewidth=2, marker='o', markersize=4)
+        plt.title('Evolución de la Precisión durante el Entrenamiento', fontsize=14, fontweight='bold')
+        plt.xlabel('Iteración', fontsize=12)
+        plt.ylabel('Precisión (%)', fontsize=12)
+        plt.grid(True, alpha=0.3)
+        plt.ylim(0, 105)  # Asegurar que el eje Y vaya de 0 a 105%
+        plt.tight_layout()
+
+        # Convertir a base64
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight')
+        buffer.seek(0)
+        image_base64 = base64.b64encode(buffer.getvalue()).decode()
+        plt.close()
+
         return image_base64
     
     def crear_grafico_pesos(self) -> str:

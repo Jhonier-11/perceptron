@@ -20,6 +20,65 @@ from .perceptron import PerceptronSimple
 from .forms import DataUploadForm, TrainingConfigForm, PredictionForm
 
 
+def generar_tabla_html_vista_previa(df, max_rows=20):
+    """
+    Genera una tabla HTML bien estructurada para la vista previa de datos
+    
+    Args:
+        df (pandas.DataFrame): DataFrame con los datos
+        max_rows (int): Número máximo de filas a mostrar
+    
+    Returns:
+        str: HTML de la tabla con estructura estándar
+    """
+    # Limitar el número de filas
+    preview_df = df.head(max_rows)
+    
+    # Crear la estructura HTML de la tabla
+    html = """
+    <div class="table-responsive" style="max-height: 400px; overflow-y: auto; overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+        <table class="tabla-vista-previa" style="width: 100%; border-collapse: collapse; margin: 0; font-size: 0.875rem;">
+            <thead style="background-color: #374151; color: white; position: sticky; top: 0; z-index: 10;">
+                <tr>
+    """
+    
+    # Agregar encabezados
+    for col in preview_df.columns:
+        html += f'<th style="padding: 12px 8px; text-align: center; border: 1px solid #4b5563; font-weight: 600;">{col}</th>'
+    
+    html += """
+                </tr>
+            </thead>
+            <tbody>
+    """
+    
+    # Agregar filas de datos
+    for index, row in preview_df.iterrows():
+        # Alternar colores de fila
+        bg_color = '#f9fafb' if index % 2 == 0 else 'white'
+        html += f'<tr style="background-color: {bg_color};" onmouseover="this.style.backgroundColor=\'#f3f4f6\'" onmouseout="this.style.backgroundColor=\'{bg_color}\'">'
+        
+        for value in row:
+            # Formatear valores según su tipo
+            if pd.api.types.is_numeric_dtype(type(value)) and not pd.isna(value):
+                # Valores numéricos: alineados a la derecha, con formato
+                formatted_value = f'{value:.4f}' if isinstance(value, float) else str(value)
+                html += f'<td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis;">{formatted_value}</td>'
+            else:
+                # Valores de texto: centrados
+                html += f'<td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis;">{value}</td>'
+        
+        html += '</tr>'
+    
+    html += """
+            </tbody>
+        </table>
+    </div>
+    """
+    
+    return html
+
+
 def detectar_separador_csv_y_leer(archivo):
     """
     Detecta automáticamente el separador de un archivo CSV y lo lee
@@ -170,13 +229,76 @@ def cargar_datos(request):
                         'sample_values': df[col].head(3).tolist()
                     })
                 
+                # Crear vista previa mejorada con más filas y estadísticas
+                preview_rows = min(20, len(df))  # Mostrar hasta 20 filas
+                preview_df = df.head(preview_rows)
+
+                # Agregar estadísticas básicas
+                stats_info = []
+                for col in df.columns:
+                    if pd.api.types.is_numeric_dtype(df[col]):
+                        stats = {
+                            'name': col,
+                            'count': df[col].count(),
+                            'mean': round(df[col].mean(), 3) if not df[col].isna().all() else None,
+                            'std': round(df[col].std(), 3) if not df[col].isna().all() else None,
+                            'min': round(df[col].min(), 3) if not df[col].isna().all() else None,
+                            'max': round(df[col].max(), 3) if not df[col].isna().all() else None,
+                            'missing': df[col].isna().sum()
+                        }
+                    else:
+                        stats = {
+                            'name': col,
+                            'count': df[col].count(),
+                            'unique': df[col].nunique(),
+                            'missing': df[col].isna().sum(),
+                            'most_common': df[col].mode().iloc[0] if not df[col].isna().all() else None
+                        }
+                    stats_info.append(stats)
+
+                # Crear vista previa estructurada para el template
+                preview_rows = min(20, len(df))
+                preview_df = df.head(preview_rows)
+                
+                # Convertir los datos a estructura que Django pueda iterar
+                preview_data = []
+                print(f"DEBUG: preview_df shape: {preview_df.shape}")
+                print(f"DEBUG: preview_df columns: {preview_df.columns.tolist()}")
+                
+                for index, row in preview_df.iterrows():
+                    row_data = []
+                    for col in preview_df.columns:
+                        value = row[col]
+                        # Determinar el tipo y formatear el valor
+                        if pd.api.types.is_numeric_dtype(type(value)) and not pd.isna(value):
+                            formatted_value = f'{value:.4f}' if isinstance(value, float) else str(value)
+                            row_data.append({
+                                'value': formatted_value,
+                                'is_numeric': True,
+                                'raw_value': value
+                            })
+                        else:
+                            row_data.append({
+                                'value': str(value) if not pd.isna(value) else 'N/A',
+                                'is_numeric': False,
+                                'raw_value': value
+                            })
+                    preview_data.append(row_data)
+                    
+                print(f"DEBUG: preview_data length: {len(preview_data)}")
+                if preview_data:
+                    print(f"DEBUG: first row length: {len(preview_data[0])}")
+                    print(f"DEBUG: first row sample: {preview_data[0][:3] if len(preview_data[0]) > 0 else 'empty'}")
+
                 # Guardar información del archivo en la sesión (sin los datos completos)
                 request.session['uploaded_data'] = {
                     'filename': file.name,
                     'columns': df.columns.tolist(),
                     'shape': df.shape,
-                    'preview': df.head(10).to_html(classes='table table-striped', table_id='data-preview'),
-                    'column_info': column_info
+                    'preview_data': preview_data,
+                    'column_info': column_info,
+                    'stats_info': stats_info,
+                    'preview_rows': preview_rows
                 }
                 
                 # Guardar la ruta del archivo
@@ -216,8 +338,36 @@ def configurar_entrenamiento(request):
     columns = uploaded_data['columns']
     
     if request.method == 'POST':
-        form = TrainingConfigForm(request.POST, columns=columns)
+        form = TrainingConfigForm(request.POST, request.FILES, columns=columns)
         if form.is_valid():
+            # Procesar archivo de pesos si se seleccionó esa opción
+            pesos_iniciales = None
+            sesgo_inicial = None
+
+            if form.cleaned_data['weight_initialization'] == 'file':
+                weights_file = form.cleaned_data['weights_file']
+                try:
+                    # Leer y parsear el archivo JSON
+                    weights_data = json.load(weights_file)
+                    pesos_iniciales = weights_data.get('weights', [])
+                    sesgo_inicial = weights_data.get('bias', 0.0)
+
+                    # Validar estructura del archivo
+                    if not isinstance(pesos_iniciales, list):
+                        raise ValueError("Los pesos deben ser una lista de números.")
+
+                    if not all(isinstance(w, (int, float)) for w in pesos_iniciales):
+                        raise ValueError("Todos los pesos deben ser números.")
+
+                    messages.success(request, f'Pesos cargados exitosamente: {len(pesos_iniciales)} pesos, sesgo: {sesgo_inicial}')
+
+                except json.JSONDecodeError:
+                    messages.error(request, 'El archivo de pesos no tiene un formato JSON válido.')
+                    return render(request, 'perceptron_app/configure_training.html', {'form': form, 'uploaded_data': uploaded_data, 'columns': columns})
+                except Exception as e:
+                    messages.error(request, f'Error al procesar el archivo de pesos: {str(e)}')
+                    return render(request, 'perceptron_app/configure_training.html', {'form': form, 'uploaded_data': uploaded_data, 'columns': columns})
+
             # Guardar configuración en la sesión
             request.session['training_config'] = {
                 'tasa_aprendizaje': form.cleaned_data['learning_rate'],
@@ -225,9 +375,12 @@ def configurar_entrenamiento(request):
                 'error_maximo': form.cleaned_data['max_error'],
                 'columnas_entrada': form.cleaned_data['input_columns'],
                 'columnas_salida': form.cleaned_data['output_columns'],
-                'nombre_entrenamiento': form.cleaned_data['training_name']
+                'nombre_entrenamiento': form.cleaned_data['training_name'],
+                'weight_initialization': form.cleaned_data['weight_initialization'],
+                'pesos_iniciales': pesos_iniciales,
+                'sesgo_inicial': sesgo_inicial
             }
-            
+
             messages.success(request, 'Configuración guardada. Listo para entrenar.')
             return redirect('perceptron_app:entrenar_perceptron')
     else:
@@ -328,10 +481,17 @@ def entrenar_perceptron(request):
             
             # Crear y entrenar el perceptrón
             print("Creando nueva instancia del perceptrón...")
+
+            # Preparar pesos iniciales si se cargaron desde archivo
+            pesos_iniciales = training_config.get('pesos_iniciales')
+            sesgo_inicial = training_config.get('sesgo_inicial')
+
             perceptron = PerceptronSimple(
                 tasa_aprendizaje=training_config['tasa_aprendizaje'],
                 max_iteraciones=training_config['iteraciones'],
-                error_maximo=training_config['error_maximo']
+                error_maximo=training_config['error_maximo'],
+                pesos_iniciales=pesos_iniciales,
+                sesgo_inicial=sesgo_inicial
             )
             
             print(f"Perceptrón creado - pesos: {perceptron.pesos}")
@@ -533,6 +693,64 @@ def descargar_pesos(request, training_id):
     return response
 
 
+def detalles_entrenamiento(request, training_id):
+    """
+    Vista para mostrar detalles completos de un entrenamiento con visualizaciones
+    """
+    training = get_object_or_404(PerceptronTraining, id=training_id)
+
+    # Crear perceptrón con los pesos entrenados para generar visualizaciones
+    perceptron = PerceptronSimple()
+    perceptron.pesos = np.array(training.pesos_finales)
+    perceptron.sesgo = training.sesgo_final
+    perceptron.errores_entrenamiento = training.errores_entrenamiento
+    perceptron.evolucion_pesos = training.evolucion_pesos
+
+    # Generar visualizaciones
+    error_plot = perceptron.crear_grafico_errores()
+    weights_plot = perceptron.crear_grafico_pesos()
+    network_diagram = perceptron.crear_diagrama_red()
+
+    # Calcular estadísticas adicionales
+    total_iterations = len(training.errores_entrenamiento)
+    final_error = training.errores_entrenamiento[-1] if training.errores_entrenamiento else 0
+    convergence_epoch = None
+
+    if training.errores_entrenamiento:
+        for i, error in enumerate(training.errores_entrenamiento):
+            if error == 0:
+                convergence_epoch = i + 1
+                break
+
+    # Preparar datos para gráficos de precisión
+    accuracy_data = []
+    if training.evolucion_pesos:
+        for i, epoch_data in enumerate(training.evolucion_pesos):
+            # Simular precisión basada en errores (esto es una aproximación)
+            # En un escenario real, tendrías que recalcular con los datos originales
+            error_rate = training.errores_entrenamiento[i] / len(training.columnas_entrada) if i < len(training.errores_entrenamiento) else 0
+            accuracy = max(0, (1 - error_rate) * 100)
+            accuracy_data.append({
+                'epoch': epoch_data['iteracion'],
+                'accuracy': round(accuracy, 2)
+            })
+
+    context = {
+        'training': training,
+        'error_plot': error_plot,
+        'weights_plot': weights_plot,
+        'network_diagram': network_diagram,
+        'total_iterations': total_iterations,
+        'final_error': final_error,
+        'convergence_epoch': convergence_epoch,
+        'accuracy_data': accuracy_data,
+        'input_features': training.columnas_entrada,
+        'output_feature': training.columnas_salida[0] if training.columnas_salida else None,
+    }
+
+    return render(request, 'perceptron_app/training_details.html', context)
+
+
 def eliminar_entrenamiento(request, training_id):
     """
     Vista para eliminar un entrenamiento del historial
@@ -541,18 +759,18 @@ def eliminar_entrenamiento(request, training_id):
         try:
             training = get_object_or_404(PerceptronTraining, id=training_id)
             training_name = training.nombre
-            
+
             # Eliminar también las predicciones asociadas
             Prediction.objects.filter(entrenamiento=training).delete()
-            
+
             # Eliminar el entrenamiento
             training.delete()
-            
+
             messages.success(request, f'Entrenamiento "{training_name}" eliminado exitosamente.')
-            
+
         except Exception as e:
             messages.error(request, f'Error al eliminar el entrenamiento: {str(e)}')
-    
+
     return redirect('perceptron_app:historial_entrenamientos')
 
 

@@ -48,7 +48,43 @@
                                         </div>
                                     {% endif %}
                                 </div>
-                                
+
+                                <!-- Weight Initialization Section -->
+                                <div>
+                                    <label for="{{ form.weight_initialization.id_for_label }}" class="block text-sm font-semibold text-accent-700 mb-2">
+                                        <i class="fas fa-brain mr-2 text-primary-600"></i>Inicialización de Pesos
+                                    </label>
+                                    {{ form.weight_initialization }}
+                                    {% if form.weight_initialization.help_text %}
+                                        <p class="mt-2 text-sm text-accent-600">{{ form.weight_initialization.help_text }}</p>
+                                    {% endif %}
+                                    {% if form.weight_initialization.errors %}
+                                        <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                            {% for error in form.weight_initialization.errors %}
+                                                <p class="text-red-700 text-sm">{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Weights File Upload (conditionally shown) -->
+                                <div id="weights-file-container" style="display: none;">
+                                    <label for="{{ form.weights_file.id_for_label }}" class="block text-sm font-semibold text-accent-700 mb-2">
+                                        <i class="fas fa-upload mr-2 text-primary-600"></i>Archivo de Pesos Predefinidos
+                                    </label>
+                                    {{ form.weights_file }}
+                                    {% if form.weights_file.help_text %}
+                                        <p class="mt-2 text-sm text-accent-600">{{ form.weights_file.help_text }}</p>
+                                    {% endif %}
+                                    {% if form.weights_file.errors %}
+                                        <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                            {% for error in form.weights_file.errors %}
+                                                <p class="text-red-700 text-sm">{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
                                 <div>
                                     <label for="{{ form.learning_rate.id_for_label }}" class="block text-sm font-semibold text-accent-700 mb-2">
                                         <i class="fas fa-tachometer-alt mr-2 text-primary-600"></i>Tasa de Aprendizaje (η)
@@ -173,8 +209,61 @@
                         <i class="fas fa-eye mr-3"></i>Vista Previa de los Datos
                     </h5>
                     <div class="bg-white rounded-xl overflow-hidden shadow-inner">
-                        <div class="overflow-x-auto">
-                            {{ uploaded_data.preview|safe }}
+                        <div class="p-4">
+                            <!-- Tabla construida con Django template syntax -->
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto; overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+                                <table class="tabla-vista-previa" style="width: 100%; border-collapse: collapse; margin: 0; font-size: 0.875rem;">
+                                    <thead style="background-color: #374151; color: white; position: sticky; top: 0; z-index: 10;">
+                                        <tr>
+                                            {% for column in uploaded_data.columns %}
+                                                <th style="padding: 12px 8px; text-align: center; border: 1px solid #4b5563; font-weight: 600;">{{ column }}</th>
+                                            {% endfor %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- DEBUG: Verificar si hay datos -->
+                                        {% if uploaded_data.preview_data %}
+                                            <!-- DEBUG: Mostrar cantidad de filas -->
+                                            <!--DEBUG: {{ uploaded_data.preview_data|length }} filas de datos-->
+                                            {% for row in uploaded_data.preview_data %}
+                                                {% if forloop.counter0|divisibleby:2 %}
+                                                    <tr style="background-color: #f9fafb;" onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='#f9fafb'">
+                                                {% else %}
+                                                    <tr style="background-color: white;" onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='white'">
+                                                {% endif %}
+                                                    {% for cell in row %}
+                                                        {% if cell.is_numeric %}
+                                                            <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis;">{{ cell.value }}</td>
+                                                        {% else %}
+                                                            <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis;">{{ cell.value }}</td>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="{{ uploaded_data.columns|length }}" style="padding: 20px; text-align: center; color: #6b7280;">
+                                                    No hay datos de vista previa disponibles
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-accent-50 border-t border-accent-200">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                <p class="text-sm text-accent-600">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    Mostrando {{ uploaded_data.preview_rows }} de {{ uploaded_data.shape.0 }} filas totales.
+                                </p>
+                                {% if uploaded_data.shape.0 > uploaded_data.preview_rows %}
+                                    <p class="text-sm text-accent-500">
+                                        <i class="fas fa-arrows-alt mr-1"></i>
+                                        Usa las barras de desplazamiento para navegar por los datos
+                                    </p>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -205,6 +294,64 @@
                             <i class="fas fa-exclamation-triangle mr-2"></i>
                             <strong>Importante:</strong> Solo puedes seleccionar columnas numéricas para el entrenamiento del perceptrón.
                         </p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Estadísticas de datos -->
+                {% if uploaded_data.stats_info %}
+                <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6">
+                    <h5 class="text-xl font-bold text-purple-800 mb-6 flex items-center">
+                        <i class="fas fa-chart-bar mr-3"></i>Estadísticas de los Datos
+                    </h5>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {% for stat in uploaded_data.stats_info %}
+                        <div class="bg-white rounded-lg p-4 shadow-sm">
+                            <div class="flex items-center justify-between mb-3">
+                                <h6 class="font-semibold text-accent-800">{{ stat.name }}</h6>
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold {% if stat.mean is not none %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                                    {% if stat.mean is not none %}Numérico{% else %}Categórico{% endif %}
+                                </span>
+                            </div>
+                            <div class="space-y-2 text-sm">
+                                {% if stat.mean is not none %}
+                                    <!-- Estadísticas numéricas -->
+                                    <div class="flex justify-between">
+                                        <span class="text-accent-600">Media:</span>
+                                        <span class="font-mono text-accent-800">{{ stat.mean|default:"N/A" }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-accent-600">Desv. Est.:</span>
+                                        <span class="font-mono text-accent-800">{{ stat.std|default:"N/A" }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-accent-600">Mín/Máx:</span>
+                                        <span class="font-mono text-accent-800">{{ stat.min|default:"N/A" }} / {{ stat.max|default:"N/A" }}</span>
+                                    </div>
+                                {% else %}
+                                    <!-- Estadísticas categóricas -->
+                                    <div class="flex justify-between">
+                                        <span class="text-accent-600">Valores únicos:</span>
+                                        <span class="font-mono text-accent-800">{{ stat.unique }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-accent-600">Más común:</span>
+                                        <span class="font-mono text-accent-800">{{ stat.most_common|truncatechars:15|default:"N/A" }}</span>
+                                    </div>
+                                {% endif %}
+                                <div class="flex justify-between">
+                                    <span class="text-accent-600">Total valores:</span>
+                                    <span class="font-mono text-accent-800">{{ stat.count }}</span>
+                                </div>
+                                {% if stat.missing > 0 %}
+                                <div class="flex justify-between">
+                                    <span class="text-red-600">Valores faltantes:</span>
+                                    <span class="font-mono text-red-700">{{ stat.missing }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
                 {% endif %}
@@ -344,7 +491,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const learningRateInput = document.getElementById('{{ form.learning_rate.id_for_label }}');
     const epochsInput = document.getElementById('{{ form.epochs.id_for_label }}');
     const maxErrorInput = document.getElementById('{{ form.max_error.id_for_label }}');
-    
+    const weightInitSelect = document.getElementById('{{ form.weight_initialization.id_for_label }}');
+    const weightsFileContainer = document.getElementById('weights-file-container');
+
+    // Toggle weights file field based on initialization choice
+    function toggleWeightsFile() {
+        if (weightInitSelect && weightInitSelect.value === 'file') {
+            weightsFileContainer.style.display = 'block';
+        } else {
+            weightsFileContainer.style.display = 'none';
+        }
+    }
+
+    // Initial check
+    toggleWeightsFile();
+
+    // Listen for changes
+    if (weightInitSelect) {
+        weightInitSelect.addEventListener('change', toggleWeightsFile);
+    }
+
     learningRateInput.addEventListener('input', function() {
         const value = parseFloat(this.value);
         if (value < 0.001 || value > 1.0) {
@@ -353,7 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.remove('is-invalid');
         }
     });
-    
+
     epochsInput.addEventListener('input', function() {
         const value = parseInt(this.value);
         if (value < 1 || value > 10000) {
@@ -362,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.remove('is-invalid');
         }
     });
-    
+
     maxErrorInput.addEventListener('input', function() {
         const value = parseFloat(this.value);
         if (value < 0 || value > 0.1) {

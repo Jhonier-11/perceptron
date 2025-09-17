@@ -1,458 +1,681 @@
-{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}Historial de Entrenamientos - Perceptrón Simple{% endblock %}
-
-{% block content %}
+{% extends 'base.html' %} {% load static %} {% block title %}Historial de
+Entrenamientos - Perceptrón Simple{% endblock %} {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div class="bg-white dark:bg-accent-800 rounded-2xl shadow-xl border border-primary-100 dark:border-accent-700 overflow-hidden animate-fadeInUp">
-        <div class="bg-gradient-to-r from-green-500 to-green-600 px-8 py-6">
-            <div class="flex justify-between items-center">
-                <h4 class="text-2xl font-bold text-white flex items-center">
-                    <i class="fas fa-history mr-3"></i>Historial de Entrenamientos
-                </h4>
-                <a href="{% url 'perceptron_app:cargar_datos' %}" class="bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105">
-                    <i class="fas fa-plus"></i>
-                    <span>Nuevo Entrenamiento</span>
-                </a>
-            </div>
-        </div>
-        <div class="p-8">
-            {% csrf_token %}
-            {% if trainings %}
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="border-b border-accent-200 dark:border-accent-600">
-                                <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Nombre</th>
-                                <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Fecha</th>
-                                <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Precisión</th>
-                                <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Iteraciones</th>
-                                <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Tasa de Aprendizaje</th>
-                                <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Error Máximo</th>
-                                <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Entradas</th>
-                                <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Salida</th>
-                                <th class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-accent-200 dark:divide-accent-600">
-                            {% for training in trainings %}
-                                <tr class="hover:bg-accent-50 dark:hover:bg-accent-700/50 transition-colors duration-200 animate-fadeInUp" style="animation-delay: {{ forloop.counter0|add:0.1 }}s;">
-                                    <td class="py-4 px-4">
-                                        <div class="flex items-center space-x-2">
-                                            <strong class="text-accent-800 dark:text-accent-200">{{ training.nombre }}</strong>
-                                            {% if training.precision >= 90 %}
-                                                <i class="fas fa-star text-yellow-500" title="Excelente precisión"></i>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                    <td class="py-4 px-4 text-accent-700 dark:text-accent-300">{{ training.fecha_creacion|date:"d/m/Y H:i" }}</td>
-                                    <td class="py-4 px-4">
-                                        <span class="px-3 py-1 rounded-full text-sm font-semibold {% if training.precision >= 90 %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300{% elif training.precision >= 70 %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300{% else %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300{% endif %}">
-                                            {{ training.precision|floatformat:1 }}%
-                                        </span>
-                                    </td>
-                                    <td class="py-4 px-4 text-accent-700 dark:text-accent-300">{{ training.iteraciones }}</td>
-                                    <td class="py-4 px-4 text-accent-700 dark:text-accent-300">{{ training.tasa_aprendizaje }}</td>
-                                    <td class="py-4 px-4 text-accent-700 dark:text-accent-300">{{ training.error_maximo }}</td>
-                                    <td class="py-4 px-4">
-                                        <span class="text-accent-600 dark:text-accent-400 text-sm">
-                                            {{ training.columnas_entrada|join:", " }}
-                                        </span>
-                                    </td>
-                                    <td class="py-4 px-4">
-                                        <span class="text-accent-600 dark:text-accent-400 text-sm">
-                                            {{ training.columnas_salida|join:", " }}
-                                        </span>
-                                    </td>
-                                    <td class="py-4 px-4">
-                                        <div class="flex space-x-2">
-                                            <a href="{% url 'perceptron_app:descargar_pesos' training.id %}" 
-                                               class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors duration-200" 
-                                               title="Descargar pesos">
-                                                <i class="fas fa-download"></i>
-                                            </a>
-                                            <button type="button" 
-                                                    class="bg-gray-100 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-900/50 transition-colors duration-200" 
-                                                    onclick="openDetailsModal({{ training.id }})"
-                                                    title="Ver detalles">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button type="button" 
-                                                    class="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-2 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors duration-200" 
-                                                    onclick="loadForPrediction({{ training.id }})"
-                                                    title="Usar para predicciones">
-                                                <i class="fas fa-calculator"></i>
-                                            </button>
-                                            <button type="button" 
-                                                    class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-2 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors duration-200" 
-                                                    onclick="confirmDelete({{ training.id }}, '{{ training.nombre }}')"
-                                                    title="Eliminar entrenamiento">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- Paginación -->
-                {% if trainings.has_other_pages %}
-                    <div class="mt-8 flex justify-center">
-                        <nav class="flex space-x-2">
-                            {% if trainings.has_previous %}
-                                <a href="?page=1" class="px-4 py-2 bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-300 rounded-lg hover:bg-accent-200 dark:hover:bg-accent-600 transition-colors duration-200">
-                                    <i class="fas fa-angle-double-left mr-1"></i>Primera
-                                </a>
-                                <a href="?page={{ trainings.previous_page_number }}" class="px-4 py-2 bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-300 rounded-lg hover:bg-accent-200 dark:hover:bg-accent-600 transition-colors duration-200">
-                                    <i class="fas fa-angle-left mr-1"></i>Anterior
-                                </a>
-                            {% endif %}
-                            
-                            <span class="px-4 py-2 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg font-semibold">
-                                Página {{ trainings.number }} de {{ trainings.paginator.num_pages }}
-                            </span>
-                            
-                            {% if trainings.has_next %}
-                                <a href="?page={{ trainings.next_page_number }}" class="px-4 py-2 bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-300 rounded-lg hover:bg-accent-200 dark:hover:bg-accent-600 transition-colors duration-200">
-                                    Siguiente<i class="fas fa-angle-right ml-1"></i>
-                                </a>
-                                <a href="?page={{ trainings.paginator.num_pages }}" class="px-4 py-2 bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-300 rounded-lg hover:bg-accent-200 dark:hover:bg-accent-600 transition-colors duration-200">
-                                    Última<i class="fas fa-angle-double-right ml-1"></i>
-                                </a>
-                            {% endif %}
-                        </nav>
-                    </div>
-                {% endif %}
-            {% else %}
-                <div class="text-center py-16">
-                    <div class="animate-bounceIn">
-                        <i class="fas fa-brain text-6xl text-accent-400 dark:text-accent-500 mb-6"></i>
-                        <h5 class="text-xl font-semibold text-accent-600 dark:text-accent-400 mb-4">No hay entrenamientos registrados</h5>
-                        <p class="text-accent-500 dark:text-accent-500 mb-8">Comienza entrenando tu primer perceptrón</p>
-                        <a href="{% url 'perceptron_app:cargar_datos' %}" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center space-x-3 mx-auto shadow-lg hover:shadow-xl transform hover:scale-105">
-                            <i class="fas fa-upload text-xl"></i>
-                            <span>Cargar Datos</span>
-                        </a>
-                    </div>
-                </div>
-            {% endif %}
-        </div>
+  <div
+    class="bg-white dark:bg-accent-800 rounded-2xl shadow-xl border border-primary-100 dark:border-accent-700 overflow-hidden animate-fadeInUp"
+  >
+    <div class="bg-gradient-to-r from-green-500 to-green-600 px-8 py-6">
+      <div class="flex justify-between items-center">
+        <h4 class="text-2xl font-bold text-white flex items-center">
+          <i class="fas fa-history mr-3"></i>Historial de Entrenamientos
+        </h4>
+        <a
+          href="{% url 'perceptron_app:cargar_datos' %}"
+          class="bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+        >
+          <i class="fas fa-plus"></i>
+          <span>Nuevo Entrenamiento</span>
+        </a>
+      </div>
     </div>
+    <div class="p-8">
+      {% csrf_token %} {% if trainings %}
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-accent-200 dark:border-accent-600">
+              <th
+                class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200"
+              >
+                Nombre
+              </th>
+              <th
+                class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200"
+              >
+                Fecha
+              </th>
+              <th
+                class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200"
+              >
+                Precisión
+              </th>
+              <th
+                class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200"
+              >
+                Iteraciones
+              </th>
+              <th
+                class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200"
+              >
+                Tasa de Aprendizaje
+              </th>
+              <th
+                class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200"
+              >
+                Error Máximo
+              </th>
+              <th
+                class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200"
+              >
+                Entradas
+              </th>
+              <th
+                class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200"
+              >
+                Salida
+              </th>
+              <th
+                class="text-left py-4 px-4 font-semibold text-accent-800 dark:text-accent-200"
+              >
+                Acciones
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-accent-200 dark:divide-accent-600">
+            {% for training in trainings %}
+            <tr
+              class="hover:bg-accent-50 dark:hover:bg-accent-700/50 transition-colors duration-200 animate-fadeInUp"
+              style="animation-delay: {{ forloop.counter0|add:0.1 }}s;"
+            >
+              <td class="py-4 px-4">
+                <div class="flex items-center space-x-2">
+                  <strong class="text-accent-800 dark:text-accent-200"
+                    >{{ training.nombre }}</strong
+                  >
+                  {% if training.precision >= 90 %}
+                  <i
+                    class="fas fa-star text-yellow-500"
+                    title="Excelente precisión"
+                  ></i>
+                  {% endif %}
+                </div>
+              </td>
+              <td class="py-4 px-4 text-accent-700 dark:text-accent-300">
+                {{ training.fecha_creacion|date:"d/m/Y H:i" }}
+              </td>
+              <td class="py-4 px-4">
+                <span
+                  class="px-3 py-1 rounded-full text-sm font-semibold {% if training.precision >= 90 %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300{% elif training.precision >= 70 %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300{% else %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300{% endif %}"
+                >
+                  {{ training.precision|floatformat:1 }}%
+                </span>
+              </td>
+              <td class="py-4 px-4 text-accent-700 dark:text-accent-300">
+                {{ training.iteraciones }}
+              </td>
+              <td class="py-4 px-4 text-accent-700 dark:text-accent-300">
+                {{ training.tasa_aprendizaje }}
+              </td>
+              <td class="py-4 px-4 text-accent-700 dark:text-accent-300">
+                {{ training.error_maximo }}
+              </td>
+              <td class="py-4 px-4">
+                <span class="text-accent-600 dark:text-accent-400 text-sm">
+                  {{ training.columnas_entrada|join:", " }}
+                </span>
+              </td>
+              <td class="py-4 px-4">
+                <span class="text-accent-600 dark:text-accent-400 text-sm">
+                  {{ training.columnas_salida|join:", " }}
+                </span>
+              </td>
+              <td class="py-4 px-4">
+                <div class="flex space-x-2">
+                  <a
+                    href="{% url 'perceptron_app:descargar_pesos' training.id %}"
+                    class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors duration-200"
+                    title="Descargar pesos"
+                  >
+                    <i class="fas fa-download"></i>
+                  </a>
+                  <a
+                    href="{% url 'perceptron_app:detalles_entrenamiento' training.id %}"
+                    class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors duration-200"
+                    title="Ver detalles completos"
+                    target="_blank"
+                  >
+                    <i class="fas fa-external-link-alt"></i>
+                  </a>
+                  <button
+                    type="button"
+                    class="bg-gray-100 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-900/50 transition-colors duration-200"
+                    onclick="openDetailsModal({{ training.id }})"
+                    title="Vista rápida"
+                  >
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-2 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors duration-200"
+                    onclick="loadForPrediction({{ training.id }})"
+                    title="Usar para predicciones"
+                  >
+                    <i class="fas fa-calculator"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-2 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors duration-200"
+                    onclick="confirmDelete({{ training.id }}, '{{ training.nombre }}')"
+                    title="Eliminar entrenamiento"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      {% if trainings.has_other_pages %}
+      <div class="mt-8 flex justify-center">
+        <nav class="flex space-x-2">
+          {% if trainings.has_previous %}
+          <a
+            href="?page=1"
+            class="px-4 py-2 bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-300 rounded-lg hover:bg-accent-200 dark:hover:bg-accent-600 transition-colors duration-200"
+          >
+            <i class="fas fa-angle-double-left mr-1"></i>Primera
+          </a>
+          <a
+            href="?page={{ trainings.previous_page_number }}"
+            class="px-4 py-2 bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-300 rounded-lg hover:bg-accent-200 dark:hover:bg-accent-600 transition-colors duration-200"
+          >
+            <i class="fas fa-angle-left mr-1"></i>Anterior
+          </a>
+          {% endif %}
+
+          <span
+            class="px-4 py-2 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg font-semibold"
+          >
+            Página {{ trainings.number }} de {{ trainings.paginator.num_pages }}
+          </span>
+
+          {% if trainings.has_next %}
+          <a
+            href="?page={{ trainings.next_page_number }}"
+            class="px-4 py-2 bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-300 rounded-lg hover:bg-accent-200 dark:hover:bg-accent-600 transition-colors duration-200"
+          >
+            Siguiente<i class="fas fa-angle-right ml-1"></i>
+          </a>
+          <a
+            href="?page={{ trainings.paginator.num_pages }}"
+            class="px-4 py-2 bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-300 rounded-lg hover:bg-accent-200 dark:hover:bg-accent-600 transition-colors duration-200"
+          >
+            Última<i class="fas fa-angle-double-right ml-1"></i>
+          </a>
+          {% endif %}
+        </nav>
+      </div>
+      {% endif %} {% else %}
+      <div class="text-center py-16">
+        <div class="animate-bounceIn">
+          <i
+            class="fas fa-brain text-6xl text-accent-400 dark:text-accent-500 mb-6"
+          ></i>
+          <h5
+            class="text-xl font-semibold text-accent-600 dark:text-accent-400 mb-4"
+          >
+            No hay entrenamientos registrados
+          </h5>
+          <p class="text-accent-500 dark:text-accent-500 mb-8">
+            Comienza entrenando tu primer perceptrón
+          </p>
+          <a
+            href="{% url 'perceptron_app:cargar_datos' %}"
+            class="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center space-x-3 mx-auto shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            <i class="fas fa-upload text-xl"></i>
+            <span>Cargar Datos</span>
+          </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
 </div>
 
 <!-- Modales de detalles -->
 {% for training in trainings %}
-    <div id="detailsModal{{ training.id }}" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" onclick="closeDetailsModal({{ training.id }})">
-        <div class="bg-white dark:bg-accent-800 rounded-2xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
-            <div class="bg-gradient-to-r from-accent-500 to-accent-600 px-8 py-6 rounded-t-2xl">
-                <div class="flex justify-between items-center">
-                    <h5 class="text-xl font-bold text-white flex items-center">
-                        <i class="fas fa-info-circle mr-3"></i>{{ training.nombre }}
-                    </h5>
-                    <button type="button" class="text-white hover:text-accent-200 transition-colors duration-200" onclick="closeDetailsModal({{ training.id }})">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="p-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="space-y-6">
-                        <div>
-                            <h6 class="text-lg font-semibold text-accent-800 dark:text-accent-200 mb-4 flex items-center">
-                                <i class="fas fa-cogs mr-2 text-primary-500"></i>Parámetros
-                            </h6>
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
-                                    <span class="text-accent-700 dark:text-accent-300 font-medium">Tasa de aprendizaje:</span>
-                                    <span class="text-accent-800 dark:text-accent-200 font-semibold">{{ training.tasa_aprendizaje }}</span>
-                                </div>
-                                <div class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
-                                    <span class="text-accent-700 dark:text-accent-300 font-medium">Iteraciones:</span>
-                                    <span class="text-accent-800 dark:text-accent-200 font-semibold">{{ training.iteraciones }}</span>
-                                </div>
-                                <div class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
-                                    <span class="text-accent-700 dark:text-accent-300 font-medium">Error máximo:</span>
-                                    <span class="text-accent-800 dark:text-accent-200 font-semibold">{{ training.error_maximo }}</span>
-                                </div>
-                                <div class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
-                                    <span class="text-accent-700 dark:text-accent-300 font-medium">Precisión:</span>
-                                    <span class="px-3 py-1 rounded-full text-sm font-semibold {% if training.precision >= 90 %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300{% elif training.precision >= 70 %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300{% else %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300{% endif %}">
-                                        {{ training.precision|floatformat:1 }}%
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h6 class="text-lg font-semibold text-accent-800 dark:text-accent-200 mb-4 flex items-center">
-                                <i class="fas fa-columns mr-2 text-primary-500"></i>Datos
-                            </h6>
-                            <div class="space-y-3">
-                                <div class="p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
-                                    <span class="text-accent-700 dark:text-accent-300 font-medium block mb-1">Entradas:</span>
-                                    <span class="text-accent-800 dark:text-accent-200">{{ training.columnas_entrada|join:", " }}</span>
-                                </div>
-                                <div class="p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
-                                    <span class="text-accent-700 dark:text-accent-300 font-medium block mb-1">Salida:</span>
-                                    <span class="text-accent-800 dark:text-accent-200">{{ training.columnas_salida|join:", " }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-6">
-                        <div>
-                            <h6 class="text-lg font-semibold text-accent-800 dark:text-accent-200 mb-4 flex items-center">
-                                <i class="fas fa-brain mr-2 text-primary-500"></i>Pesos Finales
-                            </h6>
-                            <div class="bg-accent-50 dark:bg-accent-700/50 rounded-xl p-4">
-                                <div class="space-y-2">
-                                    {% for weight in training.pesos_finales %}
-                                        <div class="flex justify-between items-center p-2 bg-white dark:bg-accent-800 rounded-lg">
-                                            <span class="text-accent-700 dark:text-accent-300 font-medium">w{{ forloop.counter }}</span>
-                                            <span class="text-primary-600 dark:text-primary-400 font-mono font-semibold">{{ weight|floatformat:3 }}</span>
-                                        </div>
-                                    {% endfor %}
-                                    <div class="flex justify-between items-center p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
-                                        <span class="text-accent-700 dark:text-accent-300 font-medium">bias</span>
-                                        <span class="text-primary-600 dark:text-primary-400 font-mono font-bold">{{ training.sesgo_final|floatformat:3 }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h6 class="text-lg font-semibold text-accent-800 dark:text-accent-200 mb-4 flex items-center">
-                                <i class="fas fa-chart-line mr-2 text-primary-500"></i>Estadísticas
-                            </h6>
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
-                                    <span class="text-accent-700 dark:text-accent-300 font-medium">Fecha:</span>
-                                    <span class="text-accent-800 dark:text-accent-200">{{ training.fecha_creacion|date:"d/m/Y H:i" }}</span>
-                                </div>
-                                <div class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
-                                    <span class="text-accent-700 dark:text-accent-300 font-medium">Archivo:</span>
-                                    <span class="text-accent-800 dark:text-accent-200">{{ training.archivo_datos.name|default:"N/A" }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-accent-50 dark:bg-accent-700/50 px-8 py-6 rounded-b-2xl flex justify-end space-x-4">
-                <button type="button" class="px-6 py-3 bg-accent-200 dark:bg-accent-600 text-accent-700 dark:text-accent-300 rounded-lg font-semibold hover:bg-accent-300 dark:hover:bg-accent-500 transition-colors duration-200" onclick="closeDetailsModal({{ training.id }})">
-                    Cerrar
-                </button>
-                <a href="{% url 'perceptron_app:descargar_pesos' training.id %}" class="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105">
-                    <i class="fas fa-download"></i>
-                    <span>Descargar Pesos</span>
-                </a>
-            </div>
-        </div>
+<div
+  id="detailsModal{{ training.id }}"
+  class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"
+  onclick="closeDetailsModal({{ training.id }})"
+>
+  <div
+    class="bg-white dark:bg-accent-800 rounded-2xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+    onclick="event.stopPropagation()"
+  >
+    <div
+      class="bg-gradient-to-r from-accent-500 to-accent-600 px-8 py-6 rounded-t-2xl"
+    >
+      <div class="flex justify-between items-center">
+        <h5 class="text-xl font-bold text-white flex items-center">
+          <i class="fas fa-info-circle mr-3"></i>{{ training.nombre }}
+        </h5>
+        <button
+          type="button"
+          class="text-white hover:text-accent-200 transition-colors duration-200"
+          onclick="closeDetailsModal({{ training.id }})"
+        >
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
     </div>
+    <div class="p-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="space-y-6">
+          <div>
+            <h6
+              class="text-lg font-semibold text-accent-800 dark:text-accent-200 mb-4 flex items-center"
+            >
+              <i class="fas fa-cogs mr-2 text-primary-500"></i>Parámetros
+            </h6>
+            <div class="space-y-3">
+              <div
+                class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg"
+              >
+                <span class="text-accent-700 dark:text-accent-300 font-medium"
+                  >Tasa de aprendizaje:</span
+                >
+                <span class="text-accent-800 dark:text-accent-200 font-semibold"
+                  >{{ training.tasa_aprendizaje }}</span
+                >
+              </div>
+              <div
+                class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg"
+              >
+                <span class="text-accent-700 dark:text-accent-300 font-medium"
+                  >Iteraciones:</span
+                >
+                <span class="text-accent-800 dark:text-accent-200 font-semibold"
+                  >{{ training.iteraciones }}</span
+                >
+              </div>
+              <div
+                class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg"
+              >
+                <span class="text-accent-700 dark:text-accent-300 font-medium"
+                  >Error máximo:</span
+                >
+                <span class="text-accent-800 dark:text-accent-200 font-semibold"
+                  >{{ training.error_maximo }}</span
+                >
+              </div>
+              <div
+                class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg"
+              >
+                <span class="text-accent-700 dark:text-accent-300 font-medium"
+                  >Precisión:</span
+                >
+                <span
+                  class="px-3 py-1 rounded-full text-sm font-semibold {% if training.precision >= 90 %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300{% elif training.precision >= 70 %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300{% else %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300{% endif %}"
+                >
+                  {{ training.precision|floatformat:1 }}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h6
+              class="text-lg font-semibold text-accent-800 dark:text-accent-200 mb-4 flex items-center"
+            >
+              <i class="fas fa-columns mr-2 text-primary-500"></i>Datos
+            </h6>
+            <div class="space-y-3">
+              <div class="p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
+                <span
+                  class="text-accent-700 dark:text-accent-300 font-medium block mb-1"
+                  >Entradas:</span
+                >
+                <span class="text-accent-800 dark:text-accent-200"
+                  >{{ training.columnas_entrada|join:", " }}</span
+                >
+              </div>
+              <div class="p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg">
+                <span
+                  class="text-accent-700 dark:text-accent-300 font-medium block mb-1"
+                  >Salida:</span
+                >
+                <span class="text-accent-800 dark:text-accent-200"
+                  >{{ training.columnas_salida|join:", " }}</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <div>
+            <h6
+              class="text-lg font-semibold text-accent-800 dark:text-accent-200 mb-4 flex items-center"
+            >
+              <i class="fas fa-brain mr-2 text-primary-500"></i>Pesos Finales
+            </h6>
+            <div class="bg-accent-50 dark:bg-accent-700/50 rounded-xl p-4">
+              <div class="space-y-2">
+                {% for weight in training.pesos_finales %}
+                <div
+                  class="flex justify-between items-center p-2 bg-white dark:bg-accent-800 rounded-lg"
+                >
+                  <span class="text-accent-700 dark:text-accent-300 font-medium"
+                    >w{{ forloop.counter }}</span
+                  >
+                  <span
+                    class="text-primary-600 dark:text-primary-400 font-mono font-semibold"
+                    >{{ weight|floatformat:3 }}</span
+                  >
+                </div>
+                {% endfor %}
+                <div
+                  class="flex justify-between items-center p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800"
+                >
+                  <span class="text-accent-700 dark:text-accent-300 font-medium"
+                    >bias</span
+                  >
+                  <span
+                    class="text-primary-600 dark:text-primary-400 font-mono font-bold"
+                    >{{ training.sesgo_final|floatformat:3 }}</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h6
+              class="text-lg font-semibold text-accent-800 dark:text-accent-200 mb-4 flex items-center"
+            >
+              <i class="fas fa-chart-line mr-2 text-primary-500"></i
+              >Estadísticas
+            </h6>
+            <div class="space-y-3">
+              <div
+                class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg"
+              >
+                <span class="text-accent-700 dark:text-accent-300 font-medium"
+                  >Fecha:</span
+                >
+                <span class="text-accent-800 dark:text-accent-200"
+                  >{{ training.fecha_creacion|date:"d/m/Y H:i" }}</span
+                >
+              </div>
+              <div
+                class="flex justify-between items-center p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg"
+              >
+                <span class="text-accent-700 dark:text-accent-300 font-medium"
+                  >Archivo:</span
+                >
+                <span class="text-accent-800 dark:text-accent-200"
+                  >{{ training.archivo_datos.name|default:"N/A" }}</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="bg-accent-50 dark:bg-accent-700/50 px-8 py-6 rounded-b-2xl flex justify-end space-x-4"
+    >
+      <button
+        type="button"
+        class="px-6 py-3 bg-accent-200 dark:bg-accent-600 text-accent-700 dark:text-accent-300 rounded-lg font-semibold hover:bg-accent-300 dark:hover:bg-accent-500 transition-colors duration-200"
+        onclick="closeDetailsModal({{ training.id }})"
+      >
+        Cerrar
+      </button>
+      <a
+        href="{% url 'perceptron_app:descargar_pesos' training.id %}"
+        class="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+      >
+        <i class="fas fa-download"></i>
+        <span>Descargar Pesos</span>
+      </a>
+    </div>
+  </div>
+</div>
 {% endfor %}
 
 <!-- Modal de confirmación de eliminación -->
-<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-accent-800 rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0" id="deleteModalContent">
-        <div class="p-6">
-            <!-- Icono de advertencia -->
-            <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/30 rounded-full">
-                <i class="fas fa-exclamation-triangle text-3xl text-red-600 dark:text-red-400"></i>
-            </div>
-            
-            <!-- Título -->
-            <h3 class="text-xl font-bold text-accent-800 dark:text-accent-200 text-center mb-2">
-                Confirmar Eliminación
-            </h3>
-            
-            <!-- Mensaje -->
-            <p class="text-accent-600 dark:text-accent-400 text-center mb-6" id="deleteModalMessage">
-                ¿Estás seguro de que quieres eliminar este entrenamiento?
+<div
+  id="deleteModal"
+  class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4"
+>
+  <div
+    class="bg-white dark:bg-accent-800 rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0"
+    id="deleteModalContent"
+  >
+    <div class="p-6">
+      <!-- Icono de advertencia -->
+      <div
+        class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/30 rounded-full"
+      >
+        <i
+          class="fas fa-exclamation-triangle text-3xl text-red-600 dark:text-red-400"
+        ></i>
+      </div>
+
+      <!-- Título -->
+      <h3
+        class="text-xl font-bold text-accent-800 dark:text-accent-200 text-center mb-2"
+      >
+        Confirmar Eliminación
+      </h3>
+
+      <!-- Mensaje -->
+      <p
+        class="text-accent-600 dark:text-accent-400 text-center mb-6"
+        id="deleteModalMessage"
+      >
+        ¿Estás seguro de que quieres eliminar este entrenamiento?
+      </p>
+
+      <!-- Información adicional -->
+      <div
+        class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6"
+      >
+        <div class="flex items-start space-x-3">
+          <i
+            class="fas fa-info-circle text-red-600 dark:text-red-400 mt-0.5"
+          ></i>
+          <div class="text-sm text-red-700 dark:text-red-300">
+            <p class="font-semibold mb-1">Esta acción no se puede deshacer</p>
+            <p>
+              También se eliminarán todas las predicciones asociadas a este
+              entrenamiento.
             </p>
-            
-            <!-- Información adicional -->
-            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-                <div class="flex items-start space-x-3">
-                    <i class="fas fa-info-circle text-red-600 dark:text-red-400 mt-0.5"></i>
-                    <div class="text-sm text-red-700 dark:text-red-300">
-                        <p class="font-semibold mb-1">Esta acción no se puede deshacer</p>
-                        <p>También se eliminarán todas las predicciones asociadas a este entrenamiento.</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Botones -->
-            <div class="flex space-x-3">
-                <button type="button" 
-                        onclick="closeDeleteModal()" 
-                        class="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-3 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 flex items-center justify-center space-x-2">
-                    <i class="fas fa-times"></i>
-                    <span>Cancelar</span>
-                </button>
-                <button type="button" 
-                        onclick="confirmDeleteAction()" 
-                        class="flex-1 bg-red-500 text-white px-4 py-3 rounded-xl font-semibold hover:bg-red-600 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl">
-                    <i class="fas fa-trash"></i>
-                    <span>Eliminar</span>
-                </button>
-            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="flex space-x-3">
+        <button
+          type="button"
+          onclick="closeDeleteModal()"
+          class="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-3 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 flex items-center justify-center space-x-2"
+        >
+          <i class="fas fa-times"></i>
+          <span>Cancelar</span>
+        </button>
+        <button
+          type="button"
+          onclick="confirmDeleteAction()"
+          class="flex-1 bg-red-500 text-white px-4 py-3 rounded-xl font-semibold hover:bg-red-600 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl"
+        >
+          <i class="fas fa-trash"></i>
+          <span>Eliminar</span>
+        </button>
+      </div>
     </div>
+  </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script>
-function loadForPrediction(trainingId) {
+  function loadForPrediction(trainingId) {
     // Redirigir a la página de predicciones con el ID específico del entrenamiento
-    window.location.href = "{% url 'perceptron_app:hacer_prediccion_con_id' training_id=0 %}".replace('0', trainingId);
-}
+    window.location.href =
+      "{% url 'perceptron_app:hacer_prediccion_con_id' training_id=0 %}".replace(
+        "0",
+        trainingId
+      );
+  }
 
-// Variables globales para el modal de eliminación
-let currentTrainingId = null;
-let currentTrainingName = '';
+  // Variables globales para el modal de eliminación
+  let currentTrainingId = null;
+  let currentTrainingName = "";
 
-function confirmDelete(trainingId, trainingName) {
+  function confirmDelete(trainingId, trainingName) {
     currentTrainingId = trainingId;
     currentTrainingName = trainingName;
-    
+
     // Actualizar el mensaje del modal
-    document.getElementById('deleteModalMessage').textContent = 
-        `¿Estás seguro de que quieres eliminar el entrenamiento "${trainingName}"?`;
-    
+    document.getElementById(
+      "deleteModalMessage"
+    ).textContent = `¿Estás seguro de que quieres eliminar el entrenamiento "${trainingName}"?`;
+
     // Mostrar el modal con animación
-    const modal = document.getElementById('deleteModal');
-    const modalContent = document.getElementById('deleteModalContent');
-    
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    document.body.style.overflow = 'hidden';
-    
+    const modal = document.getElementById("deleteModal");
+    const modalContent = document.getElementById("deleteModalContent");
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    document.body.style.overflow = "hidden";
+
     // Animar el modal
     setTimeout(() => {
-        modalContent.classList.remove('scale-95', 'opacity-0');
-        modalContent.classList.add('scale-100', 'opacity-100');
+      modalContent.classList.remove("scale-95", "opacity-0");
+      modalContent.classList.add("scale-100", "opacity-100");
     }, 10);
-}
+  }
 
-function closeDeleteModal() {
-    const modal = document.getElementById('deleteModal');
-    const modalContent = document.getElementById('deleteModalContent');
-    
+  function closeDeleteModal() {
+    const modal = document.getElementById("deleteModal");
+    const modalContent = document.getElementById("deleteModalContent");
+
     // Animar la salida
-    modalContent.classList.remove('scale-100', 'opacity-100');
-    modalContent.classList.add('scale-95', 'opacity-0');
-    
+    modalContent.classList.remove("scale-100", "opacity-100");
+    modalContent.classList.add("scale-95", "opacity-0");
+
     setTimeout(() => {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        document.body.style.overflow = 'auto';
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+      document.body.style.overflow = "auto";
     }, 300);
-}
+  }
 
-function confirmDeleteAction() {
+  function confirmDeleteAction() {
     if (currentTrainingId) {
-        // Crear formulario para enviar la eliminación
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = "{% url 'perceptron_app:eliminar_entrenamiento' training_id=0 %}".replace('0', currentTrainingId);
-        
-        // Agregar token CSRF
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrfmiddlewaretoken';
-        csrfInput.value = csrfToken;
-        form.appendChild(csrfInput);
-        
-        // Cerrar modal
-        closeDeleteModal();
-        
-        // Enviar formulario
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
+      // Crear formulario para enviar la eliminación
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action =
+        "{% url 'perceptron_app:eliminar_entrenamiento' training_id=0 %}".replace(
+          "0",
+          currentTrainingId
+        );
 
-// Cerrar modal al hacer clic fuera de él
-document.addEventListener('DOMContentLoaded', function() {
-    const deleteModal = document.getElementById('deleteModal');
+      // Agregar token CSRF
+      const csrfToken = document.querySelector(
+        "[name=csrfmiddlewaretoken]"
+      ).value;
+      const csrfInput = document.createElement("input");
+      csrfInput.type = "hidden";
+      csrfInput.name = "csrfmiddlewaretoken";
+      csrfInput.value = csrfToken;
+      form.appendChild(csrfInput);
+
+      // Cerrar modal
+      closeDeleteModal();
+
+      // Enviar formulario
+      document.body.appendChild(form);
+      form.submit();
+    }
+  }
+
+  // Cerrar modal al hacer clic fuera de él
+  document.addEventListener("DOMContentLoaded", function () {
+    const deleteModal = document.getElementById("deleteModal");
     if (deleteModal) {
-        deleteModal.addEventListener('click', function(e) {
-            if (e.target === deleteModal) {
-                closeDeleteModal();
-            }
-        });
+      deleteModal.addEventListener("click", function (e) {
+        if (e.target === deleteModal) {
+          closeDeleteModal();
+        }
+      });
     }
-    
+
     // Cerrar modal con tecla Escape
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeDeleteModal();
-        }
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        closeDeleteModal();
+      }
     });
-});
+  });
 
-function openDetailsModal(trainingId) {
-    const modal = document.getElementById('detailsModal' + trainingId);
+  function openDetailsModal(trainingId) {
+    const modal = document.getElementById("detailsModal" + trainingId);
     if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        document.body.style.overflow = 'hidden';
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      document.body.style.overflow = "hidden";
     }
-}
+  }
 
-function closeDetailsModal(trainingId) {
-    const modal = document.getElementById('detailsModal' + trainingId);
+  function closeDetailsModal(trainingId) {
+    const modal = document.getElementById("detailsModal" + trainingId);
     if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        document.body.style.overflow = 'auto';
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+      document.body.style.overflow = "auto";
     }
-}
+  }
 
-// Búsqueda en tiempo real
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.createElement('input');
-    searchInput.type = 'text';
-    searchInput.className = 'w-full px-4 py-3 bg-accent-50 dark:bg-accent-700 border border-accent-200 dark:border-accent-600 rounded-xl text-accent-800 dark:text-accent-200 placeholder-accent-500 dark:placeholder-accent-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 mb-6';
-    searchInput.placeholder = 'Buscar entrenamientos...';
-    
-    const table = document.querySelector('table');
+  // Búsqueda en tiempo real
+  document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.createElement("input");
+    searchInput.type = "text";
+    searchInput.className =
+      "w-full px-4 py-3 bg-accent-50 dark:bg-accent-700 border border-accent-200 dark:border-accent-600 rounded-xl text-accent-800 dark:text-accent-200 placeholder-accent-500 dark:placeholder-accent-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 mb-6";
+    searchInput.placeholder = "Buscar entrenamientos...";
+
+    const table = document.querySelector("table");
     if (table) {
-        table.parentNode.insertBefore(searchInput, table);
-        
-        searchInput.addEventListener('input', function() {
-            const filter = this.value.toLowerCase();
-            const rows = table.querySelectorAll('tbody tr');
-            
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                if (text.includes(filter)) {
-                    row.style.display = '';
-                    row.classList.add('animate-fadeInUp');
-                } else {
-                    row.style.display = 'none';
-                    row.classList.remove('animate-fadeInUp');
-                }
-            });
+      table.parentNode.insertBefore(searchInput, table);
+
+      searchInput.addEventListener("input", function () {
+        const filter = this.value.toLowerCase();
+        const rows = table.querySelectorAll("tbody tr");
+
+        rows.forEach((row) => {
+          const text = row.textContent.toLowerCase();
+          if (text.includes(filter)) {
+            row.style.display = "";
+            row.classList.add("animate-fadeInUp");
+          } else {
+            row.style.display = "none";
+            row.classList.remove("animate-fadeInUp");
+          }
         });
+      });
     }
-    
+
     // Cerrar modales con Escape
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            const openModals = document.querySelectorAll('[id^="detailsModal"]:not(.hidden)');
-            openModals.forEach(modal => {
-                const trainingId = modal.id.replace('detailsModal', '');
-                closeDetailsModal(trainingId);
-            });
-        }
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        const openModals = document.querySelectorAll(
+          '[id^="detailsModal"]:not(.hidden)'
+        );
+        openModals.forEach((modal) => {
+          const trainingId = modal.id.replace("detailsModal", "");
+          closeDetailsModal(trainingId);
+        });
+      }
     });
-});
+  });
 </script>
 {% endblock %}

@@ -112,10 +112,48 @@
                         </div>
                         <div>
                             <h6 class="font-semibold text-accent-800 mb-3">Vista previa:</h6>
-                            <div class="bg-accent-50 rounded-lg p-4 max-h-40 overflow-y-auto">
-                                <div class="text-sm text-accent-600">
-                                    {{ uploaded_data.preview|safe }}
-                                </div>
+                            <div class="bg-white rounded-lg overflow-hidden" style="max-height: 300px;">
+                                <!-- Tabla construida con Django template syntax -->
+                                {% if uploaded_data.preview_data %}
+                                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto; overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+                                        <table class="tabla-vista-previa" style="width: 100%; border-collapse: collapse; margin: 0; font-size: 0.75rem;">
+                                            <thead style="background-color: #374151; color: white; position: sticky; top: 0; z-index: 10;">
+                                                <tr>
+                                                    {% for column in uploaded_data.columns %}
+                                                        <th style="padding: 8px 6px; text-align: center; border: 1px solid #4b5563; font-weight: 600; font-size: 0.75rem;">{{ column }}</th>
+                                                    {% endfor %}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% if uploaded_data.preview_data %}
+                                                    {% for row in uploaded_data.preview_data %}
+                                                        {% if forloop.counter0|divisibleby:2 %}
+                                                            <tr style="background-color: #f9fafb;" onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='#f9fafb'">
+                                                        {% else %}
+                                                            <tr style="background-color: white;" onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='white'">
+                                                        {% endif %}
+                                                            {% for cell in row %}
+                                                                {% if cell.is_numeric %}
+                                                                    <td style="padding: 6px 4px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; white-space: nowrap; max-width: 80px; overflow: hidden; text-overflow: ellipsis; font-size: 0.75rem;">{{ cell.value }}</td>
+                                                                {% else %}
+                                                                    <td style="padding: 6px 4px; border: 1px solid #e5e7eb; text-align: center; white-space: nowrap; max-width: 80px; overflow: hidden; text-overflow: ellipsis; font-size: 0.75rem;">{{ cell.value }}</td>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </tr>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <tr>
+                                                        <td colspan="{{ uploaded_data.columns|length }}" style="padding: 12px; text-align: center; color: #6b7280; font-size: 0.75rem;">
+                                                            No hay datos de vista previa disponibles
+                                                        </td>
+                                                    </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <p class="text-sm text-accent-600 p-4">No hay datos para mostrar</p>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
