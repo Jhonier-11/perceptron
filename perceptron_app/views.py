@@ -20,6 +20,34 @@ from .perceptron import PerceptronSimple
 from .forms import DataUploadForm, TrainingConfigForm, PredictionForm
 
 
+def convertir_a_tipos_nativos(obj):
+    """
+    Convierte objetos de NumPy y pandas a tipos nativos de Python para serialización JSON
+    
+    Args:
+        obj: Objeto a convertir
+        
+    Returns:
+        Objeto convertido a tipos nativos de Python
+    """
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, pd.Series):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {key: convertir_a_tipos_nativos(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [convertir_a_tipos_nativos(item) for item in obj]
+    elif isinstance(obj, tuple):
+        return tuple(convertir_a_tipos_nativos(item) for item in obj)
+    else:
+        return obj
+
+
 def generar_tabla_html_vista_previa(df, max_rows=20):
     """
     Genera una tabla HTML bien estructurada para la vista previa de datos
@@ -198,7 +226,18 @@ def cargar_datos(request):
                 elif file_extension == 'xlsx':
                     df = pd.read_excel(file)
                 elif file_extension == 'json':
-                    df = pd.read_json(file)
+                    try:
+                        df = pd.read_json(file)
+                        # Si el JSON tiene una estructura anidada, intentar normalizarla
+                        if isinstance(df, pd.DataFrame) and len(df.columns) == 1:
+                            # Si solo hay una columna, podría ser una lista de objetos
+                            first_col = df.iloc[:, 0]
+                            if isinstance(first_col.iloc[0], dict):
+                                # Normalizar la lista de diccionarios
+                                df = pd.json_normalize(df.iloc[:, 0].tolist())
+                    except Exception as e:
+                        messages.error(request, f'Error al leer el archivo JSON: {str(e)}')
+                        return render(request, 'perceptron_app/upload_data.html', {'form': form})
                 elif file_extension == 'txt':
                     # Detectar automáticamente el separador del archivo de texto
                     df = detectar_separador_csv_y_leer(file)
@@ -223,10 +262,13 @@ def cargar_datos(request):
                 column_info = []
                 for col in df.columns:
                     is_numeric = pd.api.types.is_numeric_dtype(df[col])
+                    sample_values = df[col].head(3).tolist()
+                    # Convertir valores de muestra a tipos nativos
+                    sample_values = convertir_a_tipos_nativos(sample_values)
                     column_info.append({
                         'name': col,
                         'is_numeric': is_numeric,
-                        'sample_values': df[col].head(3).tolist()
+                        'sample_values': sample_values
                     })
                 
                 # Crear vista previa mejorada con más filas y estadísticas
@@ -239,20 +281,21 @@ def cargar_datos(request):
                     if pd.api.types.is_numeric_dtype(df[col]):
                         stats = {
                             'name': col,
-                            'count': df[col].count(),
-                            'mean': round(df[col].mean(), 3) if not df[col].isna().all() else None,
-                            'std': round(df[col].std(), 3) if not df[col].isna().all() else None,
-                            'min': round(df[col].min(), 3) if not df[col].isna().all() else None,
-                            'max': round(df[col].max(), 3) if not df[col].isna().all() else None,
-                            'missing': df[col].isna().sum()
+                            'count': int(df[col].count()),
+                            'mean': round(float(df[col].mean()), 3) if not df[col].isna().all() else None,
+                            'std': round(float(df[col].std()), 3) if not df[col].isna().all() else None,
+                            'min': round(float(df[col].min()), 3) if not df[col].isna().all() else None,
+                            'max': round(float(df[col].max()), 3) if not df[col].isna().all() else None,
+                            'missing': int(df[col].isna().sum())
                         }
                     else:
+                        most_common = df[col].mode().iloc[0] if not df[col].isna().all() else None
                         stats = {
                             'name': col,
-                            'count': df[col].count(),
-                            'unique': df[col].nunique(),
-                            'missing': df[col].isna().sum(),
-                            'most_common': df[col].mode().iloc[0] if not df[col].isna().all() else None
+                            'count': int(df[col].count()),
+                            'unique': int(df[col].nunique()),
+                            'missing': int(df[col].isna().sum()),
+                            'most_common': convertir_a_tipos_nativos(most_common)
                         }
                     stats_info.append(stats)
 
@@ -272,16 +315,19 @@ def cargar_datos(request):
                         # Determinar el tipo y formatear el valor
                         if pd.api.types.is_numeric_dtype(type(value)) and not pd.isna(value):
                             formatted_value = f'{value:.4f}' if isinstance(value, float) else str(value)
+                            # Convertir valor crudo a tipo nativo
+                            raw_value = convertir_a_tipos_nativos(value)
                             row_data.append({
                                 'value': formatted_value,
                                 'is_numeric': True,
-                                'raw_value': value
+                                'raw_value': raw_value
                             })
                         else:
+                            raw_value = convertir_a_tipos_nativos(value)
                             row_data.append({
                                 'value': str(value) if not pd.isna(value) else 'N/A',
                                 'is_numeric': False,
-                                'raw_value': value
+                                'raw_value': raw_value
                             })
                     preview_data.append(row_data)
                     
@@ -291,15 +337,20 @@ def cargar_datos(request):
                     print(f"DEBUG: first row sample: {preview_data[0][:3] if len(preview_data[0]) > 0 else 'empty'}")
 
                 # Guardar información del archivo en la sesión (sin los datos completos)
-                request.session['uploaded_data'] = {
+                # Convertir todos los datos a tipos nativos antes de guardar en la sesión
+                uploaded_data = {
                     'filename': file.name,
                     'columns': df.columns.tolist(),
-                    'shape': df.shape,
+                    'shape': list(df.shape),  # Convertir tupla a lista
                     'preview_data': preview_data,
                     'column_info': column_info,
                     'stats_info': stats_info,
                     'preview_rows': preview_rows
                 }
+                
+                # Asegurar que todos los datos sean serializables
+                uploaded_data = convertir_a_tipos_nativos(uploaded_data)
+                request.session['uploaded_data'] = uploaded_data
                 
                 # Guardar la ruta del archivo
                 request.session['file_path'] = file_path
@@ -433,7 +484,18 @@ def entrenar_perceptron(request):
             elif file_extension == 'xlsx':
                 df = pd.read_excel(file_path)
             elif file_extension == 'json':
-                df = pd.read_json(file_path)
+                try:
+                    df = pd.read_json(file_path)
+                    # Si el JSON tiene una estructura anidada, intentar normalizarla
+                    if isinstance(df, pd.DataFrame) and len(df.columns) == 1:
+                        # Si solo hay una columna, podría ser una lista de objetos
+                        first_col = df.iloc[:, 0]
+                        if isinstance(first_col.iloc[0], dict):
+                            # Normalizar la lista de diccionarios
+                            df = pd.json_normalize(df.iloc[:, 0].tolist())
+                except Exception as e:
+                    messages.error(request, f'Error al leer el archivo JSON: {str(e)}')
+                    return redirect('perceptron_app:cargar_datos')
             elif file_extension == 'txt':
                 # Usar detección automática de separador
                 try:
@@ -500,11 +562,11 @@ def entrenar_perceptron(request):
             # Entrenar (los pesos se inicializarán automáticamente en la función entrenar)
             training_results = perceptron.entrenar(X, y)
             
-            # Los datos ya vienen convertidos desde el perceptrón
-            pesos_finales = training_results['pesos_finales']
-            sesgo_final = training_results['sesgo_final']
-            errores_entrenamiento = training_results['errores_entrenamiento']
-            evolucion_pesos = training_results['evolucion_pesos']
+            # Los datos ya vienen convertidos desde el perceptrón, pero asegurar serialización
+            pesos_finales = convertir_a_tipos_nativos(training_results['pesos_finales'])
+            sesgo_final = convertir_a_tipos_nativos(training_results['sesgo_final'])
+            errores_entrenamiento = convertir_a_tipos_nativos(training_results['errores_entrenamiento'])
+            evolucion_pesos = convertir_a_tipos_nativos(training_results['evolucion_pesos'])
             
             # Guardar en la base de datos
             training_record = PerceptronTraining.objects.create(
@@ -527,7 +589,7 @@ def entrenar_perceptron(request):
             weights_plot = perceptron.crear_grafico_pesos()
             
             # Guardar gráficos en la sesión
-            request.session['training_results'] = {
+            training_results_session = {
                 'training_id': training_record.id,
                 'error_plot': error_plot,
                 'weights_plot': weights_plot,
@@ -535,6 +597,10 @@ def entrenar_perceptron(request):
                 'converged': training_results['converged'],
                 'iteraciones_utilizadas': training_results['iteraciones_utilizadas']
             }
+            
+            # Asegurar que los datos de la sesión sean serializables
+            training_results_session = convertir_a_tipos_nativos(training_results_session)
+            request.session['training_results'] = training_results_session
             
             # Limpiar archivo temporal después del entrenamiento
             try:
@@ -675,13 +741,13 @@ def descargar_pesos(request, training_id):
     datos_pesos = {
         'training_name': training.nombre,
         'created_at': training.fecha_creacion.isoformat(),
-        'learning_rate': training.tasa_aprendizaje,
-        'iteraciones': training.iteraciones,
+        'learning_rate': float(training.tasa_aprendizaje),
+        'iteraciones': int(training.iteraciones),
         'input_columns': training.columnas_entrada,
         'output_columns': training.columnas_salida,
-        'final_weights': training.pesos_finales,
-        'final_bias': training.sesgo_final,
-        'accuracy': training.precision
+        'final_weights': convertir_a_tipos_nativos(training.pesos_finales),
+        'final_bias': float(training.sesgo_final),
+        'accuracy': float(training.precision)
     }
     
     response = HttpResponse(
@@ -731,8 +797,8 @@ def detalles_entrenamiento(request, training_id):
             error_rate = training.errores_entrenamiento[i] / len(training.columnas_entrada) if i < len(training.errores_entrenamiento) else 0
             accuracy = max(0, (1 - error_rate) * 100)
             accuracy_data.append({
-                'epoch': epoch_data['iteracion'],
-                'accuracy': round(accuracy, 2)
+                'epoch': int(epoch_data['iteracion']),
+                'accuracy': round(float(accuracy), 2)
             })
 
     context = {
@@ -798,7 +864,7 @@ def ajax_entrenar(request):
         
         return JsonResponse({
             'success': True,
-            'results': results
+            'results': convertir_a_tipos_nativos(results)
         })
         
     except Exception as e:
