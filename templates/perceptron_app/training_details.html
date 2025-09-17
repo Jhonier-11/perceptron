@@ -86,8 +86,11 @@ Entrenamiento - {{ training.nombre }}{% endblock %} {% block content %}
             <div>
               <p class="text-orange-600 text-sm font-semibold">Estado</p>
               <p class="text-lg font-bold text-orange-800">
-                {% if convergence_epoch %}Convergente{% else %}No Convergente{%
-                {% endif %} %}
+                {% if convergence_epoch %}
+                  Convergente
+                {% else %}
+                  No Convergente  
+                {% endif %}
               </p>
             </div>
             <i class="fas fa-check-circle text-3xl text-orange-500"></i>
@@ -172,6 +175,22 @@ Entrenamiento - {{ training.nombre }}{% endblock %} {% block content %}
           <img
             src="data:image/png;base64,{{ weights_plot }}"
             alt="Gráfico de evolución de los pesos"
+            class="w-full rounded-lg"
+          />
+        </div>
+      </div>
+      {% endif %}
+      {% if error_patron_plot %}
+      <div
+        class="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-xl p-6 mb-8"
+      >
+        <h5 class="text-xl font-bold text-yellow-800 mb-6 flex items-center">
+          <i class="fas fa-balance-scale mr-3"></i>Evolución del Error por Patrón
+        </h5>
+        <div class="bg-white rounded-lg p-4 shadow-inner">
+          <img
+            src="data:image/png;base64,{{ error_patron_plot }}"
+            alt="Gráfico de evolución del error por patrón"
             class="w-full rounded-lg"
           />
         </div>

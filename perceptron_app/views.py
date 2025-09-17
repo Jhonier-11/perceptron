@@ -566,6 +566,7 @@ def entrenar_perceptron(request):
             pesos_finales = convertir_a_tipos_nativos(training_results['pesos_finales'])
             sesgo_final = convertir_a_tipos_nativos(training_results['sesgo_final'])
             errores_entrenamiento = convertir_a_tipos_nativos(training_results['errores_entrenamiento'])
+            errores_patron = convertir_a_tipos_nativos(training_results['errores_patron'])
             evolucion_pesos = convertir_a_tipos_nativos(training_results['evolucion_pesos'])
             
             # Guardar en la base de datos
@@ -580,6 +581,7 @@ def entrenar_perceptron(request):
                 sesgo_final=sesgo_final,
                 precision=training_results['precision'],
                 errores_entrenamiento=errores_entrenamiento,
+                errores_patron=errores_patron,
                 evolucion_pesos=evolucion_pesos,
                 archivo_datos=None  # No guardamos el archivo original en la base de datos
             )
@@ -587,12 +589,14 @@ def entrenar_perceptron(request):
             # Generar gráficos
             error_plot = perceptron.crear_grafico_errores()
             weights_plot = perceptron.crear_grafico_pesos()
+            error_patron_plot = perceptron.crear_grafico_error_patron()
             
             # Guardar gráficos en la sesión
             training_results_session = {
                 'training_id': training_record.id,
                 'error_plot': error_plot,
                 'weights_plot': weights_plot,
+                'error_patron_plot': error_patron_plot,
                 'summary': perceptron.obtener_resumen_entrenamiento(),
                 'converged': training_results['converged'],
                 'iteraciones_utilizadas': training_results['iteraciones_utilizadas']
@@ -642,6 +646,7 @@ def resultados_entrenamiento(request):
         'training_record': training_record,
         'error_plot': training_results['error_plot'],
         'weights_plot': training_results['weights_plot'],
+        'error_patron_plot': training_results['error_patron_plot'],
         'summary': training_results['summary'],
         'converged': training_results['converged'],
         'epochs_used': training_results['iteraciones_utilizadas']
@@ -770,12 +775,14 @@ def detalles_entrenamiento(request, training_id):
     perceptron.pesos = np.array(training.pesos_finales)
     perceptron.sesgo = training.sesgo_final
     perceptron.errores_entrenamiento = training.errores_entrenamiento
+    perceptron.errores_patron = training.errores_patron if training.errores_patron else []
     perceptron.evolucion_pesos = training.evolucion_pesos
 
     # Generar visualizaciones
     error_plot = perceptron.crear_grafico_errores()
     weights_plot = perceptron.crear_grafico_pesos()
     network_diagram = perceptron.crear_diagrama_red()
+    error_patron_plot = perceptron.crear_grafico_error_patron()
 
     # Calcular estadísticas adicionales
     total_iterations = len(training.errores_entrenamiento)
@@ -805,6 +812,7 @@ def detalles_entrenamiento(request, training_id):
         'training': training,
         'error_plot': error_plot,
         'weights_plot': weights_plot,
+        'error_patron_plot': error_patron_plot,
         'network_diagram': network_diagram,
         'total_iterations': total_iterations,
         'final_error': final_error,

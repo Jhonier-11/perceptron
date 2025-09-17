@@ -30,6 +30,7 @@ class PerceptronSimple:
         self.pesos = pesos_iniciales
         self.sesgo = sesgo_inicial if sesgo_inicial is not None else 0.0
         self.errores_entrenamiento = []
+        self.errores_patron = []
         self.evolucion_pesos = []
         print(f"Perceptrón inicializado - pesos: {self.pesos}")
     
@@ -41,6 +42,7 @@ class PerceptronSimple:
         self.pesos = None
         self.sesgo = 0.0
         self.errores_entrenamiento = []
+        self.errores_patron = []
         self.evolucion_pesos = []
         print(f"Estado limpiado - pesos después: {self.pesos}")
         
@@ -155,6 +157,7 @@ class PerceptronSimple:
         
         # Listas para almacenar el progreso del entrenamiento
         self.errores_entrenamiento = []
+        self.errores_patron = []
         self.evolucion_pesos = []
         
         print(f"Iniciando entrenamiento del perceptrón...")
@@ -168,7 +171,7 @@ class PerceptronSimple:
         # Entrenamiento por iteraciones
         for iteracion in range(self.max_iteraciones):
             errores_iteracion = 0
-            
+            error_patron = 0
             # Guardar pesos actuales para visualización
             self.evolucion_pesos.append({
                 'iteracion': iteracion + 1,
@@ -181,7 +184,7 @@ class PerceptronSimple:
                 # Predicción actual
                 prediccion = self._predecir_individual(X[i])
                 
-                # Calcular error
+                # Calcular error lineal
                 error = y[i] - prediccion
                 
                 # Actualizar pesos y sesgo si hay error
@@ -190,12 +193,13 @@ class PerceptronSimple:
                     self.pesos += self.tasa_aprendizaje * error * X[i]
                     self.sesgo += self.tasa_aprendizaje * error
                     errores_iteracion += 1
+                    error_patron += error
             
             # Guardar error de la iteración
             self.errores_entrenamiento.append(errores_iteracion)
-            
-            # Calcular error relativo (errores por muestra)
-            tasa_error = errores_iteracion / num_muestras
+            self.errores_patron.append(error_patron)
+            # Calcular error del patron (errores por muestra)
+            tasa_error = error_patron / num_muestras
             
             # Mostrar progreso cada 10 iteraciones
             if (iteracion + 1) % 10 == 0 or iteracion == 0:
@@ -227,6 +231,7 @@ class PerceptronSimple:
             'sesgo_final': float(self.sesgo),
             'precision': precision,
             'errores_entrenamiento': self.errores_entrenamiento,
+            'errores_patron': self.errores_patron,
             'evolucion_pesos': self.evolucion_pesos,
             'converged': errores_iteracion == 0,
             'iteraciones_utilizadas': iteracion + 1
@@ -246,6 +251,7 @@ class PerceptronSimple:
                     === RESUMEN DEL ENTRENAMIENTO ===
                     Tasa de aprendizaje: {self.tasa_aprendizaje}
                     Iteraciones utilizadas: {len(self.errores_entrenamiento)}
+                    Errores patrón: {self.errores_patron}
                     Pesos finales: {[f'{w:.3f}' for w in self.pesos]}
                     Sesgo final: {self.sesgo:.3f}
                     Número de características: {len(self.pesos)}
@@ -295,7 +301,7 @@ class PerceptronSimple:
             return None
 
         fig, ax = plt.subplots(figsize=(12, 8))
-        ax.set_xlim(0, 10)
+        ax.set_xlim(0, 8)
         ax.set_ylim(0, 10)
         ax.axis('off')
 
@@ -304,9 +310,9 @@ class PerceptronSimple:
         num_outputs = 1  # Perceptrón simple tiene una salida
 
         # Posiciones de las neuronas
-        input_positions = [(2, 9 - i * 8 / max(1, num_inputs - 1)) for i in range(num_inputs)]
-        hidden_position = (6, 5)
-        output_position = (10, 5)
+        input_positions = [(1.5, 9 - i * 8 / max(1, num_inputs - 1)) for i in range(num_inputs)]
+        hidden_position = (4, 5)
+        output_position = (6.5, 5)
 
         # Dibujar neuronas de entrada
         for i, (x, y) in enumerate(input_positions):
@@ -328,8 +334,12 @@ class PerceptronSimple:
         for i, (x, y) in enumerate(input_positions):
             weight = self.pesos[i]
             color = 'red' if weight < 0 else 'blue'
+            # Asegurar que las líneas sean visibles con transparencia mínima
             alpha = min(1.0, abs(weight) / 2.0)  # Transparencia basada en magnitud del peso
-            linewidth = 1 + abs(weight) * 2  # Grosor basado en magnitud del peso
+            linewidth = 1 + abs(weight) * 2  # Grosor basado en magnitud del peso       
+
+            # alpha = max(0.6, min(1.0, abs(weight) / 2.0))  # Transparencia basada en magnitud del peso
+            # linewidth = max(1.5, 1 + abs(weight) * 2)  # Grosor mínimo garantizado
 
             ax.plot([x, hidden_position[0]], [y, hidden_position[1]],
                    color=color, linewidth=linewidth, alpha=alpha)
@@ -356,9 +366,9 @@ class PerceptronSimple:
         # Leyenda
         ax.text(1, 1, 'Entrada', fontsize=10, ha='center', va='center',
                bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue"))
-        ax.text(6, 9.5, 'Perceptrón', fontsize=10, ha='center', va='center',
+        ax.text(4, 9.5, 'Perceptrón', fontsize=10, ha='center', va='center',
                bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgreen"))
-        ax.text(10, 9.5, 'Salida', fontsize=10, ha='center', va='center',
+        ax.text(6.5, 9.5, 'Salida', fontsize=10, ha='center', va='center',
                bbox=dict(boxstyle="round,pad=0.3", facecolor="lightcoral"))
 
         # Convertir a base64
@@ -439,6 +449,33 @@ class PerceptronSimple:
         plt.xlabel('Iteración', fontsize=12)
         plt.ylabel('Valor del Peso', fontsize=12)
         plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        
+        # Convertir a base64
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight')
+        buffer.seek(0)
+        image_base64 = base64.b64encode(buffer.getvalue()).decode()
+        plt.close()
+        
+        return image_base64
+
+    def crear_grafico_error_patron(self) -> str:
+        """
+        Crea un gráfico de la evolución del error patrón durante el entrenamiento
+        
+        Returns:
+            str: Imagen codificada en base64
+        """
+        if not self.errores_patron:
+            return None
+        
+        plt.figure(figsize=(12, 8))
+        plt.plot(range(1, len(self.errores_patron) + 1), self.errores_patron, 'b-', linewidth=2)
+        plt.title('Evolución del Error por Patrón durante el Entrenamiento', fontsize=14, fontweight='bold')
+        plt.xlabel('Iteración', fontsize=12)
+        plt.ylabel('Error por Patrón', fontsize=12)
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
         

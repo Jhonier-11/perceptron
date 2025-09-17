@@ -28,6 +28,7 @@ class PerceptronTraining(models.Model):
     sesgo_final = models.FloatField(verbose_name="Sesgo final")
     precision = models.FloatField(verbose_name="Precisión final")
     errores_entrenamiento = models.JSONField(verbose_name="Errores por época")
+    errores_patron = models.JSONField(verbose_name="Errores por patrón", null=True, blank=True)
     evolucion_pesos = models.JSONField(verbose_name="Evolución de pesos")
     
     # Archivo de datos original

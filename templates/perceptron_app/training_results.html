@@ -177,8 +177,29 @@
             </div>
         </div>
     </div>
-</div>
-
+    </div>
+    
+    <!-- Gráfico de evolución del error por patrón -->
+    {% if error_patron_plot %}
+    <div class="mt-8">
+        <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden animate-fadeInUp" style="animation-delay: 0.3s;">
+            <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 px-6 py-4">
+                <h5 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-balance-scale mr-3"></i>Evolución del Error por Patrón
+                </h5>
+            </div>
+            <div class="p-6">
+                <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-xl p-6">
+                    <div class="text-center">
+                        <img src="data:image/png;base64,{{ error_patron_plot }}" 
+                             class="w-full rounded-lg shadow-lg" alt="Evolución del Error por Patrón">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
     <!-- Log detallado del entrenamiento -->
     <div class="mt-8">
         <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden animate-fadeInUp" style="animation-delay: 0.4s;">
