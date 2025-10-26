@@ -1,14 +1,51 @@
+# Python
 __pycache__/
-db.sqlite3
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# FastAPI
+*.db
+*.sqlite
+*.sqlite3
+dev.db
+
+# Environment variables
 .env
+.env.dev
+.env.prod
+.env.local
+.env.*.local
+
+# Alembic
+alembic/versions/*.pyc
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker
+*.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
 .DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.development
-.env.test
-.env.production
-.env.local
-.env.development.local
-.env.test.local
+Thumbs.db
+
+# Logs
+logs/
+*.log
