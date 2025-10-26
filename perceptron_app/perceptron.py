@@ -221,7 +221,7 @@ class PerceptronSimple:
             # Parar si se alcanza el error máximo permitido o convergencia total
             if tasa_error <= self.error_maximo:
                 if errores_iteracion == 0:
-                    print(f"\n¡Convergencia total alcanzada en la iteración {iteracion + 1}!")
+                    print(f"\n¡Convergencia total alcanzada en la iteración {iteracion + 1}! con un error de iteración de {tasa_error:.3f}")
                 else:
                     print(f"\n¡Error objetivo alcanzado en la iteración {iteracion + 1}! "
                           f"Error de iteración: {tasa_error:.3f} <= {self.error_maximo}")
