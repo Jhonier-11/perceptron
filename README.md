@@ -92,7 +92,7 @@ Una implementación completa del algoritmo de perceptrón simple desde cero, con
 ## 📊 Ejemplo: Compuerta Lógica AND
 
 La aplicación incluye un ejemplo de la compuerta lógica AND:
-
+source D:/blute/Anaconda/Scripts/activate ia
 | x1 | x2 | y (AND) |
 |----|----|---------|
 | 0  | 0  | 0       |
