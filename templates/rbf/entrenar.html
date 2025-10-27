@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Entrenamiento RBF - IA{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Breadcrumb -->
+    <nav class="mb-6 flex items-center space-x-2 text-sm text-accent-600">
+        <a href="{% url 'rbf:inicio_rbf' %}" class="hover:text-primary-600 transition-colors">Inicio</a>
+        <i class="fas fa-chevron-right"></i>
+        <span class="text-accent-800 font-medium">Entrenamiento</span>
+    </nav>
+
+    <!-- Summary Card -->
+    <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8 mb-8">
+        <h1 class="text-3xl font-bold text-accent-800 mb-6">
+            <i class="fas fa-play-circle mr-3 text-primary-600"></i>Entrenar Red RBF
+        </h1>
+
+        <!-- Config Summary -->
+        <div class="bg-gradient-to-r from-primary-50 to-blue-50 rounded-xl p-6 mb-6">
+            <h3 class="font-semibold text-accent-800 mb-4">
+                <i class="fas fa-info-circle mr-2"></i>Configuración del Entrenamiento
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <p class="text-sm text-accent-600">Nombre</p>
+                    <p class="font-semibold text-accent-800">{{ training_config.nombre_entrenamiento }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-accent-600">Centros</p>
+                    <p class="font-semibold text-primary-600">{{ training_config.num_centros }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-accent-600">Entrenamiento</p>
+                    <p class="font-semibold text-green-600">{{ training_config.porcentaje_entrenamiento|floatformat:0 }}%</p>
+                </div>
+                <div>
+                    <p class="text-sm text-accent-600">Error Objetivo</p>
+                    <p class="font-semibold text-blue-600">{{ training_config.error_aproximacion }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Start Training Form -->
+        <form method="post" class="text-center">
+            {% csrf_token %}
+            <button type="submit" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:from-green-600 hover:to-green-700 transition-all shadow-xl hover:shadow-2xl">
+                <i class="fas fa-play mr-2"></i>Iniciar Entrenamiento
+            </button>
+        </form>
+    </div>
+
+    <!-- Info Card -->
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
+        <h3 class="font-semibold text-blue-800 mb-3">
+            <i class="fas fa-lightbulb mr-2"></i>¿Qué pasará durante el entrenamiento?
+        </h3>
+        <ul class="space-y-2 text-sm text-blue-700">
+            <li><i class="fas fa-check mr-2"></i>División de datos en entrenamiento y prueba</li>
+            <li><i class="fas fa-check mr-2"></i>Normalización de las características de entrada</li>
+            <li><i class="fas fa-check mr-2"></i>Inicialización de {{ training_config.num_centros }} centros radiales</li>
+            <li><i class="fas fa-check mr-2"></i>Cálculo de distancias y activaciones radiales</li>
+            <li><i class="fas fa-check mr-2"></i>Resolución de pesos mediante mínimos cuadrados</li>
+            <li><i class="fas fa-check mr-2"></i>Cálculo de métricas (EG, MAE, RMSE)</li>
+            <li><i class="fas fa-check mr-2"></i>Generación de gráficos de visualización</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+

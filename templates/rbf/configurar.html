@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurar Entrenamiento RBF - IA{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Breadcrumb -->
+    <nav class="mb-6 flex items-center space-x-2 text-sm text-accent-600">
+        <a href="{% url 'rbf:inicio_rbf' %}" class="hover:text-primary-600 transition-colors">Inicio</a>
+        <i class="fas fa-chevron-right"></i>
+        <span class="text-accent-800 font-medium">Configurar</span>
+    </nav>
+
+    <!-- Header -->
+    <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8 mb-8">
+        <h1 class="text-3xl font-bold text-accent-800 mb-2">
+            <i class="fas fa-cog mr-3 text-primary-600"></i>Configurar Entrenamiento
+        </h1>
+        <p class="text-accent-600">Configura los parámetros de la red RBF</p>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Nombre -->
+            <div>
+                <label class="block text-sm font-medium text-accent-700 mb-2">
+                    <i class="fas fa-tag mr-2"></i>{{ form.nombre_entrenamiento.label }}
+                </label>
+                {{ form.nombre_entrenamiento }}
+            </div>
+
+            <!-- Parámetros Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Num Centros -->
+                <div>
+                    <label class="block text-sm font-medium text-accent-700 mb-2">
+                        <i class="fas fa-project-diagram mr-2"></i>{{ form.num_centros.label }}
+                    </label>
+                    {{ form.num_centros }}
+                    {% if form.num_centros.help_text %}
+                    <p class="mt-1 text-xs text-accent-500">{{ form.num_centros.help_text }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Porcentaje -->
+                <div>
+                    <label class="block text-sm font-medium text-accent-700 mb-2">
+                        <i class="fas fa-percentage mr-2"></i>{{ form.porcentaje_entrenamiento.label }}
+                    </label>
+                    {{ form.porcentaje_entrenamiento }}
+                    {% if form.porcentaje_entrenamiento.help_text %}
+                    <p class="mt-1 text-xs text-accent-500">{{ form.porcentaje_entrenamiento.help_text }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Error -->
+                <div>
+                    <label class="block text-sm font-medium text-accent-700 mb-2">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>{{ form.error_aproximacion.label }}
+                    </label>
+                    {{ form.error_aproximacion }}
+                    {% if form.error_aproximacion.help_text %}
+                    <p class="mt-1 text-xs text-accent-500">{{ form.error_aproximacion.help_text }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <hr class="border-accent-200">
+
+            <!-- Columnas -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Entrada -->
+                <div>
+                    <label class="block text-sm font-medium text-accent-700 mb-3">
+                        <i class="fas fa-arrow-right mr-2"></i>{{ form.input_columns.label }}
+                    </label>
+                    <div class="max-h-48 overflow-y-auto border border-accent-200 rounded-lg p-3 space-y-2">
+                        {% for checkbox in form.input_columns %}
+                        <div class="flex items-center space-x-2 p-2 hover:bg-accent-50 rounded">
+                            {{ checkbox.tag }}
+                            <label for="{{ checkbox.id_for_label }}" class="text-sm cursor-pointer">
+                                {{ checkbox.choice_label }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Salida -->
+                <div>
+                    <label class="block text-sm font-medium text-accent-700 mb-3">
+                        <i class="fas fa-arrow-left mr-2"></i>{{ form.output_columns.label }}
+                    </label>
+                    <div class="max-h-48 overflow-y-auto border border-accent-200 rounded-lg p-3 space-y-2">
+                        {% for checkbox in form.output_columns %}
+                        <div class="flex items-center space-x-2 p-2 hover:bg-accent-50 rounded">
+                            {{ checkbox.tag }}
+                            <label for="{{ checkbox.id_for_label }}" class="text-sm cursor-pointer">
+                                {{ checkbox.choice_label }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="flex items-center justify-between pt-6 border-t border-accent-200">
+                <a href="{% url 'rbf:cargar_datos_rbf' %}" class="text-accent-600 hover:text-primary-600 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Volver
+                </a>
+                <button type="submit" class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all shadow-lg hover:shadow-xl">
+                    <i class="fas fa-arrow-right mr-2"></i>Continuar a Entrenamiento
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

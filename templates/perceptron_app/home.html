@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Inicio - Perceptrón Simple{% endblock %}
+{% block title %}Inicio - Redes Neuronales{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
@@ -16,30 +16,30 @@
             </div>
             
             <h1 class="text-5xl md:text-6xl font-bold text-accent-800 mb-6">
-                Perceptrón Simple
+                Redes Neuronales
             </h1>
             
             <p class="text-xl text-accent-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-                Implementación completa del algoritmo de perceptrón simple desde cero.
-                Entrena, visualiza y predice con tu propia red neuronal.
+                Plataforma integral para entrenar y evaluar redes neuronales desde cero.
+                Implementaciones puras de Perceptrón Simple y Red RBF.
             </p>
             
             <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
                 <a href="{% url 'perceptron_app:cargar_datos' %}" class="group bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-xl hover:shadow-2xl hover:from-primary-600 hover:to-primary-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-3">
-                    <i class="fas fa-upload text-xl"></i>
-                    <span>Comenzar Entrenamiento</span>
+                    <i class="fas fa-network-wired text-xl"></i>
+                    <span>Perceptrón Simple</span>
                 </a>
-                <a href="{% url 'perceptron_app:historial_entrenamientos' %}" class="group bg-white text-primary-600 px-8 py-4 rounded-xl font-semibold text-lg border-2 border-primary-200 hover:border-primary-300 hover:bg-primary-50 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-3 shadow-lg">
-                    <i class="fas fa-history text-xl"></i>
-                    <span>Ver Historial</span>
+                <a href="{% url 'rbf:inicio_rbf' %}" class="group bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-xl hover:shadow-2xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-3">
+                    <i class="fas fa-project-diagram text-xl"></i>
+                    <span>Red RBF</span>
                 </a>
             </div>
             
             <!-- Descripción adicional -->
             <div class="bg-white/60 backdrop-blur-sm rounded-2xl p-8 max-w-4xl mx-auto shadow-xl border border-primary-100">
                 <p class="text-accent-700 text-lg leading-relaxed">
-                    Carga tus datos, configura los parámetros de entrenamiento y observa cómo aprende el perceptrón
-                    paso a paso con visualizaciones interactivas y métricas en tiempo real.
+                    Entrena modelos de redes neuronales con implementaciones puras usando NumPy y Python.
+                    Visualiza el aprendizaje, métricas de rendimiento y realiza predicciones.
                 </p>
             </div>
         </div>
@@ -48,14 +48,120 @@
     <!-- Elementos decorativos -->
     <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div class="absolute top-20 left-10 w-32 h-32 bg-primary-200 rounded-full opacity-20 animate-pulse"></div>
-        <div class="absolute top-40 right-20 w-24 h-24 bg-primary-300 rounded-full opacity-30 animate-bounce"></div>
+        <div class="absolute top-40 right-20 w-24 h-24 bg-blue-300 rounded-full opacity-30 animate-bounce"></div>
         <div class="absolute bottom-20 left-1/4 w-16 h-16 bg-primary-400 rounded-full opacity-25 animate-ping"></div>
+    </div>
+</div>
+
+<!-- Modelos Disponibles -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="text-center mb-12">
+        <h2 class="text-4xl font-bold text-accent-800 mb-4">Modelos Disponibles</h2>
+        <p class="text-lg text-accent-600">Implementaciones completas de redes neuronales desde cero</p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Perceptrón Simple -->
+        <div class="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border border-primary-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-2xl font-bold text-white flex items-center">
+                        <i class="fas fa-network-wired mr-3"></i>Perceptrón Simple
+                    </h3>
+                    <span class="bg-white/20 text-white px-3 py-1 rounded-full text-sm font-semibold">Clasificación Binaria</span>
+                </div>
+            </div>
+            <div class="p-8">
+                <p class="text-accent-600 mb-6">
+                    El perceptrón más básico para clasificación binaria. Ideal para problemas lineales y compuertas lógicas.
+                </p>
+                
+                <div class="space-y-3 mb-6">
+                    <div class="flex items-center text-sm text-accent-700">
+                        <i class="fas fa-check-circle text-primary-600 mr-2"></i>
+                        Clasificación binaria (0/1)
+                    </div>
+                    <div class="flex items-center text-sm text-accent-700">
+                        <i class="fas fa-check-circle text-primary-600 mr-2"></i>
+                        Función de activación escalón
+                    </div>
+                    <div class="flex items-center text-sm text-accent-700">
+                        <i class="fas fa-check-circle text-primary-600 mr-2"></i>
+                        Regla de aprendizaje del perceptrón
+                    </div>
+                    <div class="flex items-center text-sm text-accent-700">
+                        <i class="fas fa-check-circle text-primary-600 mr-2"></i>
+                        Visualización de convergencia
+                    </div>
+                </div>
+                
+                <a href="{% url 'perceptron_app:cargar_datos' %}" class="block w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-primary-600 hover:to-primary-700 transition-all text-center">
+                    <i class="fas fa-arrow-right mr-2"></i>Entrenar Perceptrón
+                </a>
+            </div>
+        </div>
+        
+        <!-- Red RBF -->
+        <div class="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border border-blue-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-2xl font-bold text-white flex items-center">
+                        <i class="fas fa-project-diagram mr-3"></i>Red Neuronal RBF
+                    </h3>
+                    <span class="bg-white/20 text-white px-3 py-1 rounded-full text-sm font-semibold">Regresión/Aproximación</span>
+                </div>
+            </div>
+            <div class="p-8">
+                <p class="text-accent-600 mb-6">
+                    Red de Función de Base Radial para aproximación de funciones. Ideal para problemas no lineales y regresión.
+                </p>
+                
+                <div class="space-y-3 mb-6">
+                    <div class="flex items-center text-sm text-accent-700">
+                        <i class="fas fa-check-circle text-blue-600 mr-2"></i>
+                        Función radial FA(d) = d²×ln(d)
+                    </div>
+                    <div class="flex items-center text-sm text-accent-700">
+                        <i class="fas fa-check-circle text-blue-600 mr-2"></i>
+                        Múltiples centros radiales
+                    </div>
+                    <div class="flex items-center text-sm text-accent-700">
+                        <i class="fas fa-check-circle text-blue-600 mr-2"></i>
+                        Preprocesamiento automático
+                    </div>
+                    <div class="flex items-center text-sm text-accent-700">
+                        <i class="fas fa-check-circle text-blue-600 mr-2"></i>
+                        Métricas EG, MAE, RMSE
+                    </div>
+                </div>
+                
+                <a href="{% url 'rbf:inicio_rbf' %}" class="block w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all text-center">
+                    <i class="fas fa-arrow-right mr-2"></i>Entrenar Red RBF
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Estadísticas -->
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="text-center mb-12">
+        <h2 class="text-4xl font-bold text-accent-800 mb-4">Plataforma Completa</h2>
+        <p class="text-lg text-accent-600">Todo lo que necesitas para entrenar y evaluar redes neuronales</p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <!-- 2 Modelos -->
+        <div class="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border border-primary-100">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-primary-100 to-primary-200 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-project-diagram text-primary-600 text-2xl"></i>
+                </div>
+                <h3 class="text-4xl font-bold text-accent-800 mb-2">2</h3>
+                <p class="text-accent-600 font-medium">Modelos Disponibles</p>
+            </div>
+        </div>
+        
         <!-- Entrenamientos -->
         <div class="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border border-primary-100">
             <div class="text-center">
@@ -63,7 +169,7 @@
                     <i class="fas fa-database text-primary-600 text-2xl"></i>
                 </div>
                 <h3 class="text-4xl font-bold text-accent-800 mb-2">{{ total_trainings }}</h3>
-                <p class="text-accent-600 font-medium">Entrenamientos Realizados</p>
+                <p class="text-accent-600 font-medium">Entrenamientos Totales</p>
             </div>
         </div>
         
@@ -85,187 +191,47 @@
                     <i class="fas fa-chart-line text-primary-600 text-2xl"></i>
                 </div>
                 <h3 class="text-4xl font-bold text-accent-800 mb-2">100%</h3>
-                <p class="text-accent-600 font-medium">Implementación desde Cero</p>
+                <p class="text-accent-600 font-medium">Desde Cero con NumPy</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Características y Entrenamientos Recientes -->
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Características del Sistema -->
-        <div class="lg:col-span-2">
-            <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden">
-                <div class="bg-gradient-to-r from-primary-500 to-primary-600 px-8 py-6">
-                    <h4 class="text-2xl font-bold text-white flex items-center">
-                        <i class="fas fa-cogs mr-3"></i>Características del Sistema
-                    </h4>
-                </div>
-                <div class="p-8">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="space-y-6">
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-upload text-primary-600 text-lg"></i>
-                                </div>
-                                <div>
-                                    <h6 class="font-semibold text-accent-800 mb-2">Carga de Datos</h6>
-                                    <p class="text-accent-600 text-sm">Soporte para archivos CSV, XLSX, JSON y TXT con vista previa de datos.</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-sliders-h text-primary-600 text-lg"></i>
-                                </div>
-                                <div>
-                                    <h6 class="font-semibold text-accent-800 mb-2">Configuración Flexible</h6>
-                                    <p class="text-accent-600 text-sm">Ajusta la tasa de aprendizaje, iteraciones y selecciona columnas de entrada/salida.</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-chart-line text-primary-600 text-lg"></i>
-                                </div>
-                                <div>
-                                    <h6 class="font-semibold text-accent-800 mb-2">Visualizaciones</h6>
-                                    <p class="text-accent-600 text-sm">Gráficos de evolución del error y pesos durante el entrenamiento.</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-6">
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-brain text-primary-600 text-lg"></i>
-                                </div>
-                                <div>
-                                    <h6 class="font-semibold text-accent-800 mb-2">Implementación Pura</h6>
-                                    <p class="text-accent-600 text-sm">Algoritmo implementado desde cero usando solo NumPy, sin librerías de ML.</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-calculator text-primary-600 text-lg"></i>
-                                </div>
-                                <div>
-                                    <h6 class="font-semibold text-accent-800 mb-2">Predicciones</h6>
-                                    <p class="text-accent-600 text-sm">Interfaz para probar el perceptrón entrenado con nuevos datos.</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-download text-primary-600 text-lg"></i>
-                                </div>
-                                <div>
-                                    <h6 class="font-semibold text-accent-800 mb-2">Exportación</h6>
-                                    <p class="text-accent-600 text-sm">Descarga los pesos entrenados en formato JSON para uso posterior.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Entrenamientos Recientes -->
-        <div>
-            <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden">
-                <div class="bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-4">
-                    <h5 class="text-xl font-bold text-white flex items-center">
-                        <i class="fas fa-clock mr-2"></i>Entrenamientos Recientes
-                    </h5>
-                </div>
-                <div class="p-6">
-                    {% if recent_trainings %}
-                        <div class="space-y-4">
-                            {% for training in recent_trainings %}
-                                <div class="flex items-center justify-between p-4 bg-accent-50 rounded-xl hover:bg-primary-50 transition-colors duration-200">
-                                    <div class="flex-1">
-                                        <h6 class="font-semibold text-accent-800 mb-1">{{ training.nombre }}</h6>
-                                        <p class="text-sm text-accent-600">{{ training.fecha_creacion|date:"d/m/Y H:i" }}</p>
-                                    </div>
-                                    <span class="px-3 py-1 rounded-full text-sm font-semibold {% if training.precision >= 90 %}bg-green-100 text-green-700{% elif training.precision >= 70 %}bg-yellow-100 text-yellow-700{% else %}bg-red-100 text-red-700{% endif %}">
-                                        {{ training.precision|floatformat:1 }}%
-                                    </span>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-8">
-                            <i class="fas fa-brain text-accent-300 text-4xl mb-4"></i>
-                            <p class="text-accent-500">No hay entrenamientos recientes</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Ejemplo de Uso -->
+<!-- Entrenamientos Recientes -->
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
     <div class="bg-white rounded-2xl shadow-xl border border-primary-100 overflow-hidden">
         <div class="bg-gradient-to-r from-primary-500 to-primary-600 px-8 py-6">
             <h4 class="text-2xl font-bold text-white flex items-center">
-                <i class="fas fa-lightbulb mr-3"></i>Ejemplo: Compuerta Lógica AND
+                <i class="fas fa-clock mr-3"></i>Entrenamientos Recientes
             </h4>
         </div>
         <div class="p-8">
-            <p class="text-accent-700 text-lg mb-8">El perceptrón simple puede aprender la compuerta lógica AND. Aquí tienes un ejemplo de datos:</p>
-            
-            <div class="bg-accent-50 rounded-xl p-6 mb-8">
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="border-b border-accent-200">
-                                <th class="text-left py-3 px-4 font-semibold text-accent-800">X1</th>
-                                <th class="text-left py-3 px-4 font-semibold text-accent-800">X2</th>
-                                <th class="text-left py-3 px-4 font-semibold text-accent-800">Y (AND)</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-accent-200">
-                            <tr class="hover:bg-primary-50 transition-colors duration-200">
-                                <td class="py-3 px-4 text-accent-700">0</td>
-                                <td class="py-3 px-4 text-accent-700">0</td>
-                                <td class="py-3 px-4 text-accent-700">0</td>
-                            </tr>
-                            <tr class="hover:bg-primary-50 transition-colors duration-200">
-                                <td class="py-3 px-4 text-accent-700">0</td>
-                                <td class="py-3 px-4 text-accent-700">1</td>
-                                <td class="py-3 px-4 text-accent-700">0</td>
-                            </tr>
-                            <tr class="hover:bg-primary-50 transition-colors duration-200">
-                                <td class="py-3 px-4 text-accent-700">1</td>
-                                <td class="py-3 px-4 text-accent-700">0</td>
-                                <td class="py-3 px-4 text-accent-700">0</td>
-                            </tr>
-                            <tr class="hover:bg-primary-50 transition-colors duration-200">
-                                <td class="py-3 px-4 text-accent-700">1</td>
-                                <td class="py-3 px-4 text-accent-700">1</td>
-                                <td class="py-3 px-4 text-accent-700 font-semibold text-primary-600">1</td>
-                            </tr>
-                        </tbody>
-                    </table>
+            {% if recent_trainings %}
+                <div class="space-y-4">
+                    {% for training in recent_trainings %}
+                        <div class="flex items-center justify-between p-4 bg-accent-50 rounded-xl hover:bg-primary-50 transition-colors duration-200">
+                            <div class="flex items-center space-x-4 flex-1">
+                                <div class="w-12 h-12 bg-gradient-to-br from-primary-100 to-primary-200 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-network-wired text-primary-600"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h6 class="font-semibold text-accent-800 mb-1">{{ training.nombre }}</h6>
+                                    <p class="text-sm text-accent-600">{{ training.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-sm font-semibold {% if training.precision >= 90 %}bg-green-100 text-green-700{% elif training.precision >= 70 %}bg-yellow-100 text-yellow-700{% else %}bg-red-100 text-red-700{% endif %}">
+                                    {{ training.precision|floatformat:1 }}%
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
-            </div>
-            
-            <div class="bg-gradient-to-r from-primary-50 to-primary-100 border-l-4 border-primary-500 p-6 rounded-r-xl">
-                <div class="flex items-start space-x-3">
-                    <i class="fas fa-info-circle text-primary-600 text-xl mt-1"></i>
-                    <div>
-                        <h6 class="font-semibold text-primary-800 mb-2">Tip:</h6>
-                        <p class="text-primary-700">
-                            Crea un archivo CSV con estos datos y úsalos para entrenar tu primer perceptrón.
-                            El algoritmo debería converger rápidamente y alcanzar 100% de precisión.
-                        </p>
-                    </div>
+            {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-brain text-accent-300 text-5xl mb-4"></i>
+                    <p class="text-accent-500 text-lg">No hay entrenamientos recientes</p>
+                    <p class="text-accent-400 text-sm mt-2">Comienza entrenando tu primer modelo</p>
                 </div>
-            </div>
+            {% endif %}
         </div>
     </div>
 </div>
