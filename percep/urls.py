@@ -22,6 +22,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('perceptron_app.urls')),
+    path('rbf/', include('rbf.urls')),
 ]
 
 # Servir archivos estáticos y medios en desarrollo

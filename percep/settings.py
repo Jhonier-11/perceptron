@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'perceptron_app',  # Nuestra aplicación del perceptrón
+    'rbf',  # Nuestra aplicación de Red Neuronal RBF
 ]
 
 MIDDLEWARE = [
