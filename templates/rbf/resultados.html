@@ -452,6 +452,21 @@
                 <img src="data:image/png;base64,{{ metricas_plot }}" alt="Gráfico de Métricas" class="w-full rounded-lg">
             </div>
         </div>
+
+        <!-- Visualización de la Red Neuronal -->
+        {% if red_neuronal_plot %}
+        <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8">
+            <h2 class="text-2xl font-bold text-accent-800 mb-6">
+                <i class="fas fa-project-diagram mr-2 text-primary-600"></i>Visualización de la Estructura de la Red Neuronal
+            </h2>
+            <div class="bg-white rounded-lg p-4">
+                <img src="data:image/png;base64,{{ red_neuronal_plot }}" alt="Visualización de Red Neuronal RBF" class="w-full rounded-lg">
+            </div>
+            <p class="text-sm text-accent-600 mt-4">
+                <i class="fas fa-info-circle mr-1"></i>Esta visualización muestra la arquitectura completa de la red RBF, incluyendo las conexiones entre las capas de entrada, los centros radiales y la salida.
+            </p>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Actions -->

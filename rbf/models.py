@@ -42,6 +42,32 @@ class RBFTraining(models.Model):
     metricas_entrenamiento = models.JSONField(verbose_name="Métricas de entrenamiento (EG, MAE, RMSE)")
     metricas_prueba = models.JSONField(verbose_name="Métricas de prueba (EG, MAE, RMSE)")
     
+    # Valores reales y predichos para regenerar gráficos (guardados como listas)
+    y_train_real = models.JSONField(
+        verbose_name="Valores reales de entrenamiento",
+        null=True,
+        blank=True,
+        help_text="Valores reales (Y) del conjunto de entrenamiento"
+    )
+    y_train_pred = models.JSONField(
+        verbose_name="Valores predichos de entrenamiento",
+        null=True,
+        blank=True,
+        help_text="Valores predichos (Y_pred) del conjunto de entrenamiento"
+    )
+    y_test_real = models.JSONField(
+        verbose_name="Valores reales de prueba",
+        null=True,
+        blank=True,
+        help_text="Valores reales (Y) del conjunto de prueba"
+    )
+    y_test_pred = models.JSONField(
+        verbose_name="Valores predichos de prueba",
+        null=True,
+        blank=True,
+        help_text="Valores predichos (Y_pred) del conjunto de prueba"
+    )
+    
     # Estado de convergencia
     convergencia = models.BooleanField(
         verbose_name="Convergencia alcanzada",

@@ -327,18 +327,67 @@
     </div>
     {% endif %}
 
-    <!-- Gráfico de Demostración -->
+    <!-- Gráficos -->
     {% if graficos %}
-    <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8 mb-8">
-        <h2 class="text-2xl font-bold text-accent-800 mb-6">
-            <i class="fas fa-chart-scatter mr-2 text-primary-600"></i>Gráfico de Demostración
-        </h2>
-        <div class="bg-white rounded-lg p-4">
-            <img src="data:image/png;base64,{{ graficos.dispersion }}" alt="Gráfico de Dispersión" class="w-full rounded-lg">
+    <div class="space-y-8 mb-8">
+        <!-- Gráfico de Dispersión -->
+        {% if graficos.dispersion %}
+        <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8">
+            <h2 class="text-2xl font-bold text-accent-800 mb-6">
+                <i class="fas fa-chart-scatter mr-2 text-primary-600"></i>Yd vs Yr
+            </h2>
+            <div class="bg-white rounded-lg p-4">
+                <img src="data:image/png;base64,{{ graficos.dispersion }}" alt="Gráfico de Dispersión" class="w-full rounded-lg">
+            </div>
+            <p class="text-sm text-accent-600 mt-2">
+                <i class="fas fa-info-circle mr-1"></i>
+                {% if training.y_train_real and training.y_test_real %}
+                    <span class="text-green-600 font-semibold"><i class="fas fa-check-circle mr-1"></i>Datos reales:</span> Este gráfico muestra los resultados reales del entrenamiento con los datos originales del dataset.
+                {% else %}
+                    <span class="text-yellow-600 font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i>Datos sintéticos:</span> Este gráfico muestra la relación entre valores reales y predichos usando datos sintéticos para demostración.
+                {% endif %}
+            </p>
         </div>
-        <p class="text-sm text-accent-600 mt-2">
-            <i class="fas fa-info-circle mr-1"></i>Este gráfico muestra la relación entre valores reales y predichos usando datos sintéticos para demostración.
-        </p>
+        {% endif %}
+
+        <!-- Gráfico de Error -->
+        {% if graficos.error %}
+        <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8">
+            <h2 class="text-2xl font-bold text-accent-800 mb-6">
+                <i class="fas fa-exclamation-triangle mr-2 text-primary-600"></i>Error General vs Error Objetivo
+            </h2>
+            <div class="bg-white rounded-lg p-4">
+                <img src="data:image/png;base64,{{ graficos.error }}" alt="Gráfico de Error" class="w-full rounded-lg">
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Gráfico de Métricas -->
+        {% if graficos.metricas %}
+        <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8">
+            <h2 class="text-2xl font-bold text-accent-800 mb-6">
+                <i class="fas fa-chart-bar mr-2 text-primary-600"></i>Comparación de Métricas
+            </h2>
+            <div class="bg-white rounded-lg p-4">
+                <img src="data:image/png;base64,{{ graficos.metricas }}" alt="Gráfico de Métricas" class="w-full rounded-lg">
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Visualización de la Red Neuronal -->
+        {% if graficos.red_neuronal %}
+        <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8">
+            <h2 class="text-2xl font-bold text-accent-800 mb-6">
+                <i class="fas fa-project-diagram mr-2 text-primary-600"></i>Visualización de la Estructura de la Red Neuronal
+            </h2>
+            <div class="bg-white rounded-lg p-4">
+                <img src="data:image/png;base64,{{ graficos.red_neuronal }}" alt="Visualización de Red Neuronal RBF" class="w-full rounded-lg">
+            </div>
+            <p class="text-sm text-accent-600 mt-4">
+                <i class="fas fa-info-circle mr-1"></i>Esta visualización muestra la arquitectura completa de la red RBF, incluyendo las conexiones entre las capas de entrada, los centros radiales y la salida.
+            </p>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 

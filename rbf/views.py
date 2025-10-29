@@ -123,12 +123,20 @@ def detectar_separador_csv_y_leer(archivo):
 
 
 def generar_graficos_rbf(y_train_real, y_train_pred, y_test_real, y_test_pred, 
-                         metricas_train, metricas_test, error_objetivo):
+                         metricas_train, metricas_test, error_objetivo,
+                         num_entradas=None, num_centros=None):
     """
-    Genera los tres gráficos requeridos para RBF y retorna Base64
+    Genera los gráficos requeridos para RBF y retorna Base64
+    
+    Args:
+        y_train_real, y_train_pred, y_test_real, y_test_pred: Datos para gráficos
+        metricas_train, metricas_test: Métricas calculadas
+        error_objetivo: Error objetivo para comparación
+        num_entradas: Número de características de entrada (opcional)
+        num_centros: Número de centros radiales (opcional)
     
     Returns:
-        dict: Diccionario con las tres imágenes en Base64
+        dict: Diccionario con las imágenes en Base64
     """
     graficos = {}
     
@@ -236,7 +244,142 @@ def generar_graficos_rbf(y_train_real, y_train_pred, y_test_real, y_test_pred,
     graficos['metricas'] = base64.b64encode(buffer.getvalue()).decode()
     plt.close()
     
+    # 4. Visualización de la estructura de la red neuronal RBF
+    if num_entradas is not None and num_centros is not None:
+        grafico_red = _generar_visualizacion_red_rbf(num_entradas, num_centros)
+        if grafico_red:
+            graficos['red_neuronal'] = grafico_red
+    
     return graficos
+
+
+def _generar_visualizacion_red_rbf(num_entradas, num_centros):
+    """
+    Genera una visualización gráfica de la estructura de la red neuronal RBF
+    
+    Args:
+        num_entradas: Número de características de entrada
+        num_centros: Número de centros radiales
+        
+    Returns:
+        str: Imagen en Base64 o None si hay error
+    """
+    try:
+        from matplotlib.patches import FancyArrowPatch, Circle, FancyBboxPatch
+        
+        fig, ax = plt.subplots(figsize=(14, 10))
+        ax.set_xlim(0, 10)
+        ax.set_ylim(0, 10)
+        ax.axis('off')
+        
+        # Definir posiciones de las capas
+        # Capa de entrada (izquierda)
+        entrada_x = 1
+        entrada_y_inicio = 2
+        entrada_espacio = 6 / max(num_entradas, 1)  # Espacio entre nodos de entrada
+        
+        # Capa de centros radiales (centro)
+        centros_x = 5
+        centros_y_inicio = 2
+        centros_espacio = 6 / max(num_centros, 1)  # Espacio entre centros
+        
+        # Capa de salida (derecha)
+        salida_x = 9
+        salida_y = 5
+        
+        # Dibujar nodos de entrada
+        entrada_posiciones = []
+        for i in range(num_entradas):
+            y_pos = entrada_y_inicio + i * entrada_espacio
+            entrada_posiciones.append((entrada_x, y_pos))
+            circle = Circle((entrada_x, y_pos), 0.3, color='#4A90E2', ec='black', lw=1.5, zorder=3)
+            ax.add_patch(circle)
+            ax.text(entrada_x, y_pos, f'X{i+1}', ha='center', va='center', 
+                   fontsize=9, fontweight='bold', color='white', zorder=4)
+        
+        # Etiqueta de capa de entrada
+        ax.text(entrada_x, entrada_y_inicio - 1, 'Entradas', ha='center', va='top',
+               fontsize=11, fontweight='bold', color='#2C3E50')
+        
+        # Dibujar nodos de centros radiales
+        centros_posiciones = []
+        for i in range(num_centros):
+            y_pos = centros_y_inicio + i * centros_espacio
+            centros_posiciones.append((centros_x, y_pos))
+            circle = Circle((centros_x, y_pos), 0.4, color='#E74C3C', ec='black', lw=1.5, zorder=3)
+            ax.add_patch(circle)
+            ax.text(centros_x, y_pos, f'R{i+1}', ha='center', va='center',
+                   fontsize=9, fontweight='bold', color='white', zorder=4)
+        
+        # Etiqueta de capa de centros
+        ax.text(centros_x, centros_y_inicio - 1, 'Centros\nRadiales', ha='center', va='top',
+               fontsize=11, fontweight='bold', color='#2C3E50')
+        
+        # Dibujar nodo de salida
+        circle_salida = Circle((salida_x, salida_y), 0.35, color='#27AE60', ec='black', lw=2, zorder=3)
+        ax.add_patch(circle_salida)
+        ax.text(salida_x, salida_y, 'Y', ha='center', va='center',
+               fontsize=10, fontweight='bold', color='white', zorder=4)
+        ax.text(salida_x, salida_y - 1, 'Salida', ha='center', va='top',
+               fontsize=11, fontweight='bold', color='#2C3E50')
+        
+        # Dibujar conexiones: Entradas -> Centros
+        for entrada_pos in entrada_posiciones:
+            for centro_pos in centros_posiciones:
+                arrow = FancyArrowPatch(
+                    (entrada_pos[0] + 0.3, entrada_pos[1]),
+                    (centro_pos[0] - 0.4, centro_pos[1]),
+                    arrowstyle='->', mutation_scale=15,
+                    color='#7F8C8D', alpha=0.4, linewidth=0.8, zorder=1
+                )
+                ax.add_patch(arrow)
+        
+        # Dibujar conexiones: Centros -> Salida
+        for centro_pos in centros_posiciones:
+            arrow = FancyArrowPatch(
+                (centro_pos[0] + 0.4, centro_pos[1]),
+                (salida_x - 0.35, salida_y),
+                arrowstyle='->', mutation_scale=20,
+                color='#8E44AD', alpha=0.6, linewidth=1.2, zorder=2
+            )
+            ax.add_patch(arrow)
+        
+        # Agregar título
+        ax.text(5, 9.5, 'Estructura de la Red Neuronal RBF', ha='center', va='top',
+               fontsize=16, fontweight='bold', color='#2C3E50')
+        
+        # Agregar leyenda
+        leyenda_elementos = [
+            plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='#4A90E2', 
+                      markersize=12, markeredgecolor='black', markeredgewidth=1.5, label='Entradas'),
+            plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='#E74C3C', 
+                      markersize=14, markeredgecolor='black', markeredgewidth=1.5, label='Centros Radiales'),
+            plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='#27AE60', 
+                      markersize=13, markeredgecolor='black', markeredgewidth=2, label='Salida'),
+            plt.Line2D([0], [0], color='#7F8C8D', alpha=0.4, linewidth=2, label='Conexiones Entrada→Centro'),
+            plt.Line2D([0], [0], color='#8E44AD', alpha=0.6, linewidth=2, label='Conexiones Centro→Salida')
+        ]
+        ax.legend(handles=leyenda_elementos, loc='upper right', fontsize=9, framealpha=0.9)
+        
+        # Agregar información adicional
+        info_text = f'Número de Entradas: {num_entradas}\nNúmero de Centros: {num_centros}'
+        ax.text(0.5, 0.95, info_text, transform=ax.transAxes, ha='left', va='top',
+               fontsize=9, bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+        
+        plt.tight_layout()
+        
+        # Convertir a base64
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+        buffer.seek(0)
+        grafico_base64 = base64.b64encode(buffer.getvalue()).decode()
+        plt.close()
+        
+        return grafico_base64
+        
+    except Exception as e:
+        print(f"Error al generar visualización de red: {e}")
+        return None
 
 
 def inicio_rbf(request):
@@ -536,9 +679,11 @@ def entrenar_rbf(request):
             convergencia = verificar_convergencia(metricas_train['EG'], error_objetivo)
             
             # Generar gráficos
+            num_entradas = X_train_norm.shape[1]  # Número de características de entrada
             graficos = generar_graficos_rbf(
                 y_train, y_train_pred, y_test, y_test_pred,
-                metricas_train, metricas_test, error_objetivo
+                metricas_train, metricas_test, error_objetivo,
+                num_entradas=num_entradas, num_centros=num_centros
             )
             
             # Guardar en base de datos
@@ -560,7 +705,12 @@ def entrenar_rbf(request):
                 metricas_entrenamiento=metricas_train,
                 metricas_prueba=metricas_test,
                 convergencia=convergencia,
-                estadisticas_normalizacion=estadisticas_norm
+                estadisticas_normalizacion=estadisticas_norm,
+                # Guardar valores reales y predichos para regenerar gráficos
+                y_train_real=y_train.tolist() if hasattr(y_train, 'tolist') else list(y_train),
+                y_train_pred=y_train_pred.tolist() if hasattr(y_train_pred, 'tolist') else list(y_train_pred),
+                y_test_real=y_test.tolist() if hasattr(y_test, 'tolist') else list(y_test),
+                y_test_pred=y_test_pred.tolist() if hasattr(y_test_pred, 'tolist') else list(y_test_pred)
             )
             
             # Preparar datos de comparación para la tabla
@@ -583,6 +733,7 @@ def entrenar_rbf(request):
                 'dispersion_plot': graficos['dispersion'],
                 'error_plot': graficos['error'],
                 'metricas_plot': graficos['metricas'],
+                'red_neuronal_plot': graficos.get('red_neuronal', None),
                 'metricas_train': metricas_train,
                 'metricas_test': metricas_test,
                 'convergencia': convergencia,
@@ -647,6 +798,7 @@ def resultados_rbf(request):
         'dispersion_plot': rbf_results['dispersion_plot'],
         'error_plot': rbf_results['error_plot'],
         'metricas_plot': rbf_results['metricas_plot'],
+        'red_neuronal_plot': rbf_results.get('red_neuronal_plot', None),
         'metricas_train': rbf_results['metricas_train'],
         'metricas_test': rbf_results['metricas_test'],
         'convergencia': rbf_results['convergencia'],
@@ -690,31 +842,81 @@ def detalles_rbf(request, training_id):
         rbf.W1_n = np.array(training.pesos_finales[1:])
         rbf.entrenado = True
         
-        # Simular datos de entrada para regenerar el procesamiento interno
-        # Usar datos sintéticos basados en las estadísticas guardadas
-        num_patrones = 50  # Número de patrones para la demostración
-        num_caracteristicas = len(training.columnas_entrada)
-        
-        # Generar datos sintéticos basados en las estadísticas de normalización
-        if training.estadisticas_normalizacion:
-            mean_vals = np.array(training.estadisticas_normalizacion['mean'])
-            std_vals = np.array(training.estadisticas_normalizacion['std'])
+        # Verificar si tenemos datos reales guardados
+        if (training.y_train_real and training.y_train_pred and 
+            training.y_test_real and training.y_test_pred):
             
-            # Generar datos normalizados y luego desnormalizar
-            X_sintetico = np.random.normal(0, 1, (num_patrones, num_caracteristicas))
-            X_sintetico = X_sintetico * std_vals + mean_vals
+            # Usar datos reales guardados
+            y_train_real = np.array(training.y_train_real)
+            y_train_pred = np.array(training.y_train_pred)
+            y_test_real = np.array(training.y_test_real)
+            y_test_pred = np.array(training.y_test_pred)
+            
+            # Usar métricas reales guardadas
+            metricas_train = training.metricas_entrenamiento
+            metricas_test = training.metricas_prueba
+            
+            # Generar todas las gráficas usando datos reales
+            num_entradas = len(training.columnas_entrada)
+            num_centros = training.num_centros
+            graficos = generar_graficos_rbf(
+                y_train_real, y_train_pred, y_test_real, y_test_pred,
+                metricas_train, metricas_test, training.error_aproximacion,
+                num_entradas=num_entradas, num_centros=num_centros
+            )
+            
+            # Regenerar el procesamiento interno usando datos sintéticos (solo para visualización interna)
+            # Esto es solo para mostrar el procesamiento matemático
+            num_caracteristicas = len(training.columnas_entrada)
+            num_patrones = len(y_train_real) + len(y_test_real)
+            
+            if training.estadisticas_normalizacion:
+                mean_vals = np.array(training.estadisticas_normalizacion['mean'])
+                std_vals = np.array(training.estadisticas_normalizacion['std'])
+                X_sintetico = np.random.normal(0, 1, (min(num_patrones, 50), num_caracteristicas))
+                X_sintetico = X_sintetico * std_vals + mean_vals
+            else:
+                X_sintetico = np.random.uniform(-5, 5, (min(num_patrones, 50), num_caracteristicas))
+            
+            y_sintetico = rbf.predict(X_sintetico)
+            procesamiento_interno = _regenerar_procesamiento_interno(rbf, X_sintetico, y_sintetico)
+            
         else:
-            # Si no hay normalización, generar datos en rango [-5, 5]
-            X_sintetico = np.random.uniform(-5, 5, (num_patrones, num_caracteristicas))
-        
-        # Generar salidas sintéticas usando la red reconstruida
-        y_sintetico = rbf.predict(X_sintetico)
-        
-        # Regenerar el procesamiento interno usando los datos sintéticos
-        procesamiento_interno = _regenerar_procesamiento_interno(rbf, X_sintetico, y_sintetico)
-        
-        # Generar gráficos básicos para la demostración
-        graficos = _generar_graficos_detalles(y_sintetico, y_sintetico, procesamiento_interno['paso_7_metricas'])
+            # Si no hay datos guardados, generar datos sintéticos (para entrenamientos antiguos)
+            num_patrones = 50
+            num_caracteristicas = len(training.columnas_entrada)
+            
+            if training.estadisticas_normalizacion:
+                mean_vals = np.array(training.estadisticas_normalizacion['mean'])
+                std_vals = np.array(training.estadisticas_normalizacion['std'])
+                X_sintetico = np.random.normal(0, 1, (num_patrones, num_caracteristicas))
+                X_sintetico = X_sintetico * std_vals + mean_vals
+            else:
+                X_sintetico = np.random.uniform(-5, 5, (num_patrones, num_caracteristicas))
+            
+            y_sintetico = rbf.predict(X_sintetico)
+            procesamiento_interno = _regenerar_procesamiento_interno(rbf, X_sintetico, y_sintetico)
+            
+            split_idx = int(len(y_sintetico) * 0.7)
+            y_train_sint = y_sintetico[:split_idx]
+            y_test_sint = y_sintetico[split_idx:]
+            
+            np.random.seed(42)
+            ruido_train = np.random.normal(0, np.std(y_train_sint) * 0.1, len(y_train_sint))
+            ruido_test = np.random.normal(0, np.std(y_test_sint) * 0.1, len(y_test_sint))
+            y_train_pred_sint = y_train_sint + ruido_train
+            y_test_pred_sint = y_test_sint + ruido_test
+            
+            metricas_train_sint = calcular_metricas(y_train_sint, y_train_pred_sint)
+            metricas_test_sint = calcular_metricas(y_test_sint, y_test_pred_sint)
+            
+            num_entradas = len(training.columnas_entrada)
+            num_centros = training.num_centros
+            graficos = generar_graficos_rbf(
+                y_train_sint, y_train_pred_sint, y_test_sint, y_test_pred_sint,
+                metricas_train_sint, metricas_test_sint, training.error_aproximacion,
+                num_entradas=num_entradas, num_centros=num_centros
+            )
         
     except Exception as e:
         # Si hay error, mostrar información básica sin procesamiento interno
