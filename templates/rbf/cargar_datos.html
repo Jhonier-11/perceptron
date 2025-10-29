@@ -47,6 +47,55 @@
         <form method="post" enctype="multipart/form-data" class="space-y-6">
             {% csrf_token %}
             
+            <!-- Select de Archivos de Ejemplo -->
+            {% if archivos_ejemplo %}
+            <div class="bg-gradient-to-r from-blue-50 to-primary-50 border-2 border-dashed border-blue-200 rounded-xl p-6 mb-6">
+                <h3 class="text-lg font-bold text-accent-800 mb-4 flex items-center">
+                    <i class="fas fa-database text-primary-600 mr-2"></i>Archivos de Ejemplo Disponibles
+                </h3>
+                
+                <label for="id_archivo_ejemplo" class="block text-sm font-medium text-accent-700 mb-2">
+                    {{ form.archivo_ejemplo.label }}
+                </label>
+                {{ form.archivo_ejemplo }}
+                {% if form.archivo_ejemplo.help_text %}
+                <p class="mt-2 text-sm text-accent-500">{{ form.archivo_ejemplo.help_text }}</p>
+                {% endif %}
+                
+                {% if form.archivo_ejemplo.errors %}
+                <div class="mt-3 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                    {% for error in form.archivo_ejemplo.errors %}
+                    <p><i class="fas fa-exclamation-triangle mr-1"></i>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Lista de archivos disponibles -->
+                <div class="bg-white rounded-lg p-4 mt-4">
+                    <p class="text-sm font-semibold text-accent-700 mb-2">Archivos disponibles ({{ archivos_ejemplo|length }}):</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        {% for archivo in archivos_ejemplo %}
+                        <div class="flex items-center text-sm">
+                            <i class="fas fa-file text-primary-400 mr-2"></i>
+                            <span class="text-accent-600">{{ archivo }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Separador O -->
+            <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-accent-200"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-4 bg-white text-accent-500">O</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Upload Manual -->
             <div>
                 <label for="id_data_file" class="block text-sm font-medium text-accent-700 mb-3">
                     <i class="fas fa-file mr-2"></i>{{ form.data_file.label }}
@@ -76,6 +125,14 @@
                 </div>
                 {% endif %}
             </div>
+            
+            {% if form.non_field_errors %}
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                {% for error in form.non_field_errors %}
+                <p class="text-red-600 text-sm"><i class="fas fa-exclamation-triangle mr-1"></i>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
 
             <div class="flex items-center justify-between pt-4 border-t border-accent-200">
                 <a href="{% url 'rbf:inicio_rbf' %}" class="text-accent-600 hover:text-primary-600 transition-colors">
