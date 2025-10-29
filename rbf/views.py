@@ -256,8 +256,17 @@ def inicio_rbf(request):
 
 def cargar_datos_rbf(request):
     """
-    Vista para cargar archivos de datos
+    Vista para cargar archivos de datos desde el directorio de ejemplos o upload manual
     """
+    # Obtener lista de archivos de ejemplo
+    examples_dir = os.path.join(settings.BASE_DIR, 'static', 'examples', 'dt')
+    archivos_ejemplo = []
+    
+    if os.path.exists(examples_dir):
+        for filename in os.listdir(examples_dir):
+            if filename.endswith(('.csv', '.json', '.xlsx', '.txt')):
+                archivos_ejemplo.append(filename)
+    
     # Limpiar sesión si se solicita
     if request.GET.get('clear') == 'true':
         if 'uploaded_data_rbf' in request.session:
@@ -277,74 +286,104 @@ def cargar_datos_rbf(request):
     
     if request.method == 'POST':
         form = RBFDataUploadForm(request.POST, request.FILES)
+        
+        # Llenar las opciones del select con archivos de ejemplo
+        form.fields['archivo_ejemplo'].choices = [('', '-- Selecciona un archivo --')] + [(f, f) for f in archivos_ejemplo]
+        
         if form.is_valid():
-            # Procesar el archivo
-            file = request.FILES['data_file']
-            file_extension = file.name.split('.')[-1].lower()
+            archivo_ejemplo = form.cleaned_data.get('archivo_ejemplo')
             
-            try:
-                # Leer el archivo según su extensión
+            # Si se seleccionó un archivo de ejemplo
+            if archivo_ejemplo:
+                file_path = os.path.join(examples_dir, archivo_ejemplo)
+                file_extension = archivo_ejemplo.split('.')[-1].lower()
+                nombre_archivo = archivo_ejemplo
+            else:
+                # Procesar el archivo subido
+                file = request.FILES['data_file']
+                file_extension = file.name.split('.')[-1].lower()
+                nombre_archivo = file.name
+                file_path = None
+            
+            # Procesar el archivo
+            if archivo_ejemplo:
+                # Leer desde el directorio de ejemplos
                 if file_extension == 'csv':
-                    df = detectar_separador_csv_y_leer(file)
-                elif file_extension == 'xlsx':
-                    df = pd.read_excel(file)
+                    df = pd.read_csv(file_path)
                 elif file_extension == 'json':
-                    try:
-                        df = pd.read_json(file)
-                        # Normalizar si es necesario
-                        if isinstance(df, pd.DataFrame) and len(df.columns) == 1:
-                            first_col = df.iloc[:, 0]
-                            if isinstance(first_col.iloc[0], dict):
-                                df = pd.json_normalize(df.iloc[:, 0].tolist())
-                    except Exception as e:
-                        messages.error(request, f'Error al leer el archivo JSON: {str(e)}')
-                        return render(request, 'rbf/cargar_datos.html', {'form': form})
+                    df = pd.read_json(file_path)
                 elif file_extension == 'txt':
-                    df = detectar_separador_csv_y_leer(file)
+                    df = pd.read_csv(file_path)
                 else:
                     messages.error(request, 'Formato de archivo no soportado.')
-                    return render(request, 'rbf/cargar_datos.html', {'form': form})
-                
+                    form.fields['archivo_ejemplo'].choices = [('', '-- Selecciona un archivo --')] + [(f, f) for f in archivos_ejemplo]
+                    return render(request, 'rbf/cargar_datos.html', {'form': form, 'archivos_ejemplo': archivos_ejemplo})
+            else:
+                # Procesar como antes
+                file = request.FILES['data_file']
+                file_extension = file.name.split('.')[-1].lower()
+            
+            try:
                 # Validar mínimo de patrones
                 if len(df) < 10:
                     messages.error(request, 'El dataset debe tener al menos 10 patrones.')
-                    return render(request, 'rbf/cargar_datos.html', {'form': form})
+                    form.fields['archivo_ejemplo'].choices = [('', '-- Selecciona un archivo --')] + [(f, f) for f in archivos_ejemplo]
+                    return render(request, 'rbf/cargar_datos.html', {'form': form, 'archivos_ejemplo': archivos_ejemplo})
                 
-                # Guardar el archivo físicamente
-                file.seek(0)
-                unique_filename = f"{uuid.uuid4()}_{file.name}"
-                file_path = os.path.join(settings.MEDIA_ROOT, 'uploads', unique_filename)
-                
-                os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                
-                with open(file_path, 'wb+') as destination:
-                    for chunk in file.chunks():
-                        destination.write(chunk)
+                # Si es archivo de ejemplo, copiar a uploads
+                if archivo_ejemplo:
+                    unique_filename = f"{uuid.uuid4()}_{nombre_archivo}"
+                    destination_path = os.path.join(settings.MEDIA_ROOT, 'uploads', unique_filename)
+                    
+                    os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+                    
+                    # Copiar desde examples a uploads
+                    import shutil
+                    shutil.copy2(file_path, destination_path)
+                    file_path_sesion = destination_path
+                else:
+                    # Guardar el archivo físicamente
+                    file.seek(0)
+                    unique_filename = f"{uuid.uuid4()}_{nombre_archivo}"
+                    destination_path = os.path.join(settings.MEDIA_ROOT, 'uploads', unique_filename)
+                    
+                    os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+                    
+                    with open(destination_path, 'wb+') as destination:
+                        for chunk in file.chunks():
+                            destination.write(chunk)
+                    
+                    file_path_sesion = destination_path
                 
                 # Guardar información en la sesión
                 uploaded_data = {
-                    'filename': file.name,
+                    'filename': nombre_archivo,
                     'columns': df.columns.tolist(),
                     'shape': list(df.shape),
                 }
                 
                 uploaded_data = convertir_a_tipos_nativos(uploaded_data)
                 request.session['uploaded_data_rbf'] = uploaded_data
-                request.session['file_path_rbf'] = file_path
+                request.session['file_path_rbf'] = file_path_sesion
                 
                 messages.success(request, f'Archivo cargado exitosamente. {df.shape[0]} filas, {df.shape[1]} columnas.')
                 return redirect('rbf:configurar_rbf')
                 
             except Exception as e:
                 messages.error(request, f'Error al procesar el archivo: {str(e)}')
+                form.fields['archivo_ejemplo'].choices = [('', '-- Selecciona un archivo --')] + [(f, f) for f in archivos_ejemplo]
+                return render(request, 'rbf/cargar_datos.html', {'form': form, 'archivos_ejemplo': archivos_ejemplo})
     else:
         form = RBFDataUploadForm()
+        # Llenar las opciones del select con archivos de ejemplo
+        form.fields['archivo_ejemplo'].choices = [('', '-- Selecciona un archivo --')] + [(f, f) for f in archivos_ejemplo]
     
     uploaded_data = request.session.get('uploaded_data_rbf', None)
     
     context = {
         'form': form,
-        'uploaded_data': uploaded_data
+        'uploaded_data': uploaded_data,
+        'archivos_ejemplo': archivos_ejemplo
     }
     
     return render(request, 'rbf/cargar_datos.html', context)

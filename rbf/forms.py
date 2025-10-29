@@ -9,14 +9,38 @@ class RBFDataUploadForm(forms.Form):
     """
     Formulario para cargar archivos de datos
     """
+    archivo_ejemplo = forms.ChoiceField(
+        label='Archivos de Ejemplo',
+        required=False,
+        choices=[],  # Se completará dinámicamente
+        widget=forms.Select(attrs={
+            'class': 'form-control'
+        }),
+        help_text='Selecciona un archivo de ejemplo del directorio dt'
+    )
+    
     data_file = forms.FileField(
-        label='Archivo de Datos',
+        label='O subir archivo personalizado',
+        required=False,
         help_text='Selecciona un archivo CSV, XLSX, JSON o TXT',
         widget=forms.FileInput(attrs={
             'class': 'form-control',
             'accept': '.csv,.xlsx,.json,.txt'
         })
     )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        archivo_ejemplo = cleaned_data.get('archivo_ejemplo')
+        data_file = cleaned_data.get('data_file')
+        
+        # Validar que se seleccione al menos uno
+        if not archivo_ejemplo and not data_file:
+            raise forms.ValidationError(
+                'Debes seleccionar un archivo de ejemplo O subir un archivo personalizado.'
+            )
+        
+        return cleaned_data
     
     def clean_data_file(self):
         file = self.cleaned_data.get('data_file')
@@ -60,8 +84,14 @@ class RBFConfigForm(forms.Form):
             'min': '2',
             'max': '50'
         }),
-        help_text='Número de neuronas ocultas (centros radiales). Valores típicos: 2-10.'
+        help_text='Número de neuronas ocultas (centros radiales). Debe ser >= número de entradas. Valores típicos: 2-10.'
     )
+    
+    def __init__(self, *args, **kwargs):
+        """Constructor para recibir columnas y ajustar la validación de centros"""
+        columns = kwargs.pop('columns', None)
+        super().__init__(*args, **kwargs)
+        self.columns = columns
 
     porcentaje_entrenamiento = forms.FloatField(
         label='Porcentaje de Entrenamiento (%)',
@@ -119,6 +149,7 @@ class RBFConfigForm(forms.Form):
         cleaned_data = super().clean()
         input_columns = cleaned_data.get('input_columns', [])
         output_columns = cleaned_data.get('output_columns', [])
+        num_centros = cleaned_data.get('num_centros', 0)
 
         # Validaciones
         if not input_columns:
@@ -133,6 +164,14 @@ class RBFConfigForm(forms.Form):
         # Verificar que no haya solapamiento entre entradas y salidas
         if set(input_columns) & set(output_columns):
             raise forms.ValidationError('Las columnas de entrada y salida no pueden ser las mismas.')
+        
+        # Validar que el número de centros sea >= número de entradas
+        num_entradas = len(input_columns)
+        if num_centros < num_entradas:
+            raise forms.ValidationError(
+                f'El número de centros radiales ({num_centros}) no puede ser menor que el número de entradas ({num_entradas}). '
+                f'Por favor, usa al menos {num_entradas} centros.'
+            )
 
         return cleaned_data
 
