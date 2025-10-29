@@ -163,6 +163,264 @@
         </div>
     </div>
 
+    <!-- Procesamiento Matemático Interno -->
+    {% if procesamiento_interno %}
+    <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8 mb-8">
+        <h2 class="text-2xl font-bold text-accent-800 mb-6">
+            <i class="fas fa-calculator mr-2 text-primary-600"></i>Procesamiento Matemático Interno
+        </h2>
+        
+        <!-- Información General -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Información General</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div class="bg-white p-3 rounded border">
+                    <span class="font-semibold text-gray-600">Patrones:</span>
+                    <span class="text-gray-800">{{ procesamiento_interno.num_patrones }}</span>
+                </div>
+                <div class="bg-white p-3 rounded border">
+                    <span class="font-semibold text-gray-600">Características:</span>
+                    <span class="text-gray-800">{{ procesamiento_interno.num_caracteristicas }}</span>
+                </div>
+                <div class="bg-white p-3 rounded border">
+                    <span class="font-semibold text-gray-600">Centros:</span>
+                    <span class="text-gray-800">{{ procesamiento_interno.num_centros }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASO 1: Inicialización de Centros -->
+        <div class="mb-8">
+            <h3 class="text-xl font-bold text-blue-800 mb-4">
+                <i class="fas fa-play-circle mr-2"></i>PASO 1: Inicialización de Centros Radiales
+            </h3>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p class="text-blue-800 font-semibold mb-2">Fórmula:</p>
+                <code class="bg-white px-3 py-2 rounded border text-sm">{{ procesamiento_interno.paso_1_inicializacion.formula }}</code>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="bg-white border rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-700 mb-2">Rangos de Inicialización</h4>
+                    <div class="space-y-2 text-sm">
+                        <div><span class="font-medium">Min:</span> {{ procesamiento_interno.paso_1_inicializacion.min_vals|join:", " }}</div>
+                        <div><span class="font-medium">Max:</span> {{ procesamiento_interno.paso_1_inicializacion.max_vals|join:", " }}</div>
+                        <div><span class="font-medium">Rangos:</span> {{ procesamiento_interno.paso_1_inicializacion.rangos|join:", " }}</div>
+                    </div>
+                </div>
+                <div class="bg-white border rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-700 mb-2">Centros Inicializados</h4>
+                    <div class="max-h-32 overflow-y-auto text-xs">
+                        {% for centro in procesamiento_interno.paso_1_inicializacion.centros_inicializados %}
+                        <div class="mb-1">Centro {{ forloop.counter }}: [{{ centro|join:", " }}]</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASO 2: Cálculo de Distancias -->
+        <div class="mb-8">
+            <h3 class="text-xl font-bold text-green-800 mb-4">
+                <i class="fas fa-ruler mr-2"></i>PASO 2: Cálculo de Distancias Euclidianas
+            </h3>
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <p class="text-green-800 font-semibold mb-2">Fórmula:</p>
+                <code class="bg-white px-3 py-2 rounded border text-sm">{{ procesamiento_interno.paso_2_distancias.formula }}</code>
+                <p class="text-green-700 text-sm mt-2">Dimensiones: {{ procesamiento_interno.paso_2_distancias.dimensiones }}</p>
+            </div>
+            
+            <div class="bg-white border rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-2">Ejemplo - Primer Patrón</h4>
+                <div class="text-sm">
+                    <p class="mb-2">Distancias del primer patrón a cada centro:</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {% for dist in procesamiento_interno.paso_2_distancias.ejemplo_primer_patron %}
+                        <div class="bg-gray-100 p-2 rounded text-center">
+                            Centro {{ forloop.counter }}<br>
+                            <span class="font-mono">{{ dist|floatformat:4 }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASO 3: Función de Activación -->
+        <div class="mb-8">
+            <h3 class="text-xl font-bold text-purple-800 mb-4">
+                <i class="fas fa-function mr-2"></i>PASO 3: Función de Activación Radial
+            </h3>
+            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+                <p class="text-purple-800 font-semibold mb-2">Fórmula:</p>
+                <code class="bg-white px-3 py-2 rounded border text-sm">{{ procesamiento_interno.paso_3_activaciones.formula }}</code>
+                <p class="text-purple-700 text-sm mt-2">Dimensiones: {{ procesamiento_interno.paso_3_activaciones.dimensiones }}</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="bg-white border rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-700 mb-2">Estadísticas de Activaciones</h4>
+                    <div class="space-y-2 text-sm">
+                        <div><span class="font-medium">Mínimo:</span> {{ procesamiento_interno.paso_3_activaciones.valores_min|floatformat:6 }}</div>
+                        <div><span class="font-medium">Máximo:</span> {{ procesamiento_interno.paso_3_activaciones.valores_max|floatformat:6 }}</div>
+                        <div><span class="font-medium">Promedio:</span> {{ procesamiento_interno.paso_3_activaciones.valores_promedio|floatformat:6 }}</div>
+                    </div>
+                </div>
+                <div class="bg-white border rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-700 mb-2">Ejemplo - Primer Patrón</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {% for act in procesamiento_interno.paso_3_activaciones.ejemplo_primer_patron %}
+                        <div class="bg-purple-100 p-2 rounded text-center">
+                            Centro {{ forloop.counter }}<br>
+                            <span class="font-mono">{{ act|floatformat:4 }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASO 4: Matriz de Interpolación -->
+        <div class="mb-8">
+            <h3 class="text-xl font-bold text-orange-800 mb-4">
+                <i class="fas fa-table mr-2"></i>PASO 4: Construcción de Matriz de Interpolación
+            </h3>
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                <p class="text-orange-800 font-semibold mb-2">Fórmula:</p>
+                <code class="bg-white px-3 py-2 rounded border text-sm">{{ procesamiento_interno.paso_4_matriz_interpolacion.formula }}</code>
+                <p class="text-orange-700 text-sm mt-2">Dimensiones: {{ procesamiento_interno.paso_4_matriz_interpolacion.dimensiones }}</p>
+            </div>
+            
+            <div class="bg-white border rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-2">Ejemplo - Primer Patrón</h4>
+                <div class="text-sm">
+                    <p class="mb-2">Matriz A[0] = [Umbral, Activación_1, Activación_2, ...]:</p>
+                    <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
+                        <div class="bg-orange-100 p-2 rounded text-center">
+                            Umbral<br>
+                            <span class="font-mono">{{ procesamiento_interno.paso_4_matriz_interpolacion.ejemplo_primer_patron.0|floatformat:4 }}</span>
+                        </div>
+                        {% for val in procesamiento_interno.paso_4_matriz_interpolacion.ejemplo_primer_patron %}
+                            {% if not forloop.first %}
+                            <div class="bg-orange-100 p-2 rounded text-center">
+                                Centro {{ forloop.counter0 }}<br>
+                                <span class="font-mono">{{ val|floatformat:4 }}</span>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASO 5: Cálculo de Pesos -->
+        <div class="mb-8">
+            <h3 class="text-xl font-bold text-red-800 mb-4">
+                <i class="fas fa-weight mr-2"></i>PASO 5: Cálculo de Pesos por Mínimos Cuadrados
+            </h3>
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <p class="text-red-800 font-semibold mb-2">Fórmula:</p>
+                <code class="bg-white px-3 py-2 rounded border text-sm">{{ procesamiento_interno.paso_5_calculo_pesos.formula }}</code>
+                <p class="text-red-700 text-sm mt-2">Método: {{ procesamiento_interno.paso_5_calculo_pesos.metodo }}</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="bg-white border rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-700 mb-2">Pesos Calculados</h4>
+                    <div class="space-y-2 text-sm">
+                        <div><span class="font-medium">Umbral (W₀):</span> <span class="font-mono">{{ procesamiento_interno.paso_5_calculo_pesos.umbral_W0|floatformat:6 }}</span></div>
+                        <div class="mt-2">
+                            <span class="font-medium">Pesos de Centros:</span>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-1 mt-1">
+                                {% for peso in procesamiento_interno.paso_5_calculo_pesos.pesos_centros %}
+                                <div class="bg-gray-100 p-1 rounded text-center text-xs">
+                                    W{{ forloop.counter }}: {{ peso|floatformat:3 }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white border rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-700 mb-2">Información del Sistema</h4>
+                    <div class="space-y-2 text-sm">
+                        <div><span class="font-medium">Rank de matriz:</span> {{ procesamiento_interno.paso_5_calculo_pesos.rank_matriz }}</div>
+                        <div><span class="font-medium">Residuos:</span> {{ procesamiento_interno.paso_5_calculo_pesos.residuos.0|floatformat:6 }}</div>
+                        <div><span class="font-medium">Valores singulares:</span> {{ procesamiento_interno.paso_5_calculo_pesos.valores_singulares|length }} valores</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASO 6: Predicciones -->
+        <div class="mb-8">
+            <h3 class="text-xl font-bold text-indigo-800 mb-4">
+                <i class="fas fa-crystal-ball mr-2"></i>PASO 6: Cálculo de Predicciones
+            </h3>
+            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-4">
+                <p class="text-indigo-800 font-semibold mb-2">Fórmula:</p>
+                <code class="bg-white px-3 py-2 rounded border text-sm">{{ procesamiento_interno.paso_6_predicciones.formula }}</code>
+            </div>
+            
+            <div class="bg-white border rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-2">Ejemplo - Primeras 10 Predicciones</h4>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-2 py-1 text-left">Patrón</th>
+                                <th class="px-2 py-1 text-left">Y Real</th>
+                                <th class="px-2 py-1 text-left">Y Predicho</th>
+                                <th class="px-2 py-1 text-left">Diferencia</th>
+                                <th class="px-2 py-1 text-left">|Diferencia|</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in "0123456789"|make_list %}
+                                {% if forloop.counter0 < procesamiento_interno.paso_6_predicciones.y_real|length %}
+                                <tr class="border-t">
+                                    <td class="px-2 py-1">{{ forloop.counter }}</td>
+                                    <td class="px-2 py-1 font-mono">{{ procesamiento_interno.paso_6_predicciones.y_real|slice:forloop.counter0|first|floatformat:4 }}</td>
+                                    <td class="px-2 py-1 font-mono">{{ procesamiento_interno.paso_6_predicciones.y_predicho|slice:forloop.counter0|first|floatformat:4 }}</td>
+                                    <td class="px-2 py-1 font-mono">{{ procesamiento_interno.paso_6_predicciones.diferencias|slice:forloop.counter0|first|floatformat:4 }}</td>
+                                    <td class="px-2 py-1 font-mono">{{ procesamiento_interno.paso_6_predicciones.diferencias_absolutas|slice:forloop.counter0|first|floatformat:4 }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASO 7: Métricas Detalladas -->
+        <div class="mb-8">
+            <h3 class="text-xl font-bold text-teal-800 mb-4">
+                <i class="fas fa-chart-line mr-2"></i>PASO 7: Cálculo de Métricas de Evaluación
+            </h3>
+            <div class="bg-teal-50 border border-teal-200 rounded-lg p-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white border rounded-lg p-4 text-center">
+                        <h4 class="font-semibold text-gray-700 mb-2">Error General (EG)</h4>
+                        <div class="text-2xl font-bold text-blue-600">{{ procesamiento_interno.paso_7_metricas.EG|floatformat:6 }}</div>
+                        <p class="text-xs text-gray-600 mt-1">EG = Σ|Y_d - Y_r| / N</p>
+                    </div>
+                    <div class="bg-white border rounded-lg p-4 text-center">
+                        <h4 class="font-semibold text-gray-700 mb-2">Error Absoluto Medio (MAE)</h4>
+                        <div class="text-2xl font-bold text-green-600">{{ procesamiento_interno.paso_7_metricas.MAE|floatformat:6 }}</div>
+                        <p class="text-xs text-gray-600 mt-1">MAE = (1/N) Σ|Y_d - Y_r|</p>
+                    </div>
+                    <div class="bg-white border rounded-lg p-4 text-center">
+                        <h4 class="font-semibold text-gray-700 mb-2">Raíz Error Cuadrático Medio (RMSE)</h4>
+                        <div class="text-2xl font-bold text-red-600">{{ procesamiento_interno.paso_7_metricas.RMSE|floatformat:6 }}</div>
+                        <p class="text-xs text-gray-600 mt-1">RMSE = √[(1/N) Σ(Y_d - Y_r)²]</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Gráficos -->
     <div class="space-y-8 mb-8">
         <!-- Gráfico de Dispersión -->

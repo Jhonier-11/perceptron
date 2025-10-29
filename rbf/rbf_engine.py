@@ -362,6 +362,24 @@ def preprocesar_datos(df, columnas_entrada, columnas_salida):
     return info_preprocesamiento, df_procesado, df_comparacion
 
 
+def calcular_metricas(y_deseado, y_real):
+    """
+    Calcula todas las métricas de evaluación (EG, MAE, RMSE)
+    
+    Args:
+        y_deseado (np.ndarray): Valores deseados
+        y_real (np.ndarray): Valores reales/predichos
+        
+    Returns:
+        dict: Diccionario con todas las métricas
+    """
+    return {
+        'EG': calcular_eg(y_deseado, y_real),
+        'MAE': calcular_mae(y_deseado, y_real),
+        'RMSE': calcular_rmse(y_deseado, y_real)
+    }
+
+
 class RBFNet:
     """
     Implementación de Red Neuronal de Función de Base Radial (RBF)
@@ -472,7 +490,7 @@ class RBFNet:
             y (np.ndarray): Vector de salidas deseadas
             
         Returns:
-            dict: Información del entrenamiento
+            dict: Información del entrenamiento con todos los pasos intermedios
         """
         # Validar entrada
         X = np.asarray(X, dtype=float)
@@ -483,7 +501,7 @@ class RBFNet:
         
         num_patrones, num_caracteristicas = X.shape
         
-        # Inicializar centros radiales aleatoriamente dentro del rango [min(X), max(X)]
+        # PASO 1: Inicializar centros radiales aleatoriamente dentro del rango [min(X), max(X)]
         min_vals = np.min(X, axis=0)
         max_vals = np.max(X, axis=0)
         
@@ -521,17 +539,16 @@ class RBFNet:
             size=(self.num_centros, num_caracteristicas)
         )
         
-        # 1. Calcular distancias
+        # PASO 2: Calcular distancias euclidianas D_pj = sqrt((X_p - R_j)^2)
         distancias = self._calcular_distancias(X, self.centros)
         
-        # 2. Calcular activaciones
+        # PASO 3: Calcular activaciones usando FA(d) = d^2 * ln(d)
         activaciones = self._calcular_activaciones(distancias)
         
-        # 3. Construir matriz de interpolación A
+        # PASO 4: Construir matriz de interpolación A agregando columna de 1s
         A = self._construir_matriz_interpolacion(activaciones)
         
-        # 4. Resolver W = (A^T A)^(-1) A^T Y
-        # Usar mínimos cuadrados con lstsq para evitar problemas con matrices singulares
+        # PASO 5: Resolver W = (A^T A)^(-1) A^T Y usando mínimos cuadrados
         try:
             # lstsq retorna la solución de mínimos cuadrados
             W, residuals, rank, s = np.linalg.lstsq(A, y, rcond=None)
@@ -543,14 +560,86 @@ class RBFNet:
             
             self.entrenado = True
             
-            # Preparar resultado
+            # PASO 6: Calcular predicciones para el conjunto de entrenamiento
+            y_pred_train = A @ W
+            
+            # PASO 7: Calcular métricas de entrenamiento
+            metricas_train = calcular_metricas(y, y_pred_train)
+            
+            # Preparar resultado completo con todos los pasos intermedios
             resultado = {
+                # Información básica
+                'num_patrones': num_patrones,
+                'num_caracteristicas': num_caracteristicas,
+                'num_centros': self.num_centros,
+                
+                # PASO 1: Inicialización de centros
+                'paso_1_inicializacion': {
+                    'min_vals': min_vals.tolist(),
+                    'max_vals': max_vals.tolist(),
+                    'rangos': (max_vals - min_vals).tolist(),
+                    'centros_inicializados': self.centros.tolist(),
+                    'formula': f'R_j = random_uniform([min(X), max(X)]) para j=1,...,{self.num_centros}'
+                },
+                
+                # PASO 2: Cálculo de distancias
+                'paso_2_distancias': {
+                    'matriz_distancias': distancias.tolist(),
+                    'dimensiones': f'{distancias.shape[0]} patrones x {distancias.shape[1]} centros',
+                    'formula': 'D_pj = sqrt(sum((X_p - R_j)^2))',
+                    'ejemplo_primer_patron': distancias[0].tolist() if distancias.shape[0] > 0 else []
+                },
+                
+                # PASO 3: Función de activación
+                'paso_3_activaciones': {
+                    'matriz_activaciones': activaciones.tolist(),
+                    'dimensiones': f'{activaciones.shape[0]} patrones x {activaciones.shape[1]} centros',
+                    'formula': 'FA(D_pj) = (D_pj)^2 * ln(D_pj)',
+                    'ejemplo_primer_patron': activaciones[0].tolist() if activaciones.shape[0] > 0 else [],
+                    'valores_min': float(np.min(activaciones)),
+                    'valores_max': float(np.max(activaciones)),
+                    'valores_promedio': float(np.mean(activaciones))
+                },
+                
+                # PASO 4: Matriz de interpolación
+                'paso_4_matriz_interpolacion': {
+                    'matriz_A': A.tolist(),
+                    'dimensiones': f'{A.shape[0]} patrones x {A.shape[1]} columnas (1 umbral + {self.num_centros} centros)',
+                    'formula': 'A = [1, FA(D_1), FA(D_2), ..., FA(D_k)]',
+                    'primera_columna_umbral': A[:, 0].tolist(),
+                    'ejemplo_primer_patron': A[0].tolist() if A.shape[0] > 0 else []
+                },
+                
+                # PASO 5: Cálculo de pesos
+                'paso_5_calculo_pesos': {
+                    'vector_pesos': W.tolist(),
+                    'umbral_W0': float(self.W0),
+                    'pesos_centros': self.W1_n.tolist(),
+                    'formula': 'W = (A^T A)^(-1) A^T Y',
+                    'metodo': 'Mínimos cuadrados (np.linalg.lstsq)',
+                    'residuos': residuals.tolist() if len(residuals) > 0 else [0.0],
+                    'rank_matriz': int(rank),
+                    'valores_singulares': s.tolist() if len(s) > 0 else []
+                },
+                
+                # PASO 6: Predicciones
+                'paso_6_predicciones': {
+                    'y_real': y.tolist(),
+                    'y_predicho': y_pred_train.tolist(),
+                    'formula': 'Y_pred = A * W',
+                    'diferencias': (y - y_pred_train).tolist(),
+                    'diferencias_absolutas': np.abs(y - y_pred_train).tolist()
+                },
+                
+                # PASO 7: Métricas
+                'paso_7_metricas': metricas_train,
+                
+                # Resultados finales (compatibilidad)
                 'centros': self.centros.tolist(),
                 'pesos': W.tolist(),
                 'umbral': float(self.W0),
                 'pesos_centros': self.W1_n.tolist(),
-                'residuos': residuals.tolist() if len(residuals) > 0 else [0.0],
-                'num_centros': self.num_centros
+                'residuos': residuals.tolist() if len(residuals) > 0 else [0.0]
             }
             
             return resultado
