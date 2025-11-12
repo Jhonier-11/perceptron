@@ -613,17 +613,10 @@ def entrenar_rbf(request):
             columnas_entrada = training_config['columnas_entrada']
             columnas_salida = training_config['columnas_salida']
             
-            # Aplicar preprocesamiento automático
-            info_preprocesamiento, df_procesado, df_comparacion = preprocesar_datos(df, columnas_entrada, columnas_salida)
+            # Aplicar preprocesamiento automático (ahora normaliza por máximo)
+            info_preprocesamiento, df_procesado, df_comparacion, df_antes_normalizacion = preprocesar_datos(df, columnas_entrada, columnas_salida)
             
-            # Convertir a numérico si es necesario
-            if info_preprocesamiento['columnas_codificadas']:
-                for item in info_preprocesamiento['columnas_codificadas']:
-                    col = item['columna']
-                    if col in df_procesado.columns:
-                        df_procesado[col] = pd.to_numeric(df_procesado[col], errors='coerce')
-            
-            # Extraer X e y
+            # Extraer X e y (ya están normalizados)
             X = df_procesado[columnas_entrada].values
             y = df_procesado[columnas_salida].values.flatten()
             
@@ -635,19 +628,15 @@ def entrenar_rbf(request):
             porcentaje = training_config['porcentaje_entrenamiento']
             X_train, X_test, y_train, y_test = dividir_entrenamiento_prueba(X, y, porcentaje)
             
-            # Decidir si normalizar basado en el análisis de preprocesamiento
+            # Los datos ya están normalizados por máximo en el preprocesamiento
+            # No necesitamos normalizar nuevamente aquí
             X_train_norm = X_train
             X_test_norm = X_test
             mean_train = None
             std_train = None
             
-            if info_preprocesamiento['necesita_normalizacion']:
-                # Normalizar datos (solo X, no y)
-                X_train_norm, mean_train, std_train = normalizar_datos(X_train)
-                X_test_norm, _, _ = normalizar_datos(X_test)
-                info_preprocesamiento['normalizado'] = True
-            else:
-                info_preprocesamiento['normalizado'] = False
+            # Guardar información de normalización para desnormalización posterior
+            info_preprocesamiento['normalizado'] = True
             
             # Crear y entrenar la red RBF
             num_centros = training_config['num_centros']
@@ -686,10 +675,54 @@ def entrenar_rbf(request):
                 num_entradas=num_entradas, num_centros=num_centros
             )
             
-            # Guardar en base de datos
+            # Guardar en base de datos (usar máximos de normalización por máximo)
             estadisticas_norm = {
-                'mean': mean_train.tolist() if hasattr(mean_train, 'tolist') else mean_train,
-                'std': std_train.tolist() if hasattr(std_train, 'tolist') else std_train
+                'maximos_columnas': info_preprocesamiento.get('maximos_columnas', {}),
+                'tipo_normalizacion': 'max'
+            }
+            
+            # Preparar datos para mostrar: dataset original y dataset normalizado (vista previa)
+            datos_original = None
+            datos_normalizado = None
+            
+            # Dataset original (solo columnas relevantes, solo primeras 20 filas para visualización)
+            if not df_comparacion.empty:
+                columnas_mostrar = columnas_entrada + columnas_salida
+                df_original_mostrar = df_comparacion[columnas_mostrar].head(20)
+                datos_original = df_original_mostrar.to_dict('records')
+            
+            # Dataset normalizado (solo columnas relevantes, solo primeras 20 filas para visualización)
+            if not df_procesado.empty:
+                columnas_mostrar = columnas_entrada + columnas_salida
+                df_normalizado_mostrar = df_procesado[columnas_mostrar].head(20)
+                datos_normalizado = df_normalizado_mostrar.to_dict('records')
+            
+            # Datos antes de normalización pero después de codificación (para referencia)
+            datos_antes_norm = None
+            if not df_antes_normalizacion.empty:
+                columnas_mostrar = columnas_entrada + columnas_salida
+                df_antes_norm_mostrar = df_antes_normalizacion[columnas_mostrar].head(20)
+                datos_antes_norm = df_antes_norm_mostrar.to_dict('records')
+            
+            # Guardar dataset normalizado COMPLETO (todas las filas) para exportación
+            dataset_normalizado_completo = None
+            if not df_procesado.empty:
+                columnas_mostrar = columnas_entrada + columnas_salida
+                df_normalizado_completo = df_procesado[columnas_mostrar]
+                dataset_normalizado_completo = df_normalizado_completo.to_dict('records')
+            
+            # Preparar procesamiento interno completo para guardar
+            procesamiento_interno_completo = {
+                'num_patrones': resultado_entrenamiento['num_patrones'],
+                'num_caracteristicas': resultado_entrenamiento['num_caracteristicas'],
+                'num_centros': resultado_entrenamiento['num_centros'],
+                'paso_1_inicializacion': convertir_a_tipos_nativos(resultado_entrenamiento['paso_1_inicializacion']),
+                'paso_2_distancias': convertir_a_tipos_nativos(resultado_entrenamiento['paso_2_distancias']),
+                'paso_3_activaciones': convertir_a_tipos_nativos(resultado_entrenamiento['paso_3_activaciones']),
+                'paso_4_matriz_interpolacion': convertir_a_tipos_nativos(resultado_entrenamiento['paso_4_matriz_interpolacion']),
+                'paso_5_calculo_pesos': convertir_a_tipos_nativos(resultado_entrenamiento['paso_5_calculo_pesos']),
+                'paso_6_predicciones': convertir_a_tipos_nativos(resultado_entrenamiento['paso_6_predicciones']),
+                'paso_7_metricas': resultado_entrenamiento['paso_7_metricas']
             }
             
             training_record = RBFTraining.objects.create(
@@ -706,26 +739,16 @@ def entrenar_rbf(request):
                 metricas_prueba=metricas_test,
                 convergencia=convergencia,
                 estadisticas_normalizacion=estadisticas_norm,
+                # Guardar dataset normalizado completo
+                dataset_normalizado=dataset_normalizado_completo,
+                # Guardar procesamiento interno completo
+                procesamiento_interno=procesamiento_interno_completo,
                 # Guardar valores reales y predichos para regenerar gráficos
                 y_train_real=y_train.tolist() if hasattr(y_train, 'tolist') else list(y_train),
                 y_train_pred=y_train_pred.tolist() if hasattr(y_train_pred, 'tolist') else list(y_train_pred),
                 y_test_real=y_test.tolist() if hasattr(y_test, 'tolist') else list(y_test),
                 y_test_pred=y_test_pred.tolist() if hasattr(y_test_pred, 'tolist') else list(y_test_pred)
             )
-            
-            # Preparar datos de comparación para la tabla
-            datos_comparacion = None
-            if not df_comparacion.empty:
-                # Convertir a diccionario con solo las columnas relevantes
-                columnas_mostrar = columnas_entrada + columnas_salida
-                # Agregar columnas transformadas si existen
-                for item in info_preprocesamiento.get('datos_comparacion', []):
-                    if item['columna_transformada'] in df_comparacion.columns:
-                        columnas_mostrar.append(item['columna_transformada'])
-                
-                df_mostrar = df_comparacion[columnas_mostrar]
-                # Convertir a diccionario
-                datos_comparacion = df_mostrar.head(20).to_dict('records')  # Solo primeras 20 filas
             
             # Guardar gráficos y resultados en sesión
             request.session['rbf_results'] = {
@@ -738,7 +761,9 @@ def entrenar_rbf(request):
                 'metricas_test': metricas_test,
                 'convergencia': convergencia,
                 'info_preprocesamiento': convertir_a_tipos_nativos(info_preprocesamiento),
-                'datos_comparacion': datos_comparacion,
+                'datos_original': datos_original,
+                'datos_normalizado': datos_normalizado,
+                'datos_antes_norm': datos_antes_norm,
                 'columnas_entrada': columnas_entrada,
                 'columnas_salida': columnas_salida,
                 # Datos internos del procesamiento matemático
@@ -803,7 +828,9 @@ def resultados_rbf(request):
         'metricas_test': rbf_results['metricas_test'],
         'convergencia': rbf_results['convergencia'],
         'info_preprocesamiento': rbf_results.get('info_preprocesamiento', {}),
-        'datos_comparacion': rbf_results.get('datos_comparacion', []),
+        'datos_original': rbf_results.get('datos_original', []),
+        'datos_normalizado': rbf_results.get('datos_normalizado', []),
+        'datos_antes_norm': rbf_results.get('datos_antes_norm', []),
         'columnas_entrada': rbf_results.get('columnas_entrada', []),
         'columnas_salida': rbf_results.get('columnas_salida', []),
         'procesamiento_interno': rbf_results.get('procesamiento_interno', {})
@@ -935,31 +962,115 @@ def detalles_rbf(request, training_id):
 
 def descargar_modelo_rbf(request, training_id):
     """
-    Vista para descargar el modelo entrenado
+    Vista para descargar el modelo entrenado completo, incluyendo:
+    - Dataset normalizado completo
+    - Resultados matemáticos (centros radiales, pesos, etc.)
+    - Procesamiento interno detallado
+    - Todas las métricas y configuraciones
     """
     training = get_object_or_404(RBFTraining, id=training_id)
     
-    # Crear archivo JSON con los datos del modelo
+    # Crear estructura completa del modelo para exportación
     datos_modelo = {
-        'nombre_entrenamiento': training.nombre,
-        'fecha_creacion': training.fecha_creacion.isoformat(),
-        'num_centros': training.num_centros,
-        'columnas_entrada': training.columnas_entrada,
-        'columnas_salida': training.columnas_salida,
-        'centros_radiales': convertir_a_tipos_nativos(training.centros_radiales),
-        'pesos': convertir_a_tipos_nativos(training.pesos_finales),
-        'umbral': float(training.umbral),
-        'metricas_entrenamiento': training.metricas_entrenamiento,
-        'metricas_prueba': training.metricas_prueba,
-        'convergencia': training.convergencia,
-        'estadisticas_normalizacion': training.estadisticas_normalizacion
+        'info_general': {
+            'nombre_entrenamiento': training.nombre,
+            'fecha_creacion': training.fecha_creacion.isoformat(),
+            'fecha_creacion_formato': training.fecha_creacion.strftime('%d/%m/%Y %H:%M:%S'),
+            'version': '1.0',
+            'tipo_modelo': 'Red Neuronal de Función de Base Radial (RBF)'
+        },
+        
+        'configuracion_entrenamiento': {
+            'num_centros_radiales': training.num_centros,
+            'porcentaje_entrenamiento': training.porcentaje_entrenamiento,
+            'error_aproximacion_objetivo': training.error_aproximacion,
+            'columnas_entrada': training.columnas_entrada,
+            'columnas_salida': training.columnas_salida,
+            'num_columnas_entrada': len(training.columnas_entrada),
+            'num_columnas_salida': len(training.columnas_salida)
+        },
+        
+        'resultados_matematicos': {
+            'centros_radiales': convertir_a_tipos_nativos(training.centros_radiales),
+            'pesos_finales': convertir_a_tipos_nativos(training.pesos_finales),
+            'umbral': float(training.umbral),
+            'nota': 'Los centros radiales (Rj) representan las posiciones en el espacio de características. Los pesos (W) y el umbral (W0) son los parámetros ajustados durante el entrenamiento.'
+        },
+        
+        'metricas_evaluacion': {
+            'entrenamiento': {
+                'error_general_eg': training.metricas_entrenamiento.get('EG', None),
+                'error_absoluto_medio_mae': training.metricas_entrenamiento.get('MAE', None),
+                'raiz_error_cuadratico_medio_rmse': training.metricas_entrenamiento.get('RMSE', None)
+            },
+            'prueba': {
+                'error_general_eg': training.metricas_prueba.get('EG', None),
+                'error_absoluto_medio_mae': training.metricas_prueba.get('MAE', None),
+                'raiz_error_cuadratico_medio_rmse': training.metricas_prueba.get('RMSE', None)
+            },
+            'convergencia': training.convergencia,
+            'nota': 'EG = Error General, MAE = Error Absoluto Medio, RMSE = Raíz del Error Cuadrático Medio'
+        },
+        
+        'datos_entrenamiento': {
+            'y_train_real': training.y_train_real,
+            'y_train_predicho': training.y_train_pred,
+            'y_test_real': training.y_test_real,
+            'y_test_predicho': training.y_test_pred,
+            'num_patrones_entrenamiento': len(training.y_train_real) if training.y_train_real else 0,
+            'num_patrones_prueba': len(training.y_test_real) if training.y_test_real else 0,
+            'total_patrones': (len(training.y_train_real) if training.y_train_real else 0) + 
+                             (len(training.y_test_real) if training.y_test_real else 0)
+        },
+        
+        'normalizacion': {
+            'estadisticas': training.estadisticas_normalizacion,
+            'tipo_normalizacion': training.estadisticas_normalizacion.get('tipo_normalizacion', 'max') if training.estadisticas_normalizacion else 'max',
+            'maximos_columnas': training.estadisticas_normalizacion.get('maximos_columnas', {}) if training.estadisticas_normalizacion else {},
+            'nota': 'Los valores máximos se utilizan para desnormalizar las predicciones. Cada valor normalizado se multiplica por su máximo correspondiente.'
+        },
+        
+        'dataset_normalizado': {
+            'descripcion': 'Dataset completo normalizado utilizado para el entrenamiento (todos los valores divididos por el máximo de su columna)',
+            'num_filas': len(training.dataset_normalizado) if training.dataset_normalizado else 0,
+            'columnas': training.columnas_entrada + training.columnas_salida if training.columnas_entrada else [],
+            'datos': training.dataset_normalizado if training.dataset_normalizado else [],
+            'nota': 'Dataset normalizado completo con todas las filas. Si está vacío, el entrenamiento fue realizado antes de implementar esta característica.'
+        },
+        
+        'procesamiento_matematico_interno': {
+            'descripcion': 'Procesamiento matemático detallado del entrenamiento, incluyendo todos los pasos intermedios',
+            'disponible': training.procesamiento_interno is not None and training.procesamiento_interno != {},
+            'detalles': training.procesamiento_interno if training.procesamiento_interno else {},
+            'nota': 'Procesamiento matemático completo del entrenamiento. Si está vacío, el entrenamiento fue realizado antes de implementar esta característica.'
+        },
+        
+        'notas_adicionales': {
+            'formulas_matematicas': {
+                'inicializacion_centros': 'r_j ~ U[min(x_i), max(x_i)]',
+                'calculo_distancias': 'D_{pj} = sqrt(sum_{i=1}^{m} (x_{pi} - r_{ji})^2)',
+                'funcion_activacion': 'FA(D_{pj}) = D_{pj}^2 · ln(D_{pj})',
+                'matriz_interpolacion': 'A = [1, FA(D_1), FA(D_2), ..., FA(D_k)]',
+                'calculo_pesos': 'W = (A^T A)^{-1} A^T Y',
+                'prediccion': 'y_pred = A · W'
+            },
+            'metricas_formulas': {
+                'EG': 'EG = (1/N) sum_{i=1}^{N} |Y_d - Y_r|',
+                'MAE': 'MAE = (1/N) sum_{i=1}^{N} |Y_d - Y_r|',
+                'RMSE': 'RMSE = sqrt((1/N) sum_{i=1}^{N} (Y_d - Y_r)^2)'
+            }
+        }
     }
     
+    # Limpiar nombre del archivo de caracteres especiales
+    nombre_archivo_limpio = "".join(c for c in training.nombre if c.isalnum() or c in (' ', '-', '_')).rstrip()
+    nombre_archivo_limpio = nombre_archivo_limpio.replace(' ', '_').replace('-', '_')
+    
     response = HttpResponse(
-        json.dumps(datos_modelo, indent=2),
-        content_type='application/json'
+        json.dumps(datos_modelo, indent=2, ensure_ascii=False),
+        content_type='application/json; charset=utf-8'
     )
-    response['Content-Disposition'] = f'attachment; filename="rbf_model_{training.id}.json"'
+    response['Content-Disposition'] = f'attachment; filename="rbf_modelo_completo_{training.id}_{nombre_archivo_limpio}.json"'
     
     return response
 
@@ -995,10 +1106,19 @@ def predecir_rbf(request, training_id):
                 # Si hay estadísticas de normalización, normalizar los datos
                 if training.estadisticas_normalizacion:
                     stats = training.estadisticas_normalizacion
-                    if isinstance(stats, dict) and 'mean' in stats and 'std' in stats:
-                        mean = np.array(stats['mean'])
-                        std = np.array(stats['std'])
-                        X_input = (X_input - mean) / std
+                    if isinstance(stats, dict):
+                        # Normalización por máximo (nueva forma)
+                        if 'maximos_columnas' in stats and 'tipo_normalizacion' in stats and stats['tipo_normalizacion'] == 'max':
+                            maximos = stats['maximos_columnas']
+                            # Normalizar cada columna de entrada dividiendo por su máximo
+                            for i, col in enumerate(training.columnas_entrada):
+                                if col in maximos and maximos[col] != 0:
+                                    X_input[0, i] = X_input[0, i] / maximos[col]
+                        # Normalización por mean/std (forma antigua, para compatibilidad)
+                        elif 'mean' in stats and 'std' in stats:
+                            mean = np.array(stats['mean'])
+                            std = np.array(stats['std'])
+                            X_input = (X_input - mean) / std
                 
                 # Realizar predicción
                 prediccion = rbf.predict(X_input)[0]
@@ -1104,20 +1224,23 @@ def _regenerar_procesamiento_interno(rbf, X, y):
             'max_vals': max_vals.tolist(),
             'rangos': (max_vals - min_vals).tolist(),
             'centros_inicializados': rbf.centros.tolist(),
-            'formula': f'R_j = random_uniform([min(X), max(X)]) para j=1,...,{rbf.num_centros}'
+            'formula': f'rⱼ ~ U[min(xᵢ), max(xᵢ)] para j=1,...,{rbf.num_centros} e i=1,...,n',
+            'formula_latex': f'$r_j \\sim U[\\min(x_i), \\max(x_i)]$ para $j=1,...,{rbf.num_centros}$ e $i=1,...,n$'
         },
         
         'paso_2_distancias': {
             'matriz_distancias': distancias.tolist(),
             'dimensiones': f'{distancias.shape[0]} patrones x {distancias.shape[1]} centros',
-            'formula': 'D_pj = sqrt(sum((X_p - R_j)^2))',
+            'formula': 'D_{pj} = √(∑ᵢ₌₁ᵐ (x_{pi} - r_{ji})²)',
+            'formula_latex': '$D_{pj} = \\sqrt{\\sum_{i=1}^{m} (x_{pi} - r_{ji})^2}$',
             'ejemplo_primer_patron': distancias[0].tolist() if distancias.shape[0] > 0 else []
         },
         
         'paso_3_activaciones': {
             'matriz_activaciones': activaciones.tolist(),
             'dimensiones': f'{activaciones.shape[0]} patrones x {activaciones.shape[1]} centros',
-            'formula': 'FA(D_pj) = (D_pj)^2 * ln(D_pj)',
+            'formula': 'FA(D_{pj}) = D_{pj}² · ln(D_{pj})',
+            'formula_latex': '$FA(D_{pj}) = D_{pj}^2 \\cdot \\ln(D_{pj})$',
             'ejemplo_primer_patron': activaciones[0].tolist() if activaciones.shape[0] > 0 else [],
             'valores_min': float(np.min(activaciones)),
             'valores_max': float(np.max(activaciones)),
@@ -1127,7 +1250,8 @@ def _regenerar_procesamiento_interno(rbf, X, y):
         'paso_4_matriz_interpolacion': {
             'matriz_A': A.tolist(),
             'dimensiones': f'{A.shape[0]} patrones x {A.shape[1]} columnas (1 umbral + {rbf.num_centros} centros)',
-            'formula': 'A = [1, FA(D_1), FA(D_2), ..., FA(D_k)]',
+            'formula': 'A = [1, FA(D₁), FA(D₂), ..., FA(Dₖ)]',
+            'formula_latex': '$A = [1, FA(D_1), FA(D_2), \\ldots, FA(D_k)]$',
             'primera_columna_umbral': A[:, 0].tolist(),
             'ejemplo_primer_patron': A[0].tolist() if A.shape[0] > 0 else []
         },
@@ -1136,8 +1260,9 @@ def _regenerar_procesamiento_interno(rbf, X, y):
             'vector_pesos': W.tolist(),
             'umbral_W0': float(rbf.W0),
             'pesos_centros': rbf.W1_n.tolist(),
-            'formula': 'W = (A^T A)^(-1) A^T Y',
-            'metodo': 'Mínimos cuadrados (pesos restaurados)',
+            'formula': 'W = (AᵀA)⁻¹AᵀY',
+            'formula_latex': '$W = (A^T A)^{-1} A^T Y$',
+            'metodo': 'Mínimos cuadrados',
             'residuos': [0.0],  # No disponible para datos sintéticos
             'rank_matriz': A.shape[1],  # Estimación
             'valores_singulares': []
@@ -1146,7 +1271,8 @@ def _regenerar_procesamiento_interno(rbf, X, y):
         'paso_6_predicciones': {
             'y_real': y.tolist(),
             'y_predicho': y_pred.tolist(),
-            'formula': 'Y_pred = A * W',
+            'formula': 'ŷ = A · W',
+            'formula_latex': '$\\hat{y} = A \\cdot W$',
             'diferencias': (y - y_pred).tolist(),
             'diferencias_absolutas': np.abs(y - y_pred).tolist()
         },

@@ -40,6 +40,8 @@
                 <li>
                     {% if trans.tipo == 'Label Encoding' %}
                         <strong>{{ trans.columna }}:</strong> Codificación Label Encoding ({{ trans.num_categorias }} categorías)
+                    {% elif trans.tipo == 'Normalización por máximo' %}
+                        <strong>Normalización por máximo:</strong> {{ trans.razon }}
                     {% elif trans.tipo == 'Normalización recomendada' %}
                         <strong>Normalización aplicada:</strong> {{ trans.razon }}
                     {% endif %}
@@ -56,38 +58,34 @@
         {% if info_preprocesamiento.normalizado %}
         <div class="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
             <p class="text-green-800">
-                <i class="fas fa-check-circle mr-2"></i><strong>Normalización aplicada:</strong> Los datos fueron normalizados para mejorar el entrenamiento.
-            </p>
-        </div>
+                <i class="fas fa-check-circle mr-2"></i><strong>Normalización aplicada:</strong> 
+                {% if info_preprocesamiento.tipo_normalizacion %}
+                    {{ info_preprocesamiento.tipo_normalizacion }}
         {% else %}
-        <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <p class="text-yellow-800">
-                <i class="fas fa-info-circle mr-2"></i><strong>Normalización no requerida:</strong> Los datos están en escalas similares.
+                    Todas las columnas fueron normalizadas dividiendo cada valor por el máximo valor de su columna.
+                {% endif %}
             </p>
         </div>
         {% endif %}
     </div>
     
-    <!-- Tabla de Comparación de Datos -->
-    {% if datos_comparacion %}
+    <!-- Tabla de Dataset Original -->
+    {% if datos_original %}
     <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8 mb-8">
         <h2 class="text-2xl font-bold text-accent-800 mb-6">
-            <i class="fas fa-table mr-2 text-primary-600"></i>Vista Previa del Dataset Preprocesado
+            <i class="fas fa-database mr-2 text-primary-600"></i>Dataset Original
         </h2>
         <p class="text-sm text-accent-600 mb-4">
-            Comparación entre datos originales y transformados (mostrando primeras {{ datos_comparacion|length }} filas)
+            Datos originales antes del preprocesamiento (mostrando primeras {{ datos_original|length }} filas)
         </p>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-accent-200 border border-accent-200 rounded-lg">
                 <thead class="bg-primary-50">
                     <tr>
-                        {% if datos_comparacion %}
-                            {% for key in datos_comparacion.0.keys %}
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-primary-700 uppercase tracking-wider
-                                    {% if '_transformed' in key %}bg-blue-50 text-blue-700{% endif %}">
-                                    {% if '_transformed' in key %}
-                                        <i class="fas fa-arrow-right text-blue-600 mr-1"></i>
-                                    {% endif %}
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-primary-700 uppercase tracking-wider">#</th>
+                        {% if datos_original %}
+                            {% for key in datos_original.0.keys %}
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-primary-700 uppercase tracking-wider">
                                     {{ key }}
                                 </th>
                             {% endfor %}
@@ -95,11 +93,11 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-accent-200">
-                    {% for row in datos_comparacion %}
+                    {% for row in datos_original %}
                     <tr class="hover:bg-accent-50 transition-colors">
+                        <td class="px-4 py-3 text-sm font-semibold text-gray-600">{{ forloop.counter }}</td>
                         {% for key, value in row.items %}
-                            <td class="px-4 py-3 text-sm 
-                                {% if '_transformed' in key %}bg-blue-50 text-blue-700 font-semibold{% else %}text-accent-700{% endif %}">
+                            <td class="px-4 py-3 text-sm text-accent-700">
                                 {% if value is None %}
                                     <span class="text-accent-400">N/A</span>
                                 {% else %}
@@ -112,15 +110,65 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-4 flex items-center space-x-4 text-sm text-accent-600">
-            <div class="flex items-center">
-                <div class="w-4 h-4 bg-white border border-accent-300 mr-2"></div>
-                <span>Datos Originales</span>
             </div>
-            <div class="flex items-center">
-                <div class="w-4 h-4 bg-blue-50 border border-blue-300 mr-2"></div>
-                <span>Datos Transformados</span>
+    {% endif %}
+    
+    <!-- Tabla de Dataset Normalizado -->
+    {% if datos_normalizado %}
+    <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8 mb-8">
+        <h2 class="text-2xl font-bold text-accent-800 mb-6">
+            <i class="fas fa-chart-line mr-2 text-green-600"></i>Dataset Normalizado
+        </h2>
+        <p class="text-sm text-accent-600 mb-4">
+            Datos normalizados después del preprocesamiento (cada valor dividido por el máximo de su columna, valores entre 0 y 1)
+            {% if info_preprocesamiento.maximos_columnas %}
+                <br><span class="text-xs text-gray-500 mt-2 block">
+                    <i class="fas fa-info-circle mr-1"></i>Valores máximos originales por columna:
+                    {% for col, max_val in info_preprocesamiento.maximos_columnas.items %}
+                        <span class="ml-2"><strong>{{ col }}:</strong> {{ max_val|floatformat:4 }}</span>
+                    {% endfor %}
+                </span>
+            {% endif %}
+        </p>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-accent-200 border border-green-300 rounded-lg">
+                <thead class="bg-green-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">#</th>
+                        {% if datos_normalizado %}
+                            {% for key in datos_normalizado.0.keys %}
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">
+                                    {{ key }}
+                                </th>
+                            {% endfor %}
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-green-200">
+                    {% for row in datos_normalizado %}
+                    <tr class="hover:bg-green-50 transition-colors">
+                        <td class="px-4 py-3 text-sm font-semibold text-gray-600">{{ forloop.counter }}</td>
+                        {% for key, value in row.items %}
+                            <td class="px-4 py-3 text-sm text-green-800 font-mono">
+                                {% if value is None %}
+                                    <span class="text-accent-400">N/A</span>
+                                {% elif value|floatformat:6 == "0.000000" %}
+                                    <span class="text-gray-400">0.0</span>
+                                {% else %}
+                                    {{ value|floatformat:6 }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
             </div>
+        <div class="mt-4 bg-green-100 border border-green-300 rounded-lg p-3">
+            <p class="text-xs text-green-800">
+                <i class="fas fa-check-circle mr-1"></i><strong>Nota:</strong> Todos los valores han sido normalizados dividiendo por el máximo de su columna. 
+                El máximo valor de cada columna es ahora 1.0.
+            </p>
         </div>
     </div>
     {% endif %}
@@ -190,13 +238,21 @@
         </div>
 
         <!-- PASO 1: Inicialización de Centros -->
-        <div class="mb-8">
-            <h3 class="text-xl font-bold text-blue-800 mb-4">
-                <i class="fas fa-play-circle mr-2"></i>PASO 1: Inicialización de Centros Radiales
+        <div class="mb-8 border-l-4 border-blue-500 pl-6">
+            <div class="flex items-center mb-4">
+                <div class="bg-blue-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg mr-3">1</div>
+                <h3 class="text-xl font-bold text-blue-800">
+                    Inicialización de Centros Radiales
             </h3>
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <p class="text-blue-800 font-semibold mb-2">Fórmula:</p>
-                <code class="bg-white px-3 py-2 rounded border text-sm">{{ procesamiento_interno.paso_1_inicializacion.formula }}</code>
+            </div>
+            <div class="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-300 rounded-xl p-6 mb-4 shadow-sm">
+                <p class="text-blue-900 font-bold text-sm mb-3 uppercase tracking-wide">Fórmula Matemática:</p>
+                <div class="bg-white px-6 py-4 rounded-lg border-2 border-blue-300 shadow-inner arithmatex">
+                    <div class="text-2xl text-center text-blue-800">
+                        $$r_j \sim U[\min(x_i), \max(x_i)] \text{ para } j=1,\ldots,{{ procesamiento_interno.num_centros }} \text{ e } i=1,\ldots,n$$
+                    </div>
+                </div>
+                <p class="text-blue-700 text-xs mt-3 italic">Los centros radiales se inicializan aleatoriamente dentro del rango de los datos de entrenamiento</p>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -220,14 +276,30 @@
         </div>
 
         <!-- PASO 2: Cálculo de Distancias -->
-        <div class="mb-8">
-            <h3 class="text-xl font-bold text-green-800 mb-4">
-                <i class="fas fa-ruler mr-2"></i>PASO 2: Cálculo de Distancias Euclidianas
+        <div class="mb-8 border-l-4 border-green-500 pl-6">
+            <div class="flex items-center mb-4">
+                <div class="bg-green-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg mr-3">2</div>
+                <h3 class="text-xl font-bold text-green-800">
+                    Cálculo de Distancias Euclidianas
             </h3>
-            <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                <p class="text-green-800 font-semibold mb-2">Fórmula:</p>
-                <code class="bg-white px-3 py-2 rounded border text-sm">{{ procesamiento_interno.paso_2_distancias.formula }}</code>
-                <p class="text-green-700 text-sm mt-2">Dimensiones: {{ procesamiento_interno.paso_2_distancias.dimensiones }}</p>
+            </div>
+            <div class="bg-gradient-to-r from-green-50 to-green-100 border border-green-300 rounded-xl p-6 mb-4 shadow-sm">
+                <p class="text-green-900 font-bold text-sm mb-3 uppercase tracking-wide">Fórmula Matemática:</p>
+                <div class="bg-white px-6 py-4 rounded-lg border-2 border-green-300 shadow-inner arithmatex">
+                    <div class="text-2xl text-center text-green-800">
+                        $$D_{pj} = \sqrt{\sum_{i=1}^{m} (x_{pi} - r_{ji})^2}$$
+                    </div>
+                </div>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white px-4 py-2 rounded-lg border border-green-200">
+                        <p class="text-xs text-green-600 font-semibold">Dimensiones de la Matriz</p>
+                        <p class="text-green-800 font-mono text-sm">{{ procesamiento_interno.paso_2_distancias.dimensiones }}</p>
+                    </div>
+                    <div class="bg-white px-4 py-2 rounded-lg border border-green-200">
+                        <p class="text-xs text-green-600 font-semibold">Interpretación</p>
+                        <p class="text-green-800 text-xs">Distancia euclidiana entre cada patrón y cada centro radial</p>
+                    </div>
+                </div>
             </div>
             
             <div class="bg-white border rounded-lg p-4">
@@ -247,14 +319,24 @@
         </div>
 
         <!-- PASO 3: Función de Activación -->
-        <div class="mb-8">
-            <h3 class="text-xl font-bold text-purple-800 mb-4">
-                <i class="fas fa-function mr-2"></i>PASO 3: Función de Activación Radial
+        <div class="mb-8 border-l-4 border-purple-500 pl-6">
+            <div class="flex items-center mb-4">
+                <div class="bg-purple-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg mr-3">3</div>
+                <h3 class="text-xl font-bold text-purple-800">
+                    Función de Activación Radial
             </h3>
-            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-                <p class="text-purple-800 font-semibold mb-2">Fórmula:</p>
-                <code class="bg-white px-3 py-2 rounded border text-sm">{{ procesamiento_interno.paso_3_activaciones.formula }}</code>
-                <p class="text-purple-700 text-sm mt-2">Dimensiones: {{ procesamiento_interno.paso_3_activaciones.dimensiones }}</p>
+            </div>
+            <div class="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-300 rounded-xl p-6 mb-4 shadow-sm">
+                <p class="text-purple-900 font-bold text-sm mb-3 uppercase tracking-wide">Fórmula Matemática:</p>
+                <div class="bg-white px-6 py-4 rounded-lg border-2 border-purple-300 shadow-inner arithmatex">
+                    <div class="text-2xl text-center text-purple-800">
+                        $$FA(D_{pj}) = D_{pj}^2 \cdot \ln(D_{pj})$$
+                    </div>
+                </div>
+                <p class="text-purple-700 text-xs mt-3 italic">Función de base radial: Thin Plate Spline (TPS)</p>
+                <div class="mt-4 bg-white px-4 py-2 rounded-lg border border-purple-200">
+                    <p class="text-xs text-purple-600 font-semibold">Dimensiones: {{ procesamiento_interno.paso_3_activaciones.dimensiones }}</p>
+                </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -281,14 +363,24 @@
         </div>
 
         <!-- PASO 4: Matriz de Interpolación -->
-        <div class="mb-8">
-            <h3 class="text-xl font-bold text-orange-800 mb-4">
-                <i class="fas fa-table mr-2"></i>PASO 4: Construcción de Matriz de Interpolación
+        <div class="mb-8 border-l-4 border-orange-500 pl-6">
+            <div class="flex items-center mb-4">
+                <div class="bg-orange-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg mr-3">4</div>
+                <h3 class="text-xl font-bold text-orange-800">
+                    Construcción de Matriz de Interpolación
             </h3>
-            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
-                <p class="text-orange-800 font-semibold mb-2">Fórmula:</p>
-                <code class="bg-white px-3 py-2 rounded border text-sm">{{ procesamiento_interno.paso_4_matriz_interpolacion.formula }}</code>
-                <p class="text-orange-700 text-sm mt-2">Dimensiones: {{ procesamiento_interno.paso_4_matriz_interpolacion.dimensiones }}</p>
+            </div>
+            <div class="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-300 rounded-xl p-6 mb-4 shadow-sm">
+                <p class="text-orange-900 font-bold text-sm mb-3 uppercase tracking-wide">Fórmula Matemática:</p>
+                <div class="bg-white px-6 py-4 rounded-lg border-2 border-orange-300 shadow-inner arithmatex">
+                    <div class="text-2xl text-center text-orange-800">
+                        $$A = [1, FA(D_1), FA(D_2), \ldots, FA(D_k)]$$
+                    </div>
+                </div>
+                <p class="text-orange-700 text-xs mt-3 italic">La primera columna es el término de sesgo (umbral), seguida de las activaciones</p>
+                <div class="mt-4 bg-white px-4 py-2 rounded-lg border border-orange-200">
+                    <p class="text-xs text-orange-600 font-semibold">Dimensiones: {{ procesamiento_interno.paso_4_matriz_interpolacion.dimensiones }}</p>
+                </div>
             </div>
             
             <div class="bg-white border rounded-lg p-4">
@@ -314,14 +406,30 @@
         </div>
 
         <!-- PASO 5: Cálculo de Pesos -->
-        <div class="mb-8">
-            <h3 class="text-xl font-bold text-red-800 mb-4">
-                <i class="fas fa-weight mr-2"></i>PASO 5: Cálculo de Pesos por Mínimos Cuadrados
+        <div class="mb-8 border-l-4 border-red-500 pl-6">
+            <div class="flex items-center mb-4">
+                <div class="bg-red-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg mr-3">5</div>
+                <h3 class="text-xl font-bold text-red-800">
+                    Cálculo de Pesos por Mínimos Cuadrados
             </h3>
-            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                <p class="text-red-800 font-semibold mb-2">Fórmula:</p>
-                <code class="bg-white px-3 py-2 rounded border text-sm">{{ procesamiento_interno.paso_5_calculo_pesos.formula }}</code>
-                <p class="text-red-700 text-sm mt-2">Método: {{ procesamiento_interno.paso_5_calculo_pesos.metodo }}</p>
+            </div>
+            <div class="bg-gradient-to-r from-red-50 to-red-100 border border-red-300 rounded-xl p-6 mb-4 shadow-sm">
+                <p class="text-red-900 font-bold text-sm mb-3 uppercase tracking-wide">Fórmula Matemática:</p>
+                <div class="bg-white px-6 py-4 rounded-lg border-2 border-red-300 shadow-inner arithmatex">
+                    <div class="text-2xl text-center text-red-800">
+                        $$W = (A^T A)^{-1} A^T Y$$
+                    </div>
+                </div>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white px-4 py-2 rounded-lg border border-red-200">
+                        <p class="text-xs text-red-600 font-semibold">Método de Solución</p>
+                        <p class="text-red-800 text-sm font-mono">{{ procesamiento_interno.paso_5_calculo_pesos.metodo }}</p>
+                    </div>
+                    <div class="bg-white px-4 py-2 rounded-lg border border-red-200">
+                        <p class="text-xs text-red-600 font-semibold">Rank de Matriz</p>
+                        <p class="text-red-800 text-sm font-mono">{{ procesamiento_interno.paso_5_calculo_pesos.rank_matriz }}</p>
+                    </div>
+                </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -353,13 +461,21 @@
         </div>
 
         <!-- PASO 6: Predicciones -->
-        <div class="mb-8">
-            <h3 class="text-xl font-bold text-indigo-800 mb-4">
-                <i class="fas fa-crystal-ball mr-2"></i>PASO 6: Cálculo de Predicciones
+        <div class="mb-8 border-l-4 border-indigo-500 pl-6">
+            <div class="flex items-center mb-4">
+                <div class="bg-indigo-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg mr-3">6</div>
+                <h3 class="text-xl font-bold text-indigo-800">
+                    Cálculo de Predicciones
             </h3>
-            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-4">
-                <p class="text-indigo-800 font-semibold mb-2">Fórmula:</p>
-                <code class="bg-white px-3 py-2 rounded border text-sm">{{ procesamiento_interno.paso_6_predicciones.formula }}</code>
+            </div>
+            <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 border border-indigo-300 rounded-xl p-6 mb-4 shadow-sm">
+                <p class="text-indigo-900 font-bold text-sm mb-3 uppercase tracking-wide">Fórmula Matemática:</p>
+                <div class="bg-white px-6 py-4 rounded-lg border-2 border-indigo-300 shadow-inner arithmatex">
+                    <div class="text-2xl text-center text-indigo-800">
+                        $$\hat{y} = A \cdot W$$
+                    </div>
+                </div>
+                <p class="text-indigo-700 text-xs mt-3 italic">Producto matricial entre la matriz de interpolación y el vector de pesos</p>
             </div>
             
             <div class="bg-white border rounded-lg p-4">
@@ -394,26 +510,35 @@
         </div>
 
         <!-- PASO 7: Métricas Detalladas -->
-        <div class="mb-8">
-            <h3 class="text-xl font-bold text-teal-800 mb-4">
-                <i class="fas fa-chart-line mr-2"></i>PASO 7: Cálculo de Métricas de Evaluación
+        <div class="mb-8 border-l-4 border-teal-500 pl-6">
+            <div class="flex items-center mb-4">
+                <div class="bg-teal-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg mr-3">7</div>
+                <h3 class="text-xl font-bold text-teal-800">
+                    Cálculo de Métricas de Evaluación
             </h3>
-            <div class="bg-teal-50 border border-teal-200 rounded-lg p-4">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-white border rounded-lg p-4 text-center">
-                        <h4 class="font-semibold text-gray-700 mb-2">Error General (EG)</h4>
-                        <div class="text-2xl font-bold text-blue-600">{{ procesamiento_interno.paso_7_metricas.EG|floatformat:6 }}</div>
-                        <p class="text-xs text-gray-600 mt-1">EG = Σ|Y_d - Y_r| / N</p>
+            </div>
+            <div class="bg-gradient-to-r from-teal-50 to-teal-100 border border-teal-300 rounded-xl p-6 shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white border-2 border-blue-300 rounded-xl p-6 text-center shadow-lg transform hover:scale-105 transition-transform">
+                        <h4 class="font-bold text-gray-800 mb-3 text-lg">Error General (EG)</h4>
+                        <div class="text-4xl font-bold text-blue-600 mb-3">{{ procesamiento_interno.paso_7_metricas.EG|floatformat:6 }}</div>
+                        <div class="bg-blue-50 px-4 py-2 rounded-lg border border-blue-200 arithmatex">
+                            <p class="text-sm text-blue-800">$$EG = \frac{1}{N}\sum_{i=1}^{N}|Y_d - Y_r|$$</p>
+                        </div>
                     </div>
-                    <div class="bg-white border rounded-lg p-4 text-center">
-                        <h4 class="font-semibold text-gray-700 mb-2">Error Absoluto Medio (MAE)</h4>
-                        <div class="text-2xl font-bold text-green-600">{{ procesamiento_interno.paso_7_metricas.MAE|floatformat:6 }}</div>
-                        <p class="text-xs text-gray-600 mt-1">MAE = (1/N) Σ|Y_d - Y_r|</p>
+                    <div class="bg-white border-2 border-green-300 rounded-xl p-6 text-center shadow-lg transform hover:scale-105 transition-transform">
+                        <h4 class="font-bold text-gray-800 mb-3 text-lg">Error Absoluto Medio (MAE)</h4>
+                        <div class="text-4xl font-bold text-green-600 mb-3">{{ procesamiento_interno.paso_7_metricas.MAE|floatformat:6 }}</div>
+                        <div class="bg-green-50 px-4 py-2 rounded-lg border border-green-200 arithmatex">
+                            <p class="text-sm text-green-800">$$MAE = \frac{1}{N}\sum_{i=1}^{N}|Y_d - Y_r|$$</p>
+                        </div>
                     </div>
-                    <div class="bg-white border rounded-lg p-4 text-center">
-                        <h4 class="font-semibold text-gray-700 mb-2">Raíz Error Cuadrático Medio (RMSE)</h4>
-                        <div class="text-2xl font-bold text-red-600">{{ procesamiento_interno.paso_7_metricas.RMSE|floatformat:6 }}</div>
-                        <p class="text-xs text-gray-600 mt-1">RMSE = √[(1/N) Σ(Y_d - Y_r)²]</p>
+                    <div class="bg-white border-2 border-red-300 rounded-xl p-6 text-center shadow-lg transform hover:scale-105 transition-transform">
+                        <h4 class="font-bold text-gray-800 mb-3 text-lg">Raíz Error Cuadrático Medio (RMSE)</h4>
+                        <div class="text-4xl font-bold text-red-600 mb-3">{{ procesamiento_interno.paso_7_metricas.RMSE|floatformat:6 }}</div>
+                        <div class="bg-red-50 px-4 py-2 rounded-lg border border-red-200 arithmatex">
+                            <p class="text-sm text-red-800">$$RMSE = \sqrt{\frac{1}{N}\sum_{i=1}^{N}(Y_d - Y_r)^2}$$</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -487,5 +612,18 @@
         </div>
     </div>
 </div>
+
+<script>
+// Procesar fórmulas MathJax después de cargar el contenido
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise().then(function() {
+            console.log('Fórmulas matemáticas renderizadas');
+        }).catch(function(err) {
+            console.error('Error al renderizar fórmulas:', err);
+        });
+    }
+});
+</script>
 {% endblock %}
 

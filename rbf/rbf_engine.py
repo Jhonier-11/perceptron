@@ -317,49 +317,67 @@ def preprocesar_datos(df, columnas_entrada, columnas_salida):
             tipo = df_procesado[col].dtype
             info_preprocesamiento['tipos_tras_preprocesamiento'][col] = str(tipo)
     
-    # Verificar si necesita normalización (rango de escalas)
-    if columnas_entrada:
-        X = df_procesado[columnas_entrada].values
-        rangos = []
-        
-        for i in range(X.shape[1]):
-            col_data = X[:, i]
-            min_val = np.min(col_data)
-            max_val = np.max(col_data)
-            rango = max_val - min_val
-            
-            if rango > 0:
-                rangos.append(rango)
-        
-        if len(rangos) > 0:
-            max_rango = max(rangos)
-            min_rango = min(rangos)
-            
-            # Si hay un rango más de 10x mayor que otro, necesita normalización
-            if max_rango / min_rango > 10 or max_rango > 1000:
-                info_preprocesamiento['necesita_normalizacion'] = True
-                info_preprocesamiento['escalas_diferentes'] = True
-                info_preprocesamiento['transformaciones_realizadas'].append({
-                    'tipo': 'Normalización recomendada',
-                    'razon': f'Rangos de valores muy diferentes (min: {min_rango:.2f}, max: {max_rango:.2f})'
-                })
+    # Convertir todas las columnas a numérico antes de normalizar
+    for col in columnas_entrada + columnas_salida:
+        if col in df_procesado.columns:
+            df_procesado[col] = pd.to_numeric(df_procesado[col], errors='coerce')
     
-    # Crear DataFrame de comparación con original y transformado
+    # NORMALIZACIÓN POR MÁXIMO: Normalizar TODAS las columnas dividiendo por su máximo valor
+    # Crear copia antes de normalizar para comparación
+    df_antes_normalizacion = df_procesado.copy()
+    
+    # Guardar valores máximos para desnormalización posterior
+    maximos_columnas = {}
+    info_preprocesamiento['maximos_columnas'] = {}
+    
+    # Normalizar todas las columnas (entrada y salida)
+    todas_las_columnas = columnas_entrada + columnas_salida
+    for col in todas_las_columnas:
+        if col in df_procesado.columns:
+            col_data = df_procesado[col]
+            max_val = col_data.max()
+            
+            # Si el máximo es 0 o NaN, evitar división
+            if pd.notna(max_val) and max_val != 0:
+                maximos_columnas[col] = float(max_val)
+                info_preprocesamiento['maximos_columnas'][col] = float(max_val)
+                # Normalizar dividiendo por el máximo
+                df_procesado[col] = df_procesado[col] / max_val
+            else:
+                maximos_columnas[col] = 1.0
+                info_preprocesamiento['maximos_columnas'][col] = 1.0
+    
+    # Marcar que se aplicó normalización
+    info_preprocesamiento['necesita_normalizacion'] = True
+    info_preprocesamiento['normalizado'] = True
+    info_preprocesamiento['tipo_normalizacion'] = 'Normalización por máximo (división por máximo valor)'
+    
+    # Agregar a transformaciones realizadas
+    info_preprocesamiento['transformaciones_realizadas'].append({
+        'tipo': 'Normalización por máximo',
+        'razon': 'Todas las columnas numéricas fueron normalizadas dividiendo cada valor por el máximo valor de su columna',
+        'maximos': maximos_columnas
+    })
+    
+    # Crear DataFrame de comparación con original
     df_comparacion = df_original.copy()
     
-    # Agregar columnas transformadas al lado de las originales
+    # Guardar también el dataset después de codificación pero antes de normalización
+    df_comparacion_codificado = df_antes_normalizacion.copy()
+    
+    # Agregar columnas transformadas al lado de las originales (solo para categorías)
     for item in info_preprocesamiento['columnas_codificadas']:
         col_original = item['columna']
         if col_original in df_original.columns:
             # Agregar columna con valores transformados
-            df_comparacion[f'{col_original}_transformed'] = df_procesado[col_original]
+            df_comparacion[f'{col_original}_transformed'] = df_antes_normalizacion[col_original]
             info_preprocesamiento['datos_comparacion'].append({
                 'columna_original': col_original,
                 'columna_transformada': f'{col_original}_transformed',
                 'mapping': item['mapping']
             })
     
-    return info_preprocesamiento, df_procesado, df_comparacion
+    return info_preprocesamiento, df_procesado, df_comparacion, df_antes_normalizacion
 
 
 def calcular_metricas(y_deseado, y_real):
@@ -579,14 +597,16 @@ class RBFNet:
                     'max_vals': max_vals.tolist(),
                     'rangos': (max_vals - min_vals).tolist(),
                     'centros_inicializados': self.centros.tolist(),
-                    'formula': f'R_j = random_uniform([min(X), max(X)]) para j=1,...,{self.num_centros}'
+                    'formula': f'rⱼ ~ U[min(xᵢ), max(xᵢ)] para j=1,...,{self.num_centros} e i=1,...,n',
+                    'formula_latex': f'$r_j \\sim U[\\min(x_i), \\max(x_i)]$ para $j=1,...,{self.num_centros}$ e $i=1,...,n$'
                 },
                 
                 # PASO 2: Cálculo de distancias
                 'paso_2_distancias': {
                     'matriz_distancias': distancias.tolist(),
                     'dimensiones': f'{distancias.shape[0]} patrones x {distancias.shape[1]} centros',
-                    'formula': 'D_pj = sqrt(sum((X_p - R_j)^2))',
+                    'formula': 'D_{pj} = √(∑ᵢ₌₁ᵐ (x_{pi} - r_{ji})²)',
+                    'formula_latex': '$D_{pj} = \\sqrt{\\sum_{i=1}^{m} (x_{pi} - r_{ji})^2}$',
                     'ejemplo_primer_patron': distancias[0].tolist() if distancias.shape[0] > 0 else []
                 },
                 
@@ -594,7 +614,8 @@ class RBFNet:
                 'paso_3_activaciones': {
                     'matriz_activaciones': activaciones.tolist(),
                     'dimensiones': f'{activaciones.shape[0]} patrones x {activaciones.shape[1]} centros',
-                    'formula': 'FA(D_pj) = (D_pj)^2 * ln(D_pj)',
+                    'formula': 'FA(D_{pj}) = D_{pj}² · ln(D_{pj})',
+                    'formula_latex': '$FA(D_{pj}) = D_{pj}^2 \\cdot \\ln(D_{pj})$',
                     'ejemplo_primer_patron': activaciones[0].tolist() if activaciones.shape[0] > 0 else [],
                     'valores_min': float(np.min(activaciones)),
                     'valores_max': float(np.max(activaciones)),
@@ -605,7 +626,8 @@ class RBFNet:
                 'paso_4_matriz_interpolacion': {
                     'matriz_A': A.tolist(),
                     'dimensiones': f'{A.shape[0]} patrones x {A.shape[1]} columnas (1 umbral + {self.num_centros} centros)',
-                    'formula': 'A = [1, FA(D_1), FA(D_2), ..., FA(D_k)]',
+                    'formula': 'A = [1, FA(D₁), FA(D₂), ..., FA(Dₖ)]',
+                    'formula_latex': '$A = [1, FA(D_1), FA(D_2), \\ldots, FA(D_k)]$',
                     'primera_columna_umbral': A[:, 0].tolist(),
                     'ejemplo_primer_patron': A[0].tolist() if A.shape[0] > 0 else []
                 },
@@ -615,8 +637,9 @@ class RBFNet:
                     'vector_pesos': W.tolist(),
                     'umbral_W0': float(self.W0),
                     'pesos_centros': self.W1_n.tolist(),
-                    'formula': 'W = (A^T A)^(-1) A^T Y',
-                    'metodo': 'Mínimos cuadrados (np.linalg.lstsq)',
+                    'formula': 'W = (AᵀA)⁻¹AᵀY',
+                    'formula_latex': '$W = (A^T A)^{-1} A^T Y$',
+                    'metodo': 'Mínimos cuadrados',
                     'residuos': residuals.tolist() if len(residuals) > 0 else [0.0],
                     'rank_matriz': int(rank),
                     'valores_singulares': s.tolist() if len(s) > 0 else []
@@ -626,7 +649,8 @@ class RBFNet:
                 'paso_6_predicciones': {
                     'y_real': y.tolist(),
                     'y_predicho': y_pred_train.tolist(),
-                    'formula': 'Y_pred = A * W',
+                    'formula': 'ŷ = A · W',
+                    'formula_latex': '$\\hat{y} = A \\cdot W$',
                     'diferencias': (y - y_pred_train).tolist(),
                     'diferencias_absolutas': np.abs(y - y_pred_train).tolist()
                 },

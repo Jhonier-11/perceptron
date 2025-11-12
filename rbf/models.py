@@ -82,6 +82,22 @@ class RBFTraining(models.Model):
         default=dict
     )
     
+    # Dataset normalizado completo (todas las filas, todas las columnas)
+    dataset_normalizado = models.JSONField(
+        verbose_name="Dataset normalizado completo",
+        null=True,
+        blank=True,
+        help_text="Dataset completo normalizado para exportación"
+    )
+    
+    # Procesamiento matemático interno completo
+    procesamiento_interno = models.JSONField(
+        verbose_name="Procesamiento matemático interno",
+        null=True,
+        blank=True,
+        help_text="Todos los pasos matemáticos del entrenamiento"
+    )
+    
     # Archivo de datos original
     archivo_datos = models.FileField(
         upload_to='rbf_training_data/',
