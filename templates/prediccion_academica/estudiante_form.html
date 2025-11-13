@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} - Predicción del Rendimiento Académico{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Resetear estilos para campos del formulario */
+    .estudiante-form input,
+    .estudiante-form select,
+    .estudiante-form textarea {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+    
+    /* Asegurar que TODOS los campos del formulario sean visibles */
+    .estudiante-form input[type="text"],
+    .estudiante-form input[type="number"],
+    .estudiante-form input[type="email"],
+    .estudiante-form input[type="tel"],
+    .estudiante-form input[type="url"],
+    .estudiante-form select,
+    .estudiante-form textarea {
+        color: #1e293b !important;
+        background-color: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        padding: 0.5rem 1rem !important;
+        border-radius: 0.5rem !important;
+        width: 100% !important;
+        font-size: 1rem !important;
+        line-height: 1.5 !important;
+        font-family: inherit !important;
+    }
+    
+    /* Específico para cualquier input dentro del formulario */
+    .estudiante-form input:not([type="checkbox"]):not([type="radio"]) {
+        color: #1e293b !important;
+        background-color: #ffffff !important;
+    }
+    
+    /* Asegurar que los placeholders sean visibles */
+    .estudiante-form input::placeholder,
+    .estudiante-form textarea::placeholder {
+        color: #94a3b8 !important;
+        opacity: 1 !important;
+    }
+    
+    .estudiante-form input[type="text"]:focus,
+    .estudiante-form input[type="number"]:focus,
+    .estudiante-form select:focus,
+    .estudiante-form textarea:focus {
+        outline: none !important;
+        border-color: #22c55e !important;
+        box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2) !important;
+        color: #1e293b !important;
+        background-color: #ffffff !important;
+    }
+    
+    .estudiante-form select {
+        color: #1e293b !important;
+        background-color: #ffffff !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E") !important;
+        background-position: right 0.5rem center !important;
+        background-repeat: no-repeat !important;
+        background-size: 1.5em 1.5em !important;
+        padding-right: 2.5rem !important;
+        cursor: pointer !important;
+    }
+    
+    .estudiante-form select:focus {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2322c55e' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E") !important;
+    }
+    
+    .estudiante-form select option {
+        color: #1e293b !important;
+        background-color: #ffffff !important;
+        padding: 0.5rem !important;
+    }
+    
+    .estudiante-form label {
+        color: #334155 !important;
+        font-weight: 500 !important;
+        display: block !important;
+        margin-bottom: 0.5rem !important;
+        font-size: 0.875rem !important;
+    }
+    
+    .estudiante-form input[type="checkbox"] {
+        width: 1.25rem !important;
+        height: 1.25rem !important;
+        cursor: pointer !important;
+        margin-right: 0.5rem !important;
+        accent-color: #22c55e !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 0.25rem !important;
+    }
+    
+    /* Asegurar visibilidad del texto en todos los elementos */
+    .estudiante-form {
+        color: #334155 !important;
+    }
+    
+    .estudiante-form input,
+    .estudiante-form select {
+        color: #1e293b !important;
+    }
+    
+    /* Asegurar que los valores de los campos sean visibles */
+    .estudiante-form input[type="text"]:not(:placeholder-shown),
+    .estudiante-form input[type="number"]:not(:placeholder-shown) {
+        color: #1e293b !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-accent-800 mb-2">{{ titulo }}</h1>
+    </div>
+    
+    <!-- Formulario -->
+    <div class="bg-white rounded-xl shadow-lg p-8 border border-primary-100 estudiante-form">
+        <form method="post" class="estudiante-form">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div class="mb-6">
+                {% if field.name == 'apoyo_escuela' or field.name == 'apoyo_familia' or field.name == 'clases_pagadas' or field.name == 'actividades_extra' or field.name == 'guarderia' or field.name == 'quiere_superior' or field.name == 'internet' or field.name == 'relacion_romantica' %}
+                <!-- Campo checkbox -->
+                <div class="flex items-center space-x-2 py-2">
+                    {{ field }}
+                    <label for="{{ field.id_for_label }}" class="text-sm font-medium text-accent-700 cursor-pointer ml-2">
+                        {{ field.label }}
+                        {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                </div>
+                {% else %}
+                <!-- Campo de texto, número o select -->
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                    {{ field.label }}
+                    {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                </label>
+                <div class="w-full">
+                    {{ field }}
+                </div>
+                {% endif %}
+                
+                {% if field.help_text %}
+                <p class="mt-2 text-sm text-accent-500">{{ field.help_text }}</p>
+                {% endif %}
+                {% if field.errors %}
+                <div class="mt-2 text-sm text-red-600">
+                    {% for error in field.errors %}
+                    <p class="text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            <div class="flex space-x-4 mt-8">
+                <button type="submit" class="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors font-semibold">
+                    <i class="fas fa-save mr-2"></i>Guardar
+                </button>
+                <a href="{% url 'prediccion_academica:estudiantes' %}" class="bg-accent-300 text-accent-800 px-6 py-3 rounded-lg hover:bg-accent-400 transition-colors font-semibold">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

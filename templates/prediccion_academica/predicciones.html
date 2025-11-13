@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Predicciones - Predicción del Rendimiento Académico{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-accent-800 mb-2">Predicciones</h1>
+        <p class="text-lg text-accent-600">Historial de predicciones de rendimiento académico</p>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="mb-6 bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+        <form method="get" class="flex space-x-4">
+            <select name="estudiante" class="px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="">Todos los estudiantes</option>
+                {% for estudiante in estudiantes %}
+                <option value="{{ estudiante.id }}" {% if request.GET.estudiante == estudiante.id|stringformat:"s" %}selected{% endif %}>
+                    {{ estudiante.get_nombre_completo }}
+                </option>
+                {% endfor %}
+            </select>
+            <select name="entrenamiento" class="px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="">Todos los modelos</option>
+                {% for entrenamiento in entrenamientos %}
+                <option value="{{ entrenamiento.id }}" {% if request.GET.entrenamiento == entrenamiento.id|stringformat:"s" %}selected{% endif %}>
+                    {{ entrenamiento.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="bg-accent-600 text-white px-6 py-2 rounded-lg hover:bg-accent-700 transition-colors">
+                <i class="fas fa-filter mr-2"></i>Filtrar
+            </button>
+        </form>
+    </div>
+    
+    <!-- Tabla de Predicciones -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-primary-100">
+        <table class="min-w-full divide-y divide-accent-200">
+            <thead class="bg-accent-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Estudiante</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Modelo</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Predicción</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Real</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Error</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Fecha</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-accent-200">
+                {% for prediccion in predicciones %}
+                <tr class="hover:bg-accent-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-accent-900">
+                        {{ prediccion.estudiante.get_nombre_completo }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">
+                        {{ prediccion.entrenamiento.nombre }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-accent-800">
+                        {{ prediccion.calificacion_predicha|floatformat:2 }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">
+                        {{ prediccion.calificacion_real|default:"-"|floatformat:2 }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">
+                        {{ prediccion.error_prediccion|default:"-"|floatformat:2 }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">
+                        {{ prediccion.fecha_prediccion|date:"d/m/Y H:i" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-4 text-center text-accent-600">No hay predicciones</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Paginación -->
+    {% if predicciones.has_other_pages %}
+    <div class="mt-6 flex justify-center">
+        <div class="flex space-x-2">
+            {% if predicciones.has_previous %}
+            <a href="?pagina={{ predicciones.previous_page_number }}{% if request.GET.estudiante %}&estudiante={{ request.GET.estudiante }}{% endif %}{% if request.GET.entrenamiento %}&entrenamiento={{ request.GET.entrenamiento }}{% endif %}" class="px-4 py-2 bg-white border border-accent-300 rounded-lg hover:bg-accent-50">
+                Anterior
+            </a>
+            {% endif %}
+            <span class="px-4 py-2 bg-primary-100 text-primary-800 rounded-lg">
+                Página {{ predicciones.number }} de {{ predicciones.paginator.num_pages }}
+            </span>
+            {% if predicciones.has_next %}
+            <a href="?pagina={{ predicciones.next_page_number }}{% if request.GET.estudiante %}&estudiante={{ request.GET.estudiante }}{% endif %}{% if request.GET.entrenamiento %}&entrenamiento={{ request.GET.entrenamiento }}{% endif %}" class="px-4 py-2 bg-white border border-accent-300 rounded-lg hover:bg-accent-50">
+                Siguiente
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

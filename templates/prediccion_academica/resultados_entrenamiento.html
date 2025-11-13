@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Resultados del Entrenamiento - Predicción del Rendimiento Académico{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-accent-800 mb-2">Resultados del Entrenamiento</h1>
+        <p class="text-lg text-accent-600">{{ entrenamiento.nombre }}</p>
+    </div>
+    
+    <!-- Métricas -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+            <p class="text-sm text-accent-600 mb-1">Precisión Entrenamiento</p>
+            <p class="text-3xl font-bold text-primary-600">{{ entrenamiento.precision_entrenamiento|floatformat:4 }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+            <p class="text-sm text-accent-600 mb-1">Precisión Validación</p>
+            <p class="text-3xl font-bold text-blue-600">{{ entrenamiento.precision_validacion|floatformat:4 }}</p>
+        </div>
+        {% if metricas.MAE %}
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+            <p class="text-sm text-accent-600 mb-1">MAE</p>
+            <p class="text-3xl font-bold text-accent-800">{{ metricas.MAE|floatformat:4 }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+            <p class="text-sm text-accent-600 mb-1">RMSE</p>
+            <p class="text-3xl font-bold text-accent-800">{{ metricas.RMSE|floatformat:4 }}</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Gráficos -->
+    {% if grafico_errores %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+            <h2 class="text-2xl font-bold text-accent-800 mb-4">Evolución del Error</h2>
+            <img src="data:image/png;base64,{{ grafico_errores }}" alt="Gráfico de Errores" class="w-full">
+        </div>
+        {% if grafico_precision %}
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+            <h2 class="text-2xl font-bold text-accent-800 mb-4">Evolución de la Precisión</h2>
+            <img src="data:image/png;base64,{{ grafico_precision }}" alt="Gráfico de Precisión" class="w-full">
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Información del Modelo -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-primary-100">
+        <h2 class="text-2xl font-bold text-accent-800 mb-4">Información del Modelo</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <p class="text-sm text-accent-600 mb-1">Arquitectura</p>
+                <p class="font-semibold text-accent-800">{{ entrenamiento.get_arquitectura }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-accent-600 mb-1">Función de Activación</p>
+                <p class="font-semibold text-accent-800">{{ entrenamiento.get_funcion_activacion_display }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-accent-600 mb-1">Tasa de Aprendizaje</p>
+                <p class="font-semibold text-accent-800">{{ entrenamiento.tasa_aprendizaje }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-accent-600 mb-1">Iteraciones</p>
+                <p class="font-semibold text-accent-800">{{ entrenamiento.iteraciones }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-accent-600 mb-1">Variable Objetivo</p>
+                <p class="font-semibold text-accent-800">{{ entrenamiento.columna_salida }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-accent-600 mb-1">Fecha de Creación</p>
+                <p class="font-semibold text-accent-800">{{ entrenamiento.fecha_creacion|date:"d/m/Y H:i" }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botones -->
+    <div class="flex space-x-4">
+        <a href="{% url 'prediccion_academica:predicciones' %}?entrenamiento={{ entrenamiento.id }}" class="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors">
+            <i class="fas fa-chart-line mr-2"></i>Ver Predicciones
+        </a>
+        <a href="{% url 'prediccion_academica:dashboard' %}" class="bg-accent-300 text-accent-800 px-6 py-3 rounded-lg hover:bg-accent-400 transition-colors">
+            Volver al Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
+

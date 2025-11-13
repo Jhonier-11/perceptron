@@ -77,28 +77,32 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <!-- Logo -->
-                <a href="{% url 'perceptron_app:inicio' %}" class="flex items-center space-x-3 group">
+                <a href="{% url 'prediccion_academica:dashboard' %}" class="flex items-center space-x-3 group">
                     <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-                        <i class="fas fa-brain text-white text-lg"></i>
+                        <i class="fas fa-graduation-cap text-white text-lg"></i>
                     </div>
                     <span class="text-xl font-bold text-accent-600 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-200">
-                        Redes Neuronales
+                        Predicción Académica
                     </span>
                 </a>
                 
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="{% url 'perceptron_app:inicio' %}" class="text-accent-600 hover:text-primary-600 font-medium transition-colors duration-200 flex items-center space-x-2">
+                    <a href="{% url 'prediccion_academica:dashboard' %}" class="text-accent-600 hover:text-primary-600 font-medium transition-colors duration-200 flex items-center space-x-2">
                         <i class="fas fa-home"></i>
-                        <span>Inicio</span>
+                        <span>Dashboard</span>
                     </a>
-                    <a href="{% url 'perceptron_app:cargar_datos' %}" class="text-accent-600 hover:text-primary-600 font-medium transition-colors duration-200 flex items-center space-x-2">
-                        <i class="fas fa-network-wired"></i>
-                        <span>Perceptrón</span>
+                    <a href="{% url 'prediccion_academica:estudiantes' %}" class="text-accent-600 hover:text-primary-600 font-medium transition-colors duration-200 flex items-center space-x-2">
+                        <i class="fas fa-users"></i>
+                        <span>Estudiantes</span>
                     </a>
-                    <a href="{% url 'rbf:inicio_rbf' %}" class="text-accent-600 hover:text-primary-600 font-medium transition-colors duration-200 flex items-center space-x-2">
-                        <i class="fas fa-project-diagram"></i>
-                        <span>RBF</span>
+                    <a href="{% url 'prediccion_academica:docentes' %}" class="text-accent-600 hover:text-primary-600 font-medium transition-colors duration-200 flex items-center space-x-2">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        <span>Docentes</span>
+                    </a>
+                    <a href="{% url 'prediccion_academica:entrenar_mlp' %}" class="text-accent-600 hover:text-primary-600 font-medium transition-colors duration-200 flex items-center space-x-2">
+                        <i class="fas fa-brain"></i>
+                        <span>Entrenar MLP</span>
                     </a>
                 </div>
                 
@@ -113,14 +117,17 @@
             <!-- Mobile Navigation -->
             <div class="md:hidden hidden" id="mobile-menu">
                 <div class="px-2 pt-2 pb-3 space-y-1 bg-white/95 backdrop-blur-md rounded-lg mt-2 shadow-lg">
-                    <a href="{% url 'perceptron_app:inicio' %}" class="block px-3 py-2 text-accent-600 hover:text-primary-600 font-medium rounded-md hover:bg-primary-50 transition-colors duration-200">
-                        <i class="fas fa-home mr-2"></i>Inicio
+                    <a href="{% url 'prediccion_academica:dashboard' %}" class="block px-3 py-2 text-accent-600 hover:text-primary-600 font-medium rounded-md hover:bg-primary-50 transition-colors duration-200">
+                        <i class="fas fa-home mr-2"></i>Dashboard
                     </a>
-                    <a href="{% url 'perceptron_app:cargar_datos' %}" class="block px-3 py-2 text-accent-600 hover:text-primary-600 font-medium rounded-md hover:bg-primary-50 transition-colors duration-200">
-                        <i class="fas fa-network-wired mr-2"></i>Perceptrón
+                    <a href="{% url 'prediccion_academica:estudiantes' %}" class="block px-3 py-2 text-accent-600 hover:text-primary-600 font-medium rounded-md hover:bg-primary-50 transition-colors duration-200">
+                        <i class="fas fa-users mr-2"></i>Estudiantes
                     </a>
-                    <a href="{% url 'rbf:inicio_rbf' %}" class="block px-3 py-2 text-accent-600 hover:text-primary-600 font-medium rounded-md hover:bg-primary-50 transition-colors duration-200">
-                        <i class="fas fa-project-diagram mr-2"></i>RBF
+                    <a href="{% url 'prediccion_academica:docentes' %}" class="block px-3 py-2 text-accent-600 hover:text-primary-600 font-medium rounded-md hover:bg-primary-50 transition-colors duration-200">
+                        <i class="fas fa-chalkboard-teacher mr-2"></i>Docentes
+                    </a>
+                    <a href="{% url 'prediccion_academica:entrenar_mlp' %}" class="block px-3 py-2 text-accent-600 hover:text-primary-600 font-medium rounded-md hover:bg-primary-50 transition-colors duration-200">
+                        <i class="fas fa-brain mr-2"></i>Entrenar MLP
                     </a>
                 </div>
             </div>
@@ -156,7 +163,7 @@
             <div class="text-center">
                 <div class="flex items-center justify-center space-x-2 mb-4">
                     <i class="fas fa-graduation-cap text-primary-400"></i>
-                    <span class="font-semibold">Redes Neuronales - Implementación desde cero</span>
+                    <span class="font-semibold">Predicción del Rendimiento Académico - MLP</span>
                 </div>
                 <div class="flex items-center justify-center space-x-2 text-sm text-accent-400">
                     <i class="fas fa-code"></i>

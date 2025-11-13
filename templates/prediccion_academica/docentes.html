@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Vista Docentes - Predicción del Rendimiento Académico{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-accent-800 mb-2">Vista para Docentes</h1>
+        <p class="text-lg text-accent-600">Alertas y recomendaciones para estudiantes</p>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="mb-6 bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+        <form method="get" class="flex space-x-4">
+            <input type="text" name="busqueda" value="{{ busqueda }}" placeholder="Buscar estudiantes..." class="flex-1 px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <select name="riesgo" class="px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="">Todos</option>
+                <option value="alto" {% if filtro_riesgo == 'alto' %}selected{% endif %}>Alto Riesgo</option>
+                <option value="medio" {% if filtro_riesgo == 'medio' %}selected{% endif %}>Riesgo Medio</option>
+            </select>
+            <button type="submit" class="bg-accent-600 text-white px-6 py-2 rounded-lg hover:bg-accent-700 transition-colors">
+                <i class="fas fa-search mr-2"></i>Filtrar
+            </button>
+        </form>
+    </div>
+    
+    <!-- Alertas Recientes -->
+    {% if alertas_recientes %}
+    <div class="mb-8 bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+        <h2 class="text-2xl font-bold text-accent-800 mb-4">Alertas Recientes</h2>
+        <div class="space-y-4">
+            {% for alerta in alertas_recientes %}
+            <div class="border border-red-200 rounded-lg p-4 bg-red-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="font-semibold text-accent-800">{{ alerta.estudiante.get_nombre_completo }}</p>
+                        <p class="text-sm text-accent-600">{{ alerta.get_tipo_alerta_display }}</p>
+                        <p class="text-sm text-accent-700 mt-1">{{ alerta.mensaje }}</p>
+                    </div>
+                    <span class="px-3 py-1 bg-red-200 text-red-800 rounded-full text-sm font-semibold">
+                        Prioridad {{ alerta.get_prioridad_display }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Lista de Estudiantes -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-primary-100">
+        <table class="min-w-full divide-y divide-accent-200">
+            <thead class="bg-accent-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Estudiante</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Calificación G3</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Última Predicción</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Alertas</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-accent-200">
+                {% for item in estudiantes %}
+                <tr class="hover:bg-accent-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-accent-900">
+                        {{ item.estudiante.get_nombre_completo }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">
+                        {{ item.estudiante.calificacion_g3|default:"-" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">
+                        {% if item.ultima_prediccion %}
+                            {{ item.ultima_prediccion.calificacion_predicha|floatformat:2 }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        {% if item.alertas_no_vistas > 0 %}
+                            <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">
+                                {{ item.alertas_no_vistas }} nueva(s)
+                            </span>
+                        {% else %}
+                            <span class="text-accent-500">Sin alertas</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <a href="{% url 'prediccion_academica:estudiante' item.estudiante.id %}" class="text-primary-600 hover:text-primary-800">
+                            <i class="fas fa-eye"></i> Ver
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-4 text-center text-accent-600">No hay estudiantes</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Paginación -->
+    {% if estudiantes.has_other_pages %}
+    <div class="mt-6 flex justify-center">
+        <div class="flex space-x-2">
+            {% if estudiantes.has_previous %}
+            <a href="?pagina={{ estudiantes.previous_page_number }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}{% if filtro_riesgo %}&riesgo={{ filtro_riesgo }}{% endif %}" class="px-4 py-2 bg-white border border-accent-300 rounded-lg hover:bg-accent-50">
+                Anterior
+            </a>
+            {% endif %}
+            <span class="px-4 py-2 bg-primary-100 text-primary-800 rounded-lg">
+                Página {{ estudiantes.number }} de {{ estudiantes.paginator.num_pages }}
+            </span>
+            {% if estudiantes.has_next %}
+            <a href="?pagina={{ estudiantes.next_page_number }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}{% if filtro_riesgo %}&riesgo={{ filtro_riesgo }}{% endif %}" class="px-4 py-2 bg-white border border-accent-300 rounded-lg hover:bg-accent-50">
+                Siguiente
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Predicción del Rendimiento Académico{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-accent-800 mb-2">Dashboard</h1>
+        <p class="text-lg text-accent-600">Predicción del Rendimiento Académico con MLP</p>
+    </div>
+    
+    <!-- Estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Estudiantes -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-accent-600 mb-1">Total Estudiantes</p>
+                    <p class="text-3xl font-bold text-accent-800">{{ total_estudiantes }}</p>
+                </div>
+                <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-users text-primary-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Entrenamientos -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-accent-600 mb-1">Modelos Entrenados</p>
+                    <p class="text-3xl font-bold text-accent-800">{{ total_entrenamientos }}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-brain text-blue-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Predicciones -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-accent-600 mb-1">Total Predicciones</p>
+                    <p class="text-3xl font-bold text-accent-800">{{ total_predicciones }}</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-chart-line text-green-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Alertas Pendientes -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-accent-600 mb-1">Alertas Pendientes</p>
+                    <p class="text-3xl font-bold text-accent-800">{{ total_alertas }}</p>
+                </div>
+                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estadísticas de Rendimiento -->
+    {% if promedio_g3 %}
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-primary-100">
+        <h2 class="text-2xl font-bold text-accent-800 mb-4">Estadísticas de Rendimiento</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <p class="text-sm text-accent-600 mb-1">Promedio G3</p>
+                <p class="text-3xl font-bold text-primary-600">{{ promedio_g3 }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-accent-600 mb-1">Estudiantes en Riesgo</p>
+                <p class="text-3xl font-bold text-red-600">{{ estudiantes_riesgo }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Accesos Rápidos -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <a href="{% url 'prediccion_academica:estudiantes' %}" class="bg-white rounded-xl shadow-lg p-6 border border-primary-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-users text-primary-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-accent-800">Gestión de Estudiantes</h3>
+                    <p class="text-sm text-accent-600">Ver y gestionar estudiantes</p>
+                </div>
+            </div>
+        </a>
+        
+        <a href="{% url 'prediccion_academica:entrenar_mlp' %}" class="bg-white rounded-xl shadow-lg p-6 border border-primary-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-brain text-blue-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-accent-800">Entrenar MLP</h3>
+                    <p class="text-sm text-accent-600">Entrenar modelo de predicción</p>
+                </div>
+            </div>
+        </a>
+        
+        <a href="{% url 'prediccion_academica:docentes' %}" class="bg-white rounded-xl shadow-lg p-6 border border-primary-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-chalkboard-teacher text-green-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-accent-800">Vista Docentes</h3>
+                    <p class="text-sm text-accent-600">Ver alertas y recomendaciones</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <!-- Alertas Recientes -->
+    {% if alertas_recientes %}
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-primary-100">
+        <h2 class="text-2xl font-bold text-accent-800 mb-4">Alertas Recientes</h2>
+        <div class="space-y-4">
+            {% for alerta in alertas_recientes %}
+            <div class="border border-red-200 rounded-lg p-4 bg-red-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="font-semibold text-accent-800">{{ alerta.estudiante.get_nombre_completo }}</p>
+                        <p class="text-sm text-accent-600">{{ alerta.get_tipo_alerta_display }}</p>
+                        <p class="text-sm text-accent-700 mt-1">{{ alerta.mensaje }}</p>
+                    </div>
+                    <span class="px-3 py-1 bg-red-200 text-red-800 rounded-full text-sm font-semibold">
+                        Prioridad {{ alerta.get_prioridad_display }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Estudiantes Recientes -->
+    {% if estudiantes_recientes %}
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-primary-100">
+        <h2 class="text-2xl font-bold text-accent-800 mb-4">Estudiantes Recientes</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-accent-200">
+                <thead class="bg-accent-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Nombre</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Identificación</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">G1</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">G2</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">G3</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-accent-200">
+                    {% for estudiante in estudiantes_recientes %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-accent-900">{{ estudiante.get_nombre_completo }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">{{ estudiante.identificacion }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">{{ estudiante.calificacion_g1|default:"-" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">{{ estudiante.calificacion_g2|default:"-" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">{{ estudiante.calificacion_g3|default:"-" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <a href="{% url 'prediccion_academica:estudiante' estudiante.id %}" class="text-primary-600 hover:text-primary-800">
+                                <i class="fas fa-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

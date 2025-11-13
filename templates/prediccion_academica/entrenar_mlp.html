@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Entrenar MLP - Predicción del Rendimiento Académico{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-accent-800 mb-2">Entrenar Modelo MLP</h1>
+        <p class="text-lg text-accent-600">Configura y entrena un modelo de Perceptrón Multicapa</p>
+    </div>
+    
+    <!-- Información -->
+    <div class="mb-6 bg-blue-50 rounded-xl p-4 border border-blue-200">
+        <p class="text-blue-700">
+            <i class="fas fa-info-circle mr-2"></i>
+            Total de estudiantes disponibles: <strong>{{ total_estudiantes }}</strong>
+        </p>
+    </div>
+    
+    <!-- Formulario -->
+    <div class="bg-white rounded-xl shadow-lg p-8 border border-primary-100">
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Nombre del Entrenamiento -->
+            <div class="mb-6">
+                <label for="{{ form.nombre.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                    {{ form.nombre.label }}
+                </label>
+                {{ form.nombre }}
+                {% if form.nombre.help_text %}
+                <p class="mt-2 text-sm text-accent-500">{{ form.nombre.help_text }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Arquitectura -->
+            <div class="mb-6 border-b border-accent-200 pb-6">
+                <h3 class="text-xl font-bold text-accent-800 mb-4">Arquitectura del Modelo</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.num_capas_ocultas.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                            {{ form.num_capas_ocultas.label }}
+                        </label>
+                        {{ form.num_capas_ocultas }}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.funcion_activacion.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                            {{ form.funcion_activacion.label }}
+                        </label>
+                        {{ form.funcion_activacion }}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.neuronas_capa_1.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                            {{ form.neuronas_capa_1.label }}
+                        </label>
+                        {{ form.neuronas_capa_1 }}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.neuronas_capa_2.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                            {{ form.neuronas_capa_2.label }}
+                        </label>
+                        {{ form.neuronas_capa_2 }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Parámetros de Entrenamiento -->
+            <div class="mb-6 border-b border-accent-200 pb-6">
+                <h3 class="text-xl font-bold text-accent-800 mb-4">Parámetros de Entrenamiento</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.tasa_aprendizaje.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                            {{ form.tasa_aprendizaje.label }}
+                        </label>
+                        {{ form.tasa_aprendizaje }}
+                        {% if form.tasa_aprendizaje.help_text %}
+                        <p class="mt-2 text-sm text-accent-500">{{ form.tasa_aprendizaje.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.iteraciones.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                            {{ form.iteraciones.label }}
+                        </label>
+                        {{ form.iteraciones }}
+                        {% if form.iteraciones.help_text %}
+                        <p class="mt-2 text-sm text-accent-500">{{ form.iteraciones.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.tamanio_batch.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                            {{ form.tamanio_batch.label }}
+                        </label>
+                        {{ form.tamanio_batch }}
+                        {% if form.tamanio_batch.help_text %}
+                        <p class="mt-2 text-sm text-accent-500">{{ form.tamanio_batch.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.porcentaje_entrenamiento.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                            {{ form.porcentaje_entrenamiento.label }}
+                        </label>
+                        {{ form.porcentaje_entrenamiento }}
+                        {% if form.porcentaje_entrenamiento.help_text %}
+                        <p class="mt-2 text-sm text-accent-500">{{ form.porcentaje_entrenamiento.help_text }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Selección de Características -->
+            <div class="mb-6">
+                <h3 class="text-xl font-bold text-accent-800 mb-4">Selección de Características</h3>
+                
+                <div class="mb-6">
+                    <label for="{{ form.columna_salida.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                        {{ form.columna_salida.label }}
+                    </label>
+                    {{ form.columna_salida }}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-accent-700 mb-2">
+                        {{ form.columnas_entrada.label }}
+                    </label>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-64 overflow-y-auto border border-accent-200 rounded-lg p-4">
+                        {% for choice in form.columnas_entrada %}
+                        <div class="flex items-center">
+                            {{ choice.tag }}
+                            <label for="{{ choice.id_for_label }}" class="ml-2 text-sm text-accent-700">
+                                {{ choice.choice_label }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if form.columnas_entrada.help_text %}
+                    <p class="mt-2 text-sm text-accent-500">{{ form.columnas_entrada.help_text }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Botones -->
+            <div class="flex space-x-4">
+                <button type="submit" class="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors">
+                    <i class="fas fa-play mr-2"></i>Iniciar Entrenamiento
+                </button>
+                <a href="{% url 'prediccion_academica:dashboard' %}" class="bg-accent-300 text-accent-800 px-6 py-3 rounded-lg hover:bg-accent-400 transition-colors">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

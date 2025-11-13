@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ estudiante.get_nombre_completo }} - Predicción del Rendimiento Académico{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-4xl font-bold text-accent-800 mb-2">{{ estudiante.get_nombre_completo }}</h1>
+            <p class="text-lg text-accent-600">{{ estudiante.identificacion }}</p>
+        </div>
+        <div class="flex space-x-4">
+            <a href="{% url 'prediccion_academica:editar_estudiante' estudiante.id %}" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                <i class="fas fa-edit mr-2"></i>Editar
+            </a>
+        </div>
+    </div>
+    
+    <!-- Información del Estudiante -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <!-- Información Personal -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+            <h2 class="text-2xl font-bold text-accent-800 mb-4">Información Personal</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-accent-600">Edad:</span>
+                    <span class="font-semibold text-accent-800">{{ estudiante.edad }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-accent-600">Sexo:</span>
+                    <span class="font-semibold text-accent-800">{{ estudiante.get_sexo_display }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-accent-600">Dirección:</span>
+                    <span class="font-semibold text-accent-800">{{ estudiante.get_direccion_display }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Calificaciones -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+            <h2 class="text-2xl font-bold text-accent-800 mb-4">Calificaciones</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-accent-600">G1:</span>
+                    <span class="font-semibold text-accent-800">{{ estudiante.calificacion_g1|default:"-" }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-accent-600">G2:</span>
+                    <span class="font-semibold text-accent-800">{{ estudiante.calificacion_g2|default:"-" }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-accent-600">G3:</span>
+                    <span class="font-semibold text-accent-800">{{ estudiante.calificacion_g3|default:"-" }}</span>
+                </div>
+                {% if promedio %}
+                <div class="flex justify-between border-t border-accent-200 pt-3">
+                    <span class="text-accent-600 font-semibold">Promedio:</span>
+                    <span class="font-bold text-primary-600">{{ promedio|floatformat:2 }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Predicciones -->
+    {% if predicciones %}
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-primary-100">
+        <h2 class="text-2xl font-bold text-accent-800 mb-4">Predicciones</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-accent-200">
+                <thead class="bg-accent-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Modelo</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Predicción</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Real</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Error</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Fecha</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-accent-200">
+                    {% for prediccion in predicciones %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">{{ prediccion.entrenamiento.nombre }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-accent-800">{{ prediccion.calificacion_predicha|floatformat:2 }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">{{ prediccion.calificacion_real|default:"-"|floatformat:2 }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">{{ prediccion.error_prediccion|default:"-"|floatformat:2 }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">{{ prediccion.fecha_prediccion|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Alertas -->
+    {% if alertas %}
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-primary-100">
+        <h2 class="text-2xl font-bold text-accent-800 mb-4">Alertas</h2>
+        <div class="space-y-4">
+            {% for alerta in alertas %}
+            <div class="border border-red-200 rounded-lg p-4 bg-red-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="font-semibold text-accent-800">{{ alerta.get_tipo_alerta_display }}</p>
+                        <p class="text-sm text-accent-700 mt-1">{{ alerta.mensaje }}</p>
+                        <p class="text-xs text-accent-500 mt-2">{{ alerta.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    <span class="px-3 py-1 bg-red-200 text-red-800 rounded-full text-sm font-semibold">
+                        Prioridad {{ alerta.get_prioridad_display }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
