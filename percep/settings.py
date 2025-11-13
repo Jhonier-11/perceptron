@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'prediccion_academica',  # Nueva aplicación principal de predicción académica
     'perceptron_app',  # Nuestra aplicación del perceptrón
     'rbf',  # Nuestra aplicación de Red Neuronal RBF
 ]
@@ -125,6 +126,9 @@ STATICFILES_DIRS = [
 # Media files (archivos subidos por usuarios)
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Directorio para modelos MLP
+MLP_MODELS_DIR = BASE_DIR / 'media' / 'modelos_mlp'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

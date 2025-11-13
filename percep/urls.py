@@ -21,8 +21,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('perceptron_app.urls')),
-    path('rbf/', include('rbf.urls')),
+    path('', include('prediccion_academica.urls')),  # Nueva aplicación principal
+    path('perceptron/', include('perceptron_app.urls')),  # Mover a subruta
+    path('rbf/', include('rbf.urls')),  # Mantener en subruta
 ]
 
 # Servir archivos estáticos y medios en desarrollo
