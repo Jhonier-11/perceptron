@@ -8,8 +8,11 @@ from . import views
 app_name = 'prediccion_academica'
 
 urlpatterns = [
+    # Landing Page
+    path('', views.landing_page, name='landing'),
+    
     # Dashboard
-    path('', views.dashboard, name='dashboard'),
+    path('dashboard/', views.dashboard, name='dashboard'),
     
     # Gestión de estudiantes
     path('estudiantes/', views.gestionar_estudiantes, name='estudiantes'),

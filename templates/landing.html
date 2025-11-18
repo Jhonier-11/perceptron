@@ -1,0 +1,285 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prevee - Predicción del Rendimiento Académico con IA</title>
+    
+    <!-- Google Fonts: Inter y Orbitron -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- AOS - Animate On Scroll -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link href="{% static 'css/landing.css' %}" rel="stylesheet">
+</head>
+<body>
+    <!-- Navbar Sticky Minimalista -->
+    <nav id="navbar">
+        <div class="navbar-container">
+            <a href="{% url 'prediccion_academica:landing' %}" class="navbar-brand">
+                <i class="fas fa-brain"></i>
+                <span>PREVEE</span>
+            </a>
+            <a href="{% url 'prediccion_academica:dashboard' %}" class="btn-empezar">
+                Empezar
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section con Red Neuronal Animada -->
+    <section id="hero">
+        <!-- Canvas para animación de red neuronal -->
+        <canvas id="neural-network"></canvas>
+        
+        <!-- Particles.js container -->
+        <div id="particles-js"></div>
+        
+        <div class="hero-content" data-aos="fade-up" data-aos-duration="1000">
+            <h1 class="hero-title">
+                Predicción de Éxito Académico
+                <span class="gradient-text">con Inteligencia Artificial</span>
+            </h1>
+            <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="200">
+                Sistema avanzado de detección temprana de riesgo académico
+                utilizando Perceptrones Multicapa para transformar el futuro educativo
+            </p>
+            <div class="hero-buttons" data-aos="fade-up" data-aos-delay="400">
+                <a href="{% url 'prediccion_academica:dashboard' %}" class="btn-primary">
+                    <i class="fas fa-rocket"></i>
+                    Comenzar Ahora
+                </a>
+                <a href="#problema" class="btn-secondary">
+                    <i class="fas fa-info-circle"></i>
+                    Conocer Más
+                </a>
+            </div>
+        </div>
+        
+        <!-- Scroll Indicator -->
+        <div class="scroll-indicator">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </section>
+
+    <!-- Sección: El Problema (Estadísticas) -->
+    <section id="problema" class="section-dark">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <h2 class="section-title">El Desafío Educativo</h2>
+                <p class="section-subtitle">Datos en tiempo real de nuestro sistema</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card glass-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="stat-icon red-glow">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-number" data-target="{{ porcentaje_desercion }}">0</div>
+                    <div class="stat-label">% Tasa de Deserción</div>
+                    <div class="stat-description">Estudiantes identificados en riesgo académico</div>
+                </div>
+                
+                <div class="stat-card glass-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="stat-icon cyan-glow">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-number" data-target="{{ total_estudiantes }}">0</div>
+                    <div class="stat-label">Estudiantes Monitoreados</div>
+                    <div class="stat-description">Total de estudiantes en el sistema</div>
+                </div>
+                
+                <div class="stat-card glass-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="stat-icon violet-glow">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="stat-number" data-target="{{ total_alertas }}">0</div>
+                    <div class="stat-label">Alertas Generadas</div>
+                    <div class="stat-description">Notificaciones de intervención temprana</div>
+                </div>
+                
+                <div class="stat-card glass-card" data-aos="fade-up" data-aos-delay="400">
+                    <div class="stat-icon green-glow">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-number" data-target="{{ tasa_deteccion }}">0</div>
+                    <div class="stat-label">% Detección Temprana</div>
+                    <div class="stat-description">Tasa de intervenciones exitosas</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección: La Solución (Tecnología MLP) -->
+    <section id="solucion" class="section-light">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <h2 class="section-title">Nuestra Solución: IA Predictiva</h2>
+                <p class="section-subtitle">Perceptrón Multicapa para predicción de rendimiento</p>
+            </div>
+            
+            <!-- Diagrama de Flujo -->
+            <div class="flow-diagram" data-aos="fade-up" data-aos-delay="200">
+                <div class="flow-step">
+                    <div class="flow-icon cyan-bg">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h3>Datos Históricos</h3>
+                    <p>Recopilación de información académica, demográfica y socioeconómica</p>
+                </div>
+                
+                <div class="flow-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="flow-icon violet-bg">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>Procesamiento IA</h3>
+                    <p>Perceptrón Multicapa analiza patrones y correlaciones complejas</p>
+                </div>
+                
+                <div class="flow-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="flow-icon green-bg">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <h3>Predicción de Riesgo</h3>
+                    <p>Identificación temprana de estudiantes en riesgo académico</p>
+                </div>
+            </div>
+            
+            <!-- Características del MLP -->
+            <div class="features-grid" data-aos="fade-up" data-aos-delay="400">
+                <div class="feature-card glass-card">
+                    <i class="fas fa-network-wired feature-icon cyan-text"></i>
+                    <h3>Red Neuronal Profunda</h3>
+                    <p>Múltiples capas ocultas para aprendizaje complejo de patrones académicos</p>
+                </div>
+                
+                <div class="feature-card glass-card">
+                    <i class="fas fa-cogs feature-icon violet-text"></i>
+                    <h3>Algoritmo Adaptativo</h3>
+                    <p>Ajuste automático de pesos mediante retropropagación del error</p>
+                </div>
+                
+                <div class="feature-card glass-card">
+                    <i class="fas fa-tachometer-alt feature-icon green-text"></i>
+                    <h3>Alta Precisión</h3>
+                    <p>Modelo entrenado con datos reales para predicciones confiables</p>
+                </div>
+                
+                <div class="feature-card glass-card">
+                    <i class="fas fa-clock feature-icon red-text"></i>
+                    <h3>Tiempo Real</h3>
+                    <p>Predicciones instantáneas para intervención oportuna</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección: Para Quién Es -->
+    <section id="para-quien" class="section-dark">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <h2 class="section-title">¿Para Quién es Prevee?</h2>
+                <p class="section-subtitle">Beneficios para toda la comunidad educativa</p>
+            </div>
+            
+            <div class="audience-grid">
+                <div class="audience-card glass-card" data-aos="zoom-in" data-aos-delay="100">
+                    <div class="audience-icon cyan-glow">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <h3>Para Estudiantes</h3>
+                    <ul class="audience-benefits">
+                        <li><i class="fas fa-check-circle"></i> Alertas personalizadas de rendimiento</li>
+                        <li><i class="fas fa-check-circle"></i> Seguimiento continuo de progreso académico</li>
+                        <li><i class="fas fa-check-circle"></i> Recomendaciones adaptadas a tus necesidades</li>
+                        <li><i class="fas fa-check-circle"></i> Identificación temprana de áreas de mejora</li>
+                    </ul>
+                    <a href="{% url 'prediccion_academica:dashboard' %}" class="audience-btn cyan-btn">
+                        Acceder como Estudiante
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                
+                <div class="audience-card glass-card" data-aos="zoom-in" data-aos-delay="300">
+                    <div class="audience-icon violet-glow">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <h3>Para Docentes</h3>
+                    <ul class="audience-benefits">
+                        <li><i class="fas fa-check-circle"></i> Identificación automática de riesgo académico</li>
+                        <li><i class="fas fa-check-circle"></i> Dashboard con métricas en tiempo real</li>
+                        <li><i class="fas fa-check-circle"></i> Estrategias de intervención temprana</li>
+                        <li><i class="fas fa-check-circle"></i> Reportes detallados por estudiante</li>
+                    </ul>
+                    <a href="{% url 'prediccion_academica:dashboard' %}" class="audience-btn violet-btn">
+                        Acceder como Docente
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <i class="fas fa-brain"></i>
+                    <span>PREVEE</span>
+                </div>
+                <p class="footer-description">
+                    Sistema de predicción de rendimiento académico mediante Inteligencia Artificial
+                </p>
+            </div>
+            
+            <div class="footer-links">
+                <h4>Enlaces Rápidos</h4>
+                <ul>
+                    <li><a href="{% url 'prediccion_academica:dashboard' %}"><i class="fas fa-home"></i> Dashboard</a></li>
+                    <li><a href="{% url 'prediccion_academica:estudiantes' %}"><i class="fas fa-users"></i> Estudiantes</a></li>
+                    <li><a href="{% url 'prediccion_academica:docentes' %}"><i class="fas fa-chalkboard-teacher"></i> Docentes</a></li>
+                    <li><a href="{% url 'prediccion_academica:entrenar_mlp' %}"><i class="fas fa-brain"></i> Entrenar MLP</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-info">
+                <h4>Información</h4>
+                <p><i class="fas fa-university"></i> Universidad Popular del Cesar</p>
+                <p><i class="fas fa-calendar"></i> 2025</p>
+                <p><i class="fas fa-code"></i> Desarrollado con Django & TensorFlow</p>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2025 Universidad Popular del Cesar. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Particles.js -->
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    
+    <!-- AOS -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{% static 'js/landing.js' %}"></script>
+</body>
+</html>
+

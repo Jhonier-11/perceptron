@@ -39,6 +39,45 @@ import os
 from django.conf import settings
 
 
+def landing_page(request):
+    """
+    Vista para la landing page principal de Prevee
+    Muestra estadísticas dinámicas y presenta el proyecto
+    """
+    # Estadísticas en tiempo real desde la base de datos
+    total_estudiantes = Estudiante.objects.count()
+    total_predicciones = PrediccionRendimiento.objects.count()
+    total_alertas = AlertaEstudiante.objects.count()
+    
+    # Calcular porcentaje de deserción (estudiantes en riesgo)
+    if total_estudiantes > 0:
+        estudiantes_riesgo = AlertaEstudiante.objects.filter(
+            tipo_alerta__in=['alto_riesgo', 'prediccion_baja']
+        ).values('estudiante').distinct().count()
+        porcentaje_desercion = round((estudiantes_riesgo / total_estudiantes) * 100, 2)
+    else:
+        porcentaje_desercion = 0.0
+        estudiantes_riesgo = 0
+    
+    # Calcular tasa de detección temprana
+    alertas_vistas = AlertaEstudiante.objects.filter(vista=True).count()
+    if total_alertas > 0:
+        tasa_deteccion = round((alertas_vistas / total_alertas) * 100, 2)
+    else:
+        tasa_deteccion = 0.0
+    
+    context = {
+        'total_estudiantes': total_estudiantes,
+        'total_predicciones': total_predicciones,
+        'total_alertas': total_alertas,
+        'porcentaje_desercion': porcentaje_desercion,
+        'estudiantes_riesgo': estudiantes_riesgo,
+        'tasa_deteccion': tasa_deteccion,
+    }
+    
+    return render(request, 'landing.html', context)
+
+
 def dashboard(request):
     """
     Vista principal del dashboard
