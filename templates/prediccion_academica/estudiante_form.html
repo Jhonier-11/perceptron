@@ -94,6 +94,10 @@
         accent-color: #22c55e !important;
         border: 1px solid #cbd5e1 !important;
         border-radius: 0.25rem !important;
+        pointer-events: auto !important;
+        -webkit-appearance: checkbox !important;
+        -moz-appearance: checkbox !important;
+        appearance: checkbox !important;
     }
     
     /* Asegurar visibilidad del texto en todos los elementos */
@@ -128,15 +132,15 @@
             
             {% for field in form %}
             <div class="mb-6">
-                {% if field.name == 'apoyo_escuela' or field.name == 'apoyo_familia' or field.name == 'clases_pagadas' or field.name == 'actividades_extra' or field.name == 'guarderia' or field.name == 'quiere_superior' or field.name == 'internet' or field.name == 'relacion_romantica' %}
+                {% if field.name == 'apoyo_escuela' or field.name == 'apoyo_familia' or field.name == 'clases_pagadas' or field.name == 'actividades_extra' or field.name == 'guarderia' or field.name == 'quiere_superior' or field.name == 'internet' or field.name == 'relacion_romantica' or field.name == 'trabaja_actualmente' %}
                 <!-- Campo checkbox -->
-                <div class="flex items-center space-x-2 py-2">
+                <label for="{{ field.id_for_label }}" class="flex items-center space-x-2 py-2 cursor-pointer">
                     {{ field }}
-                    <label for="{{ field.id_for_label }}" class="text-sm font-medium text-accent-700 cursor-pointer ml-2">
+                    <span class="text-sm font-medium text-accent-700">
                         {{ field.label }}
                         {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
-                    </label>
-                </div>
+                    </span>
+                </label>
                 {% else %}
                 <!-- Campo de texto, número o select -->
                 <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">

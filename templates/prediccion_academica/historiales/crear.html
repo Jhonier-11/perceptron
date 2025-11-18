@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Crear Historial Académico - Predicción del Rendimiento Académico{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-accent-800 mb-2">{{ titulo }}</h1>
+        {% if estudiante %}
+        <p class="text-lg text-accent-600">Estudiante: {{ estudiante.get_nombre_completo }}</p>
+        {% endif %}
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-8 border border-primary-100">
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <ul class="list-disc list-inside text-sm text-red-600">
+                    {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            {% if estudiante %}
+            <input type="hidden" name="estudiante" value="{{ estudiante.id }}">
+            {% else %}
+            <div class="mb-6">
+                <label for="{{ form.estudiante.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                    {{ form.estudiante.label }}
+                    <span class="text-red-500">*</span>
+                </label>
+                {{ form.estudiante }}
+                {% if form.estudiante.help_text %}
+                <p class="mt-2 text-sm text-accent-500">{{ form.estudiante.help_text }}</p>
+                {% endif %}
+                {% if form.estudiante.errors %}
+                <div class="mt-2 text-sm text-red-600">
+                    {% for error in form.estudiante.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="{{ form.semestre.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                        {{ form.semestre.label }}
+                        <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.semestre }}
+                    {% if form.semestre.errors %}
+                    <div class="mt-2 text-sm text-red-600">
+                        {% for error in form.semestre.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.promedio.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                        {{ form.promedio.label }}
+                        <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.promedio }}
+                    {% if form.promedio.help_text %}
+                    <p class="mt-2 text-sm text-accent-500">{{ form.promedio.help_text }}</p>
+                    {% endif %}
+                    {% if form.promedio.errors %}
+                    <div class="mt-2 text-sm text-red-600">
+                        {% for error in form.promedio.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="{{ form.porcentaje_asistencia.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                        {{ form.porcentaje_asistencia.label }}
+                        <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.porcentaje_asistencia }}
+                    {% if form.porcentaje_asistencia.help_text %}
+                    <p class="mt-2 text-sm text-accent-500">{{ form.porcentaje_asistencia.help_text }}</p>
+                    {% endif %}
+                    {% if form.porcentaje_asistencia.errors %}
+                    <div class="mt-2 text-sm text-red-600">
+                        {% for error in form.porcentaje_asistencia.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.materias_reprobadas.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                        {{ form.materias_reprobadas.label }}
+                        <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.materias_reprobadas }}
+                    {% if form.materias_reprobadas.errors %}
+                    <div class="mt-2 text-sm text-red-600">
+                        {% for error in form.materias_reprobadas.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <label for="{{ form.creditos_inscritos.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                    {{ form.creditos_inscritos.label }}
+                    <span class="text-red-500">*</span>
+                </label>
+                {{ form.creditos_inscritos }}
+                {% if form.creditos_inscritos.errors %}
+                <div class="mt-2 text-sm text-red-600">
+                    {% for error in form.creditos_inscritos.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="flex space-x-4">
+                <button type="submit" class="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors">
+                    <i class="fas fa-save mr-2"></i>Guardar Historial
+                </button>
+                {% if estudiante %}
+                <a href="{% url 'prediccion_academica:estudiante' estudiante.id %}" class="bg-accent-300 text-accent-800 px-6 py-3 rounded-lg hover:bg-accent-400 transition-colors">
+                    Cancelar
+                </a>
+                {% else %}
+                <a href="{% url 'prediccion_academica:listar_historiales' %}" class="bg-accent-300 text-accent-800 px-6 py-3 rounded-lg hover:bg-accent-400 transition-colors">
+                    Cancelar
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

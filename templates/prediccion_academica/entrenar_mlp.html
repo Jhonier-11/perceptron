@@ -24,15 +24,57 @@
         <form method="post">
             {% csrf_token %}
             
+            <!-- Mostrar errores generales del formulario -->
+            {% if form.non_field_errors %}
+            <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <ul class="list-disc list-inside text-sm text-red-600">
+                    {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
             <!-- Nombre del Entrenamiento -->
             <div class="mb-6">
                 <label for="{{ form.nombre.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
                     {{ form.nombre.label }}
+                    {% if form.nombre.field.required %}<span class="text-red-500">*</span>{% endif %}
                 </label>
                 {{ form.nombre }}
                 {% if form.nombre.help_text %}
                 <p class="mt-2 text-sm text-accent-500">{{ form.nombre.help_text }}</p>
                 {% endif %}
+                {% if form.nombre.errors %}
+                <div class="mt-2 text-sm text-red-600">
+                    {% for error in form.nombre.errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Tipo de Implementación -->
+            <div class="mb-6 border-b border-accent-200 pb-6">
+                <h3 class="text-xl font-bold text-accent-800 mb-4">Tipo de Implementación</h3>
+                
+                <div class="mb-4">
+                    <label for="{{ form.tipo_implementacion.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                        {{ form.tipo_implementacion.label }}
+                        {% if form.tipo_implementacion.field.required %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                    {{ form.tipo_implementacion }}
+                    {% if form.tipo_implementacion.help_text %}
+                    <p class="mt-2 text-sm text-accent-500">{{ form.tipo_implementacion.help_text }}</p>
+                    {% endif %}
+                    {% if form.tipo_implementacion.errors %}
+                    <div class="mt-2 text-sm text-red-600">
+                        {% for error in form.tipo_implementacion.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
             </div>
             
             <!-- Arquitectura -->
@@ -45,6 +87,11 @@
                             {{ form.num_capas_ocultas.label }}
                         </label>
                         {{ form.num_capas_ocultas }}
+                        {% if form.num_capas_ocultas.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.num_capas_ocultas.errors %}{{ error }}{% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
                     
                     <div>
@@ -52,6 +99,11 @@
                             {{ form.funcion_activacion.label }}
                         </label>
                         {{ form.funcion_activacion }}
+                        {% if form.funcion_activacion.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.funcion_activacion.errors %}{{ error }}{% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
                     
                     <div>
@@ -66,7 +118,26 @@
                             {{ form.neuronas_capa_2.label }}
                         </label>
                         {{ form.neuronas_capa_2 }}
+                        {% if form.neuronas_capa_2.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.neuronas_capa_2.errors %}{{ error }}{% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
+                    
+                    {% if form.neuronas_capa_3 %}
+                    <div>
+                        <label for="{{ form.neuronas_capa_3.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
+                            {{ form.neuronas_capa_3.label }}
+                        </label>
+                        {{ form.neuronas_capa_3 }}
+                        {% if form.neuronas_capa_3.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.neuronas_capa_3.errors %}{{ error }}{% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             
@@ -78,40 +149,64 @@
                     <div>
                         <label for="{{ form.tasa_aprendizaje.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
                             {{ form.tasa_aprendizaje.label }}
+                            {% if form.tasa_aprendizaje.field.required %}<span class="text-red-500">*</span>{% endif %}
                         </label>
                         {{ form.tasa_aprendizaje }}
                         {% if form.tasa_aprendizaje.help_text %}
                         <p class="mt-2 text-sm text-accent-500">{{ form.tasa_aprendizaje.help_text }}</p>
+                        {% endif %}
+                        {% if form.tasa_aprendizaje.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.tasa_aprendizaje.errors %}{{ error }}{% endfor %}
+                        </div>
                         {% endif %}
                     </div>
                     
                     <div>
                         <label for="{{ form.iteraciones.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
                             {{ form.iteraciones.label }}
+                            {% if form.iteraciones.field.required %}<span class="text-red-500">*</span>{% endif %}
                         </label>
                         {{ form.iteraciones }}
                         {% if form.iteraciones.help_text %}
                         <p class="mt-2 text-sm text-accent-500">{{ form.iteraciones.help_text }}</p>
+                        {% endif %}
+                        {% if form.iteraciones.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.iteraciones.errors %}{{ error }}{% endfor %}
+                        </div>
                         {% endif %}
                     </div>
                     
                     <div>
                         <label for="{{ form.tamanio_batch.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
                             {{ form.tamanio_batch.label }}
+                            {% if form.tamanio_batch.field.required %}<span class="text-red-500">*</span>{% endif %}
                         </label>
                         {{ form.tamanio_batch }}
                         {% if form.tamanio_batch.help_text %}
                         <p class="mt-2 text-sm text-accent-500">{{ form.tamanio_batch.help_text }}</p>
+                        {% endif %}
+                        {% if form.tamanio_batch.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.tamanio_batch.errors %}{{ error }}{% endfor %}
+                        </div>
                         {% endif %}
                     </div>
                     
                     <div>
                         <label for="{{ form.porcentaje_entrenamiento.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
                             {{ form.porcentaje_entrenamiento.label }}
+                            {% if form.porcentaje_entrenamiento.field.required %}<span class="text-red-500">*</span>{% endif %}
                         </label>
                         {{ form.porcentaje_entrenamiento }}
                         {% if form.porcentaje_entrenamiento.help_text %}
                         <p class="mt-2 text-sm text-accent-500">{{ form.porcentaje_entrenamiento.help_text }}</p>
+                        {% endif %}
+                        {% if form.porcentaje_entrenamiento.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.porcentaje_entrenamiento.errors %}{{ error }}{% endfor %}
+                        </div>
                         {% endif %}
                     </div>
                 </div>
@@ -124,13 +219,23 @@
                 <div class="mb-6">
                     <label for="{{ form.columna_salida.id_for_label }}" class="block text-sm font-medium text-accent-700 mb-2">
                         {{ form.columna_salida.label }}
+                        {% if form.columna_salida.field.required %}<span class="text-red-500">*</span>{% endif %}
                     </label>
                     {{ form.columna_salida }}
+                    {% if form.columna_salida.help_text %}
+                    <p class="mt-2 text-sm text-accent-500">{{ form.columna_salida.help_text }}</p>
+                    {% endif %}
+                    {% if form.columna_salida.errors %}
+                    <div class="mt-2 text-sm text-red-600">
+                        {% for error in form.columna_salida.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
                 
                 <div>
                     <label class="block text-sm font-medium text-accent-700 mb-2">
                         {{ form.columnas_entrada.label }}
+                        {% if form.columnas_entrada.field.required %}<span class="text-red-500">*</span>{% endif %}
                     </label>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-64 overflow-y-auto border border-accent-200 rounded-lg p-4">
                         {% for choice in form.columnas_entrada %}
@@ -144,6 +249,11 @@
                     </div>
                     {% if form.columnas_entrada.help_text %}
                     <p class="mt-2 text-sm text-accent-500">{{ form.columnas_entrada.help_text }}</p>
+                    {% endif %}
+                    {% if form.columnas_entrada.errors %}
+                    <div class="mt-2 text-sm text-red-600">
+                        {% for error in form.columnas_entrada.errors %}{{ error }}{% endfor %}
+                    </div>
                     {% endif %}
                 </div>
             </div>

@@ -10,6 +10,7 @@ from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.db.models import Q, Count, Avg, Max, Min
+from django import forms
 import traceback
 import json
 import pandas as pd
@@ -18,8 +19,8 @@ import os
 import uuid
 from typing import Dict, Any
 
-from .models import Estudiante, EntrenamientoMLP, PrediccionRendimiento, AlertaEstudiante
-from .forms import CargaEstudiantesForm, EstudianteForm, ConfiguracionEntrenamientoMLPForm, PrediccionForm
+from .models import Estudiante, EntrenamientoMLP, PrediccionRendimiento, AlertaEstudiante, HistorialAcademico
+from .forms import CargaEstudiantesForm, EstudianteForm, ConfiguracionEntrenamientoMLPForm, PrediccionForm, HistorialAcademicoForm
 from .mlp_engine import MLP
 try:
     from .mlp_tensorflow import MLPTensorFlow
@@ -65,15 +66,15 @@ def dashboard(request):
     ).order_by('-prioridad', '-fecha_creacion')[:5]
     
     # Estadísticas de rendimiento
-    estudiantes_con_calificaciones = Estudiante.objects.exclude(
-        calificacion_g3__isnull=True
+    estudiantes_con_promedios = Estudiante.objects.exclude(
+        promedio_acumulado__isnull=True
     )
     
-    promedio_g3 = estudiantes_con_calificaciones.aggregate(Avg('calificacion_g3'))['calificacion_g3__avg']
-    promedio_g3 = round(promedio_g3, 2) if promedio_g3 else None
+    promedio_acum = estudiantes_con_promedios.aggregate(Avg('promedio_acumulado'))['promedio_acumulado__avg']
+    promedio_acum = round(promedio_acum, 2) if promedio_acum else None
     
-    estudiantes_riesgo = estudiantes_con_calificaciones.filter(
-        calificacion_g3__lt=10
+    estudiantes_riesgo = estudiantes_con_promedios.filter(
+        promedio_acumulado__lt=3.0
     ).count()
     
     context = {
@@ -85,7 +86,7 @@ def dashboard(request):
         'entrenamientos_recientes': entrenamientos_recientes,
         'predicciones_recientes': predicciones_recientes,
         'alertas_recientes': alertas_recientes,
-        'promedio_g3': promedio_g3,
+        'promedio_acumulado': promedio_acum,
         'estudiantes_riesgo': estudiantes_riesgo,
     }
     
@@ -190,13 +191,19 @@ def vista_estudiante(request, estudiante_id):
         estudiante=estudiante
     ).order_by('-prioridad', '-fecha_creacion')
     
-    # Promedio de calificaciones
-    promedio = estudiante.get_promedio()
+    # Historial académico del estudiante
+    historiales = HistorialAcademico.objects.filter(
+        estudiante=estudiante
+    ).order_by('semestre')
+    
+    # Promedio acumulado
+    promedio = estudiante.promedio_acumulado
     
     context = {
         'estudiante': estudiante,
         'predicciones': predicciones,
         'alertas': alertas,
+        'historiales': historiales,
         'promedio': promedio,
     }
     
@@ -246,6 +253,15 @@ def cargar_estudiantes(request):
                     except:
                         return None
                 
+                def obtener_valor_fila(row, columnas_posibles, valor_defecto=None):
+                    """Obtiene un valor de una fila de pandas Series, buscando en varias columnas posibles"""
+                    for col in columnas_posibles:
+                        if col in row.index:
+                            valor = row[col]
+                            if pd.notna(valor):
+                                return valor
+                    return valor_defecto
+                
                 # Crear estudiantes
                 estudiantes_creados = 0
                 estudiantes_actualizados = 0
@@ -256,45 +272,164 @@ def cargar_estudiantes(request):
                         # Generar identificación única
                         identificacion = f"EST{index + 1:04d}"
                         
+                        # Mapear campos del CSV a un diccionario de defaults
+                        defaults = {
+                            'nombre': f'Estudiante {index + 1}',
+                            'apellido': '',
+                        }
+                        
+                        # Mapear campos requeridos con valores por defecto
+                        # Sexo
+                        sexo_val = None
+                        if 'sex' in row.index:
+                            sexo_val = row['sex']
+                        elif 'Sex' in row.index:
+                            sexo_val = row['Sex']
+                        
+                        if sexo_val is not None and pd.notna(sexo_val):
+                            if isinstance(sexo_val, str):
+                                sexo_val = str(sexo_val).strip().strip('"').strip("'").upper()
+                            else:
+                                sexo_val = str(sexo_val).upper()
+                            defaults['sexo'] = 'M' if sexo_val == 'M' else 'F'
+                        else:
+                            defaults['sexo'] = 'M'
+                        
+                        # Edad
+                        edad_val = None
+                        if 'age' in row.index:
+                            edad_val = convertir_valor_numerico(row['age'])
+                        elif 'Age' in row.index:
+                            edad_val = convertir_valor_numerico(row['Age'])
+                        
+                        if edad_val is not None and not pd.isna(edad_val):
+                            defaults['edad'] = int(edad_val)
+                        else:
+                            defaults['edad'] = 18
+                        
+                        # Dirección
+                        direccion_val = None
+                        if 'address' in row.index:
+                            direccion_val = row['address']
+                        elif 'Address' in row.index:
+                            direccion_val = row['Address']
+                        
+                        if direccion_val is not None and pd.notna(direccion_val):
+                            if isinstance(direccion_val, str):
+                                direccion_val = str(direccion_val).strip().strip('"').strip("'").upper()
+                            else:
+                                direccion_val = str(direccion_val).upper()
+                            defaults['direccion'] = 'U' if direccion_val == 'U' else 'R'
+                        else:
+                            defaults['direccion'] = 'U'
+                        
+                        # Tamaño de familia
+                        famsize_val = obtener_valor_fila(row, ['famsize', 'Famsize'], 'GT3')
+                        if pd.notna(famsize_val):
+                            if isinstance(famsize_val, str):
+                                famsize_val = str(famsize_val).strip().strip('"').strip("'").upper()
+                            else:
+                                famsize_val = str(famsize_val).upper()
+                            defaults['tamano_familia'] = famsize_val if famsize_val in ['GT3', 'LE3'] else 'GT3'
+                        else:
+                            defaults['tamano_familia'] = 'GT3'
+                        
+                        # Estado de los padres
+                        pstatus_val = obtener_valor_fila(row, ['Pstatus', 'pstatus'], 'T')
+                        if pd.notna(pstatus_val):
+                            if isinstance(pstatus_val, str):
+                                pstatus_val = str(pstatus_val).strip().strip('"').strip("'").upper()
+                            else:
+                                pstatus_val = str(pstatus_val).upper()
+                            defaults['estado_padres'] = 'T' if pstatus_val == 'T' else 'A'
+                        else:
+                            defaults['estado_padres'] = 'T'
+                        
+                        # Mapear el resto de los campos requeridos a defaults
+                        # Educacion padres
+                        medu_val = convertir_valor_numerico(obtener_valor_fila(row, ['Medu', 'medu'], 0))
+                        defaults['educacion_madre'] = int(medu_val) if medu_val is not None else 0
+                        
+                        fedu_val = convertir_valor_numerico(obtener_valor_fila(row, ['Fedu', 'fedu'], 0))
+                        defaults['educacion_padre'] = int(fedu_val) if fedu_val is not None else 0
+                        
+                        # Trabajos padres
+                        mjob_val = obtener_valor_fila(row, ['Mjob', 'mjob'], 'other')
+                        if pd.notna(mjob_val):
+                            defaults['trabajo_madre'] = str(mjob_val).strip().strip('"').strip("'")
+                        else:
+                            defaults['trabajo_madre'] = 'other'
+                        
+                        fjob_val = obtener_valor_fila(row, ['Fjob', 'fjob'], 'other')
+                        if pd.notna(fjob_val):
+                            defaults['trabajo_padre'] = str(fjob_val).strip().strip('"').strip("'")
+                        else:
+                            defaults['trabajo_padre'] = 'other'
+                        
+                        # Campos académicos con valores por defecto
+                        traveltime_val = convertir_valor_numerico(obtener_valor_fila(row, ['traveltime', 'Traveltime'], 1))
+                        defaults['tiempo_viaje'] = int(traveltime_val) if traveltime_val is not None else 1
+                        
+                        studytime_val = convertir_valor_numerico(obtener_valor_fila(row, ['studytime', 'Studytime'], 2))
+                        defaults['tiempo_estudio'] = int(studytime_val) if studytime_val is not None else 2
+                        
+                        failures_val = convertir_valor_numerico(obtener_valor_fila(row, ['failures', 'Failures'], 0))
+                        defaults['fallos_previos'] = int(failures_val) if failures_val is not None else 0
+                        
+                        famrel_val = convertir_valor_numerico(obtener_valor_fila(row, ['famrel', 'Famrel'], 4))
+                        defaults['relacion_familiar'] = int(famrel_val) if famrel_val is not None else 4
+                        
+                        freetime_val = convertir_valor_numerico(obtener_valor_fila(row, ['freetime', 'Freetime'], 3))
+                        defaults['tiempo_libre'] = int(freetime_val) if freetime_val is not None else 3
+                        
+                        goout_val = convertir_valor_numerico(obtener_valor_fila(row, ['goout', 'Goout'], 3))
+                        defaults['salidas'] = int(goout_val) if goout_val is not None else 3
+                        
+                        dalc_val = convertir_valor_numerico(obtener_valor_fila(row, ['Dalc', 'dalc'], 1))
+                        defaults['alcohol_semana'] = int(dalc_val) if dalc_val is not None else 1
+                        
+                        walc_val = convertir_valor_numerico(obtener_valor_fila(row, ['Walc', 'walc'], 1))
+                        defaults['alcohol_fin_semana'] = int(walc_val) if walc_val is not None else 1
+                        
+                        health_val = convertir_valor_numerico(obtener_valor_fila(row, ['health', 'Health'], 3))
+                        defaults['salud'] = int(health_val) if health_val is not None else 3
+                        
+                        absences_val = convertir_valor_numerico(obtener_valor_fila(row, ['absences', 'Absences'], 0))
+                        defaults['ausencias'] = int(absences_val) if absences_val is not None else 0
+                        
+                        # Campos booleanos con valores por defecto
+                        schoolsup_val = obtener_valor_fila(row, ['schoolsup', 'Schoolsup'], 'no')
+                        defaults['apoyo_escuela'] = convertir_valor_booleano(schoolsup_val) if pd.notna(schoolsup_val) else False
+                        
+                        famsup_val = obtener_valor_fila(row, ['famsup', 'Famsup'], 'no')
+                        defaults['apoyo_familia'] = convertir_valor_booleano(famsup_val) if pd.notna(famsup_val) else False
+                        
+                        paid_val = obtener_valor_fila(row, ['paid', 'Paid'], 'no')
+                        defaults['clases_pagadas'] = convertir_valor_booleano(paid_val) if pd.notna(paid_val) else False
+                        
+                        activities_val = obtener_valor_fila(row, ['activities', 'Activities'], 'no')
+                        defaults['actividades_extra'] = convertir_valor_booleano(activities_val) if pd.notna(activities_val) else False
+                        
+                        nursery_val = obtener_valor_fila(row, ['nursery', 'Nursery'], 'no')
+                        defaults['guarderia'] = convertir_valor_booleano(nursery_val) if pd.notna(nursery_val) else False
+                        
+                        higher_val = obtener_valor_fila(row, ['higher', 'Higher'], 'yes')
+                        defaults['quiere_superior'] = convertir_valor_booleano(higher_val) if pd.notna(higher_val) else True
+                        
+                        internet_val = obtener_valor_fila(row, ['internet', 'Internet'], 'no')
+                        defaults['internet'] = convertir_valor_booleano(internet_val) if pd.notna(internet_val) else False
+                        
+                        romantic_val = obtener_valor_fila(row, ['romantic', 'Romantic'], 'no')
+                        defaults['relacion_romantica'] = convertir_valor_booleano(romantic_val) if pd.notna(romantic_val) else False
+                        
                         # Verificar si el estudiante ya existe
                         estudiante, creado = Estudiante.objects.get_or_create(
                             identificacion=identificacion,
-                            defaults={
-                                'nombre': f'Estudiante {index + 1}',
-                                'apellido': '',
-                            }
+                            defaults=defaults
                         )
                         
-                        # Mapear campos del CSV al modelo
-                        if 'sex' in row or 'Sex' in row:
-                            sexo_val = row.get('sex', row.get('Sex', 'M'))
-                            if isinstance(sexo_val, str):
-                                sexo_val = sexo_val.strip().strip('"').strip("'").upper()
-                                estudiante.sexo = 'M' if sexo_val == 'M' else 'F'
-                        
-                        if 'age' in row or 'Age' in row:
-                            edad_val = convertir_valor_numerico(row.get('age', row.get('Age')))
-                            if edad_val is not None:
-                                estudiante.edad = int(edad_val)
-                        
-                        if 'address' in row or 'Address' in row:
-                            direccion_val = row.get('address', row.get('Address', 'U'))
-                            if isinstance(direccion_val, str):
-                                direccion_val = direccion_val.strip().strip('"').strip("'").upper()
-                                estudiante.direccion = 'U' if direccion_val == 'U' else 'R'
-                        
-                        if 'famsize' in row or 'Famsize' in row:
-                            famsize_val = row.get('famsize', row.get('Famsize', 'GT3'))
-                            if isinstance(famsize_val, str):
-                                famsize_val = famsize_val.strip().strip('"').strip("'").upper()
-                                estudiante.tamano_familia = famsize_val
-                        
-                        if 'Pstatus' in row or 'pstatus' in row:
-                            pstatus_val = row.get('Pstatus', row.get('pstatus', 'T'))
-                            if isinstance(pstatus_val, str):
-                                pstatus_val = pstatus_val.strip().strip('"').strip("'").upper()
-                                estudiante.estado_padres = 'T' if pstatus_val == 'T' else 'A'
-                        
+                        # Actualizar campos adicionales (tanto si fue creado como si ya existía)
+                        # Estos campos pueden actualizarse después porque no son requeridos
                         if 'Medu' in row or 'medu' in row:
                             estudiante.educacion_madre = int(convertir_valor_numerico(row.get('Medu', row.get('medu', 0))) or 0)
                         
@@ -303,13 +438,13 @@ def cargar_estudiantes(request):
                         
                         if 'Mjob' in row or 'mjob' in row:
                             mjob_val = row.get('Mjob', row.get('mjob', 'other'))
-                            if isinstance(mjob_val, str):
-                                estudiante.trabajo_madre = mjob_val.strip().strip('"').strip("'")
+                            if isinstance(mjob_val, str) and pd.notna(mjob_val):
+                                estudiante.trabajo_madre = str(mjob_val).strip().strip('"').strip("'")
                         
                         if 'Fjob' in row or 'fjob' in row:
                             fjob_val = row.get('Fjob', row.get('fjob', 'other'))
-                            if isinstance(fjob_val, str):
-                                estudiante.trabajo_padre = fjob_val.strip().strip('"').strip("'")
+                            if isinstance(fjob_val, str) and pd.notna(fjob_val):
+                                estudiante.trabajo_padre = str(fjob_val).strip().strip('"').strip("'")
                         
                         if 'traveltime' in row or 'Traveltime' in row:
                             estudiante.tiempo_viaje = int(convertir_valor_numerico(row.get('traveltime', row.get('Traveltime', 1))) or 1)
@@ -365,14 +500,31 @@ def cargar_estudiantes(request):
                         if 'absences' in row or 'Absences' in row:
                             estudiante.ausencias = int(convertir_valor_numerico(row.get('absences', row.get('Absences', 0))) or 0)
                         
-                        if 'G1' in row or 'g1' in row:
-                            estudiante.calificacion_g1 = convertir_valor_numerico(row.get('G1', row.get('g1')))
+                        # Campos académicos universitarios (si existen en el CSV)
+                        if 'semestre_actual' in row or 'Semestre' in row:
+                            estudiante.semestre_actual = int(convertir_valor_numerico(row.get('semestre_actual', row.get('Semestre', 1))) or 1)
                         
-                        if 'G2' in row or 'g2' in row:
-                            estudiante.calificacion_g2 = convertir_valor_numerico(row.get('G2', row.get('g2')))
+                        if 'puntaje_icfes_global' in row or 'Puntaje ICFES' in row or 'icfes' in row:
+                            estudiante.puntaje_icfes_global = int(convertir_valor_numerico(row.get('puntaje_icfes_global', row.get('Puntaje ICFES', row.get('icfes')))) or 0)
                         
-                        if 'G3' in row or 'g3' in row:
-                            estudiante.calificacion_g3 = convertir_valor_numerico(row.get('G3', row.get('g3')))
+                        if 'estrato' in row or 'Estrato' in row:
+                            estudiante.estrato = int(convertir_valor_numerico(row.get('estrato', row.get('Estrato', 3))) or 3)
+                        
+                        if 'programa_academico' in row or 'Programa' in row or 'carrera' in row:
+                            estudiante.programa_academico = str(row.get('programa_academico', row.get('Programa', row.get('carrera', '')))).strip()
+                        
+                        if 'trabaja_actualmente' in row or 'trabaja' in row:
+                            trabaja_val = row.get('trabaja_actualmente', row.get('trabaja', 'no'))
+                            estudiante.trabaja_actualmente = convertir_valor_booleano(trabaja_val)
+                        
+                        if 'horas_trabajo_sem' in row or 'horas_trabajo' in row:
+                            estudiante.horas_trabajo_sem = int(convertir_valor_numerico(row.get('horas_trabajo_sem', row.get('horas_trabajo', 0))) or 0)
+                        
+                        if 'promedio_semestre_anterior' in row or 'promedio_sem_ant' in row:
+                            estudiante.promedio_semestre_anterior = convertir_valor_numerico(row.get('promedio_semestre_anterior', row.get('promedio_sem_ant')))
+                        
+                        if 'promedio_acumulado' in row or 'promedio_acum' in row:
+                            estudiante.promedio_acumulado = convertir_valor_numerico(row.get('promedio_acumulado', row.get('promedio_acum')))
                         
                         estudiante.save()
                         
@@ -426,15 +578,15 @@ def vista_docentes(request):
             Q(identificacion__icontains=busqueda)
         )
     
-    # Filtrar por riesgo
+    # Filtrar por riesgo (basado en promedio acumulado)
     if filtro_riesgo == 'alto':
         estudiantes = estudiantes.filter(
-            Q(calificacion_g3__lt=10) | Q(ausencias__gt=10)
+            Q(promedio_acumulado__lt=3.0) | Q(ausencias__gt=10)
         )
     elif filtro_riesgo == 'medio':
         estudiantes = estudiantes.filter(
-            calificacion_g3__gte=10,
-            calificacion_g3__lt=14
+            promedio_acumulado__gte=3.0,
+            promedio_acumulado__lt=3.5
         )
     
     # Obtener predicciones y alertas para cada estudiante
@@ -498,8 +650,7 @@ def entrenar_mlp(request):
         messages.warning(request, 'No hay estudiantes registrados. Por favor, carga estudiantes primero.')
         return redirect('prediccion_academica:estudiantes')
     
-    # Columnas disponibles (basadas en el modelo Estudiante)
-    # Excluir G3 si es que no está disponible para todos
+    # Columnas disponibles (basadas en el modelo Estudiante y el data_pipeline)
     columnas_disponibles = [
         'edad', 'sexo', 'direccion', 'tamano_familia', 'estado_padres',
         'educacion_madre', 'educacion_padre', 'trabajo_madre', 'trabajo_padre',
@@ -507,7 +658,14 @@ def entrenar_mlp(request):
         'apoyo_familia', 'clases_pagadas', 'actividades_extra', 'guarderia',
         'quiere_superior', 'internet', 'relacion_romantica', 'relacion_familiar',
         'tiempo_libre', 'salidas', 'alcohol_semana', 'alcohol_fin_semana',
-        'salud', 'ausencias', 'G1', 'G2'
+        'salud', 'ausencias',
+        # Campos académicos universitarios
+        'semestre_actual', 'puntaje_icfes_global', 'estrato', 'programa_academico',
+        'trabaja_actualmente', 'horas_trabajo_sem', 'promedio_semestre_anterior',
+        'promedio_acumulado',
+        # Campos del data_pipeline
+        'promedio_semestre_ant', 'materias_reprobadas_sem_ant', 'tendencia_rendimiento',
+        'porcentaje_asistencia_sem_ant'
     ]
     
     if request.method == 'POST':
@@ -516,34 +674,167 @@ def entrenar_mlp(request):
             columnas_disponibles=columnas_disponibles
         )
         
-        if form.is_valid():
-            try:
-                # Obtener datos del formulario
-                nombre = form.cleaned_data['nombre']
-                tipo_implementacion = form.cleaned_data.get('tipo_implementacion', 'numpy')  # Default a numpy para compatibilidad
-                num_capas_ocultas = form.cleaned_data['num_capas_ocultas']
-                neuronas_por_capa = form.get_neuronas_por_capa()
-                funcion_activacion = form.cleaned_data['funcion_activacion']
-                tasa_aprendizaje = form.cleaned_data['tasa_aprendizaje']
-                iteraciones = form.cleaned_data['iteraciones']
-                tamanio_batch = form.cleaned_data['tamanio_batch']
-                porcentaje_entrenamiento = form.cleaned_data['porcentaje_entrenamiento']
-                columnas_entrada = form.cleaned_data['columnas_entrada']
-                columna_salida = form.cleaned_data['columna_salida']
+        if not form.is_valid():
+            # Validar errores del formulario
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'Error en {field}: {error}')
+            return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                'form': form, 
+                'total_estudiantes': estudiantes.count()
+            })
+        
+        try:
+            # Obtener datos del formulario
+            nombre = form.cleaned_data['nombre']
+            tipo_implementacion = form.cleaned_data.get('tipo_implementacion', 'numpy')
+            num_capas_ocultas = form.cleaned_data['num_capas_ocultas']
+            neuronas_por_capa = form.get_neuronas_por_capa()
+            funcion_activacion = form.cleaned_data['funcion_activacion']
+            tasa_aprendizaje = form.cleaned_data['tasa_aprendizaje']
+            iteraciones = form.cleaned_data['iteraciones']
+            tamanio_batch = form.cleaned_data['tamanio_batch']
+            porcentaje_entrenamiento = form.cleaned_data['porcentaje_entrenamiento']
+            columnas_entrada = form.cleaned_data['columnas_entrada']
+            columna_salida = form.cleaned_data['columna_salida']
+            
+            # Validaciones adicionales
+            if not columnas_entrada or len(columnas_entrada) == 0:
+                messages.error(request, 'Debe seleccionar al menos una columna de entrada.')
+                return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                    'form': form, 
+                    'total_estudiantes': estudiantes.count()
+                })
+            
+            if not neuronas_por_capa or len(neuronas_por_capa) == 0:
+                messages.error(request, 'Debe especificar al menos una capa oculta con neuronas.')
+                return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                    'form': form, 
+                    'total_estudiantes': estudiantes.count()
+                })
+            
+            if tamanio_batch > len(estudiantes):
+                messages.warning(request, f'El tamaño de batch ({tamanio_batch}) es mayor que el número de estudiantes ({len(estudiantes)}). Se ajustará al número de estudiantes.')
+                tamanio_batch = min(tamanio_batch, len(estudiantes))
+            
+            if iteraciones <= 0:
+                messages.error(request, 'El número de iteraciones debe ser mayor que 0.')
+                return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                    'form': form, 
+                    'total_estudiantes': estudiantes.count()
+                })
+            
+            # Validar rangos de valores
+            if tasa_aprendizaje <= 0 or tasa_aprendizaje > 1:
+                messages.error(request, f'La tasa de aprendizaje debe estar entre 0 y 1. Valor ingresado: {tasa_aprendizaje}')
+                return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                    'form': form, 
+                    'total_estudiantes': estudiantes.count()
+                })
+            
+            if porcentaje_entrenamiento < 50 or porcentaje_entrenamiento > 90:
+                messages.error(request, f'El porcentaje de entrenamiento debe estar entre 50% y 90%. Valor ingresado: {porcentaje_entrenamiento}%')
+                return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                    'form': form, 
+                    'total_estudiantes': estudiantes.count()
+                })
+            
+            # Validar neuronas por capa
+            for i, neuronas in enumerate(neuronas_por_capa, 1):
+                if neuronas <= 0:
+                    messages.error(request, f'La capa oculta {i} debe tener al menos 1 neurona. Valor ingresado: {neuronas}')
+                    return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                        'form': form, 
+                        'total_estudiantes': estudiantes.count()
+                    })
+            
+            # Generar dataset según el tipo de columna de salida
+            if columna_salida == 'Y_promedio_sem_siguiente':
+                # Usar el nuevo pipeline de datos
+                from .data_pipeline import generar_dataset_rendimiento
+                from .models import HistorialAcademico
                 
-                # Filtrar estudiantes que tengan la columna de salida
-                if columna_salida == 'G1':
-                    estudiantes_filtrados = estudiantes.exclude(calificacion_g1__isnull=True)
-                elif columna_salida == 'G2':
-                    estudiantes_filtrados = estudiantes.exclude(calificacion_g2__isnull=True)
-                elif columna_salida == 'G3':
-                    estudiantes_filtrados = estudiantes.exclude(calificacion_g3__isnull=True)
-                else:
-                    estudiantes_filtrados = estudiantes
+                # Validar que haya historiales académicos
+                total_historiales = HistorialAcademico.objects.count()
+                if total_historiales == 0:
+                    messages.error(
+                        request, 
+                        'No hay historiales académicos registrados. Por favor, crea historiales académicos para los estudiantes antes de entrenar el modelo.'
+                    )
+                    return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                        'form': form, 
+                        'total_estudiantes': estudiantes.count()
+                    })
+                
+                estudiantes_con_historial = Estudiante.objects.filter(
+                    historial_academico__isnull=False
+                ).distinct().count()
+                
+                if estudiantes_con_historial == 0:
+                    messages.error(
+                        request, 
+                        'No hay estudiantes con historial académico. Por favor, crea historiales académicos para al menos algunos estudiantes.'
+                    )
+                    return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                        'form': form, 
+                        'total_estudiantes': estudiantes.count()
+                    })
+                
+                try:
+                    df = generar_dataset_rendimiento()
+                except Exception as e:
+                    messages.error(request, f'Error al generar el dataset: {str(e)}')
+                    import traceback
+                    traceback.print_exc()
+                    return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                        'form': form, 
+                        'total_estudiantes': estudiantes.count()
+                    })
+                
+                # Validar que el dataset no esté vacío
+                if df.empty or len(df) == 0:
+                    messages.error(
+                        request, 
+                        'El dataset generado está vacío. Asegúrate de que los estudiantes tengan al menos 2 semestres de historial académico.'
+                    )
+                    return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                        'form': form, 
+                        'total_estudiantes': estudiantes.count()
+                    })
+                
+                # Validar que las columnas seleccionadas existan en el dataset
+                columnas_faltantes = [col for col in columnas_entrada if col not in df.columns]
+                if columnas_faltantes:
+                    messages.error(
+                        request, 
+                        f'Las siguientes columnas seleccionadas no están disponibles en el dataset: {", ".join(columnas_faltantes)}'
+                    )
+                    return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                        'form': form, 
+                        'total_estudiantes': estudiantes.count()
+                    })
+                
+                # Validar que la columna de salida exista
+                if columna_salida not in df.columns:
+                    messages.error(
+                        request, 
+                        f'La columna de salida "{columna_salida}" no está disponible en el dataset.'
+                    )
+                    return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                        'form': form, 
+                        'total_estudiantes': estudiantes.count()
+                    })
+                
+            else:
+                # Método antiguo: crear DataFrame desde estudiantes
+                estudiantes_filtrados = estudiantes
                 
                 if estudiantes_filtrados.count() == 0:
-                    messages.error(request, f'No hay estudiantes con datos para {columna_salida}. Por favor, carga estudiantes con esa información.')
-                    return render(request, 'prediccion_academica/entrenar_mlp.html', {'form': form, 'total_estudiantes': estudiantes.count()})
+                    messages.error(request, f'No hay estudiantes registrados para entrenar el modelo.')
+                    return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                        'form': form, 
+                        'total_estudiantes': estudiantes.count()
+                    })
                 
                 # Crear DataFrame con datos de estudiantes
                 datos_estudiantes = []
@@ -576,18 +867,39 @@ def entrenar_mlp(request):
                         'alcohol_fin_semana': estudiante.alcohol_fin_semana,
                         'salud': estudiante.salud,
                         'ausencias': estudiante.ausencias,
-                        'G1': estudiante.calificacion_g1 if estudiante.calificacion_g1 is not None else None,
-                        'G2': estudiante.calificacion_g2 if estudiante.calificacion_g2 is not None else None,
-                        'G3': estudiante.calificacion_g3 if estudiante.calificacion_g3 is not None else None,
+                        # Campos académicos universitarios nuevos
+                        'semestre_actual': estudiante.semestre_actual if estudiante.semestre_actual else 1,
+                        'puntaje_icfes_global': estudiante.puntaje_icfes_global if estudiante.puntaje_icfes_global else None,
+                        'estrato': estudiante.estrato if estudiante.estrato else None,
+                        'programa_academico': estudiante.programa_academico if estudiante.programa_academico else '',
+                        'trabaja_actualmente': 1 if estudiante.trabaja_actualmente else 0,
+                        'horas_trabajo_sem': estudiante.horas_trabajo_sem if estudiante.horas_trabajo_sem else 0,
+                        'promedio_semestre_anterior': estudiante.promedio_semestre_anterior if estudiante.promedio_semestre_anterior else None,
+                        'promedio_acumulado': estudiante.promedio_acumulado if estudiante.promedio_acumulado else None,
                     }
                     datos_estudiantes.append(datos)
                 
                 df = pd.DataFrame(datos_estudiantes)
                 
                 # Verificar que el DataFrame no esté vacío
-                if df.empty:
+                if df.empty or len(df) == 0:
                     messages.error(request, 'No hay datos suficientes para entrenar el modelo.')
-                    return render(request, 'prediccion_academica/entrenar_mlp.html', {'form': form, 'total_estudiantes': estudiantes.count()})
+                    return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                        'form': form, 
+                        'total_estudiantes': estudiantes.count()
+                    })
+                
+                # Validar que las columnas seleccionadas existan en el dataset
+                columnas_faltantes = [col for col in columnas_entrada if col not in df.columns]
+                if columnas_faltantes:
+                    messages.error(
+                        request, 
+                        f'Las siguientes columnas seleccionadas no están disponibles en el dataset: {", ".join(columnas_faltantes)}'
+                    )
+                    return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                        'form': form, 
+                        'total_estudiantes': estudiantes.count()
+                    })
                 
                 # Preprocesar datos
                 X, y, info_preprocesamiento = preprocesar_datos_estudiantes(
@@ -765,11 +1077,15 @@ def entrenar_mlp(request):
                 
                 messages.success(request, f'Modelo entrenado exitosamente. R² entrenamiento: {resultados["metricas_entrenamiento"]["R2"]:.4f}')
                 return redirect('prediccion_academica:resultados_entrenamiento', entrenamiento_id=entrenamiento.id)
-            
-            except Exception as e:
-                messages.error(request, f'Error durante el entrenamiento: {str(e)}')
-                import traceback
-                traceback.print_exc()
+        
+        except Exception as e:
+            messages.error(request, f'Error durante el entrenamiento: {str(e)}')
+            import traceback
+            traceback.print_exc()
+            return render(request, 'prediccion_academica/entrenar_mlp.html', {
+                'form': form, 
+                'total_estudiantes': estudiantes.count()
+            })
     
     else:
         form = ConfiguracionEntrenamientoMLPForm(columnas_disponibles=columnas_disponibles)
@@ -1064,3 +1380,119 @@ def api_prediccion(request):
             'success': False,
             'error': str(e)
         }, status=400)
+
+
+# ==================== VISTAS DE HISTORIAL ACADÉMICO ====================
+
+def listar_historiales(request, estudiante_id=None):
+    """
+    Vista para listar todos los historiales académicos o los de un estudiante específico
+    """
+    estudiante = None
+    if estudiante_id is not None:
+        estudiante = get_object_or_404(Estudiante, id=estudiante_id)
+        historiales = HistorialAcademico.objects.filter(estudiante=estudiante).order_by('-semestre')
+        titulo = f"Historial Académico - {estudiante.get_nombre_completo()}"
+    else:
+        historiales = HistorialAcademico.objects.all().select_related('estudiante').order_by('-semestre', 'estudiante')
+        titulo = "Historial Académico - Todos los Estudiantes"
+    
+    # Paginación
+    paginator = Paginator(historiales, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'historiales': page_obj,
+        'estudiante': estudiante,
+        'titulo': titulo,
+    }
+    
+    return render(request, 'prediccion_academica/historiales/listar.html', context)
+
+
+def crear_historial(request, estudiante_id=None):
+    """
+    Vista para crear un nuevo historial académico
+    """
+    estudiante = None
+    if estudiante_id:
+        estudiante = get_object_or_404(Estudiante, id=estudiante_id)
+    
+    if request.method == 'POST':
+        form = HistorialAcademicoForm(request.POST)
+        if form.is_valid():
+            historial = form.save()
+            messages.success(request, f'Historial académico del semestre {historial.semestre} creado exitosamente.')
+            if estudiante:
+                return redirect('prediccion_academica:historiales_estudiante', estudiante_id=estudiante.id)
+            return redirect('prediccion_academica:listar_historiales')
+    else:
+        initial = {}
+        if estudiante:
+            # Obtener el siguiente semestre
+            ultimo_historial = HistorialAcademico.objects.filter(estudiante=estudiante).order_by('-semestre').first()
+            siguiente_semestre = (ultimo_historial.semestre + 1) if ultimo_historial else 1
+            initial = {
+                'estudiante': estudiante,
+                'semestre': siguiente_semestre,
+                'porcentaje_asistencia': 1.0,
+            }
+        form = HistorialAcademicoForm(initial=initial)
+        if estudiante:
+            form.fields['estudiante'].widget = forms.HiddenInput()
+    
+    context = {
+        'form': form,
+        'estudiante': estudiante,
+        'titulo': f'Crear Historial Académico' + (f' - {estudiante.get_nombre_completo()}' if estudiante else ''),
+    }
+    
+    return render(request, 'prediccion_academica/historiales/crear.html', context)
+
+
+def editar_historial(request, historial_id):
+    """
+    Vista para editar un historial académico existente
+    """
+    historial = get_object_or_404(HistorialAcademico, id=historial_id)
+    estudiante = historial.estudiante
+    
+    if request.method == 'POST':
+        form = HistorialAcademicoForm(request.POST, instance=historial)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Historial académico del semestre {historial.semestre} actualizado exitosamente.')
+            return redirect('prediccion_academica:historiales_estudiante', estudiante_id=estudiante.id)
+    else:
+        form = HistorialAcademicoForm(instance=historial)
+    
+    context = {
+        'form': form,
+        'historial': historial,
+        'estudiante': estudiante,
+        'titulo': f'Editar Historial Académico - Semestre {historial.semestre}',
+    }
+    
+    return render(request, 'prediccion_academica/historiales/editar.html', context)
+
+
+def eliminar_historial(request, historial_id):
+    """
+    Vista para eliminar un historial académico
+    """
+    historial = get_object_or_404(HistorialAcademico, id=historial_id)
+    estudiante = historial.estudiante
+    semestre = historial.semestre
+    
+    if request.method == 'POST':
+        historial.delete()
+        messages.success(request, f'Historial académico del semestre {semestre} eliminado exitosamente.')
+        return redirect('prediccion_academica:historiales_estudiante', estudiante_id=estudiante.id)
+    
+    context = {
+        'historial': historial,
+        'estudiante': estudiante,
+    }
+    
+    return render(request, 'prediccion_academica/historiales/eliminar.html', context)

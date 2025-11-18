@@ -3,15 +3,15 @@ Configuración del admin para la aplicación de Predicción del Rendimiento Acad
 """
 
 from django.contrib import admin
-from .models import Estudiante, EntrenamientoMLP, PrediccionRendimiento, AlertaEstudiante
+from .models import Estudiante, EntrenamientoMLP, PrediccionRendimiento, AlertaEstudiante, HistorialAcademico
 
 
 @admin.register(Estudiante)
 class EstudianteAdmin(admin.ModelAdmin):
-    list_display = ['identificacion', 'nombre', 'apellido', 'edad', 'sexo', 'calificacion_g1', 'calificacion_g2', 'calificacion_g3', 'fecha_creacion']
-    list_filter = ['sexo', 'direccion', 'estado_padres', 'fecha_creacion']
-    search_fields = ['identificacion', 'nombre', 'apellido']
-    readonly_fields = ['fecha_creacion', 'fecha_actualizacion']
+    list_display = ['identificacion', 'nombre', 'apellido', 'edad', 'sexo', 'semestre_actual', 'programa_academico', 'fecha_creacion']
+    list_filter = ['sexo', 'direccion', 'estado_padres', 'programa_academico', 'trabaja_actualmente', 'fecha_creacion']
+    search_fields = ['identificacion', 'nombre', 'apellido', 'programa_academico']
+    readonly_fields = ['fecha_creacion', 'fecha_actualizacion', 'promedio_semestre_anterior', 'promedio_acumulado']
     fieldsets = (
         ('Información Personal', {
             'fields': ('identificacion', 'nombre', 'apellido', 'edad', 'sexo', 'direccion')
@@ -27,8 +27,10 @@ class EstudianteAdmin(admin.ModelAdmin):
                       'tiempo_libre', 'salidas', 'alcohol_semana', 'alcohol_fin_semana', 
                       'salud', 'ausencias')
         }),
-        ('Calificaciones', {
-            'fields': ('calificacion_g1', 'calificacion_g2', 'calificacion_g3')
+        ('Información Académica Universitaria', {
+            'fields': ('semestre_actual', 'puntaje_icfes_global', 'estrato', 'programa_academico',
+                      'trabaja_actualmente', 'horas_trabajo_sem', 'promedio_semestre_anterior', 
+                      'promedio_acumulado')
         }),
         ('Fechas', {
             'fields': ('fecha_creacion', 'fecha_actualizacion')
@@ -69,6 +71,15 @@ class PrediccionRendimientoAdmin(admin.ModelAdmin):
     search_fields = ['estudiante__nombre', 'estudiante__apellido', 'estudiante__identificacion']
     readonly_fields = ['fecha_prediccion']
     date_hierarchy = 'fecha_prediccion'
+
+
+@admin.register(HistorialAcademico)
+class HistorialAcademicoAdmin(admin.ModelAdmin):
+    list_display = ['estudiante', 'semestre', 'promedio', 'porcentaje_asistencia', 'materias_reprobadas', 'creditos_inscritos', 'fecha_creacion']
+    list_filter = ['semestre', 'materias_reprobadas', 'fecha_creacion']
+    search_fields = ['estudiante__nombre', 'estudiante__apellido', 'estudiante__identificacion']
+    readonly_fields = ['fecha_creacion', 'fecha_actualizacion']
+    date_hierarchy = 'fecha_creacion'
 
 
 @admin.register(AlertaEstudiante)

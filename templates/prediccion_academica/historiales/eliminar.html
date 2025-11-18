@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Historial Académico - Predicción del Rendimiento Académico{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-accent-800 mb-2">Eliminar Historial Académico</h1>
+        <p class="text-lg text-accent-600">Estudiante: {{ estudiante.get_nombre_completo }}</p>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-8 border border-red-200">
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p class="text-red-800 font-semibold">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                ¿Estás seguro de que deseas eliminar este historial académico?
+            </p>
+        </div>
+        
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold text-accent-800 mb-4">Información del Historial:</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <span class="text-accent-600">Semestre:</span>
+                    <span class="font-semibold text-accent-800 ml-2">{{ historial.semestre }}</span>
+                </div>
+                <div>
+                    <span class="text-accent-600">Promedio:</span>
+                    <span class="font-semibold text-accent-800 ml-2">{{ historial.promedio|floatformat:2 }}</span>
+                </div>
+                <div>
+                    <span class="text-accent-600">Asistencia:</span>
+                    <span class="font-semibold text-accent-800 ml-2">{% widthratio historial.porcentaje_asistencia 1 100 %}%</span>
+                </div>
+                <div>
+                    <span class="text-accent-600">Materias Reprobadas:</span>
+                    <span class="font-semibold text-accent-800 ml-2">{{ historial.materias_reprobadas }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="flex space-x-4">
+                <button type="submit" class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors">
+                    <i class="fas fa-trash mr-2"></i>Sí, Eliminar
+                </button>
+                <a href="{% url 'prediccion_academica:estudiante' estudiante.id %}" class="bg-accent-300 text-accent-800 px-6 py-3 rounded-lg hover:bg-accent-400 transition-colors">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

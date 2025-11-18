@@ -5,7 +5,16 @@ Utilidades para preprocesamiento de datos
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Tuple, Any, Optional
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder
+
+try:
+    from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder
+    SKLEARN_AVAILABLE = True
+except ImportError:
+    SKLEARN_AVAILABLE = False
+    # Crear placeholders para evitar errores de importación
+    StandardScaler = None
+    MinMaxScaler = None
+    LabelEncoder = None
 
 
 def convertir_a_tipos_nativos(obj: Any) -> Any:
@@ -116,6 +125,12 @@ def normalizar_caracteristicas(
     Returns:
         Tupla (X_normalizado, scaler)
     """
+    if not SKLEARN_AVAILABLE:
+        raise ImportError(
+            "scikit-learn no está instalado. Por favor, instálalo usando: "
+            "pip install scikit-learn"
+        )
+    
     if scaler is None:
         if metodo == 'standard':
             scaler = StandardScaler()
@@ -170,6 +185,12 @@ def label_encoding(df: pd.DataFrame, columnas: List[str]) -> Tuple[pd.DataFrame,
     Returns:
         Tupla (df_codificado, mapeo_labels)
     """
+    if not SKLEARN_AVAILABLE:
+        raise ImportError(
+            "scikit-learn no está instalado. Por favor, instálalo usando: "
+            "pip install scikit-learn"
+        )
+    
     df_resultado = df.copy()
     mapeo_labels = {}
     
@@ -355,13 +376,23 @@ def convertir_estudiante_a_caracteristicas(
         'ausencias': estudiante.ausencias,
     }
     
-    # Agregar calificaciones si están disponibles y se necesitan
-    if 'G1' in columnas_entrada:
-        datos['G1'] = estudiante.calificacion_g1 if estudiante.calificacion_g1 is not None else 0
-    if 'G2' in columnas_entrada:
-        datos['G2'] = estudiante.calificacion_g2 if estudiante.calificacion_g2 is not None else 0
-    if 'G3' in columnas_entrada:
-        datos['G3'] = estudiante.calificacion_g3 if estudiante.calificacion_g3 is not None else 0
+    # Agregar campos académicos universitarios si están disponibles y se necesitan
+    if 'semestre_actual' in columnas_entrada:
+        datos['semestre_actual'] = estudiante.semestre_actual if estudiante.semestre_actual else 1
+    if 'puntaje_icfes_global' in columnas_entrada:
+        datos['puntaje_icfes_global'] = estudiante.puntaje_icfes_global if estudiante.puntaje_icfes_global else None
+    if 'estrato' in columnas_entrada:
+        datos['estrato'] = estudiante.estrato if estudiante.estrato else None
+    if 'programa_academico' in columnas_entrada:
+        datos['programa_academico'] = estudiante.programa_academico if estudiante.programa_academico else ''
+    if 'trabaja_actualmente' in columnas_entrada:
+        datos['trabaja_actualmente'] = 1 if estudiante.trabaja_actualmente else 0
+    if 'horas_trabajo_sem' in columnas_entrada:
+        datos['horas_trabajo_sem'] = estudiante.horas_trabajo_sem if estudiante.horas_trabajo_sem else 0
+    if 'promedio_semestre_anterior' in columnas_entrada:
+        datos['promedio_semestre_anterior'] = estudiante.promedio_semestre_anterior if estudiante.promedio_semestre_anterior else None
+    if 'promedio_acumulado' in columnas_entrada:
+        datos['promedio_acumulado'] = estudiante.promedio_acumulado if estudiante.promedio_acumulado else None
     
     # Crear DataFrame con una sola fila, solo con las columnas de entrada
     datos_filtrados = {col: datos.get(col, 0) for col in columnas_entrada}

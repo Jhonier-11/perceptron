@@ -133,18 +133,9 @@ def generar_alertas_estudiante(estudiante: Estudiante, prediccion: Optional[Pred
             )
             alertas_generadas.append(alerta)
     
-    # 7. Alerta por calificaciones actuales bajas
-    calificaciones = []
-    if estudiante.calificacion_g1 is not None:
-        calificaciones.append(estudiante.calificacion_g1)
-    if estudiante.calificacion_g2 is not None:
-        calificaciones.append(estudiante.calificacion_g2)
-    if estudiante.calificacion_g3 is not None:
-        calificaciones.append(estudiante.calificacion_g3)
-    
-    if calificaciones:
-        promedio = sum(calificaciones) / len(calificaciones)
-        if promedio < 10:
+    # 7. Alerta por promedio acumulado bajo
+    if estudiante.promedio_acumulado is not None:
+        if estudiante.promedio_acumulado < 3.0:
             alerta_existente = AlertaEstudiante.objects.filter(
                 estudiante=estudiante,
                 tipo_alerta='bajo_rendimiento',
@@ -152,11 +143,12 @@ def generar_alertas_estudiante(estudiante: Estudiante, prediccion: Optional[Pred
             ).exists()
             
             if not alerta_existente:
+                prioridad = 3 if estudiante.promedio_acumulado < 2.5 else 2
                 alerta = AlertaEstudiante.objects.create(
                     estudiante=estudiante,
                     tipo_alerta='bajo_rendimiento',
-                    mensaje=f"El estudiante tiene un promedio de calificaciones bajo ({promedio:.2f}/20). Se requiere apoyo académico.",
-                    prioridad=3 if promedio < 8 else 2
+                    mensaje=f"El estudiante tiene un promedio acumulado bajo ({estudiante.promedio_acumulado:.2f}/5.0). Se requiere apoyo académico.",
+                    prioridad=prioridad
                 )
                 alertas_generadas.append(alerta)
     

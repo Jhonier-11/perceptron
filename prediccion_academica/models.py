@@ -34,7 +34,7 @@ class Estudiante(models.Model):
     )
     estado_padres = models.CharField(
         max_length=1,
-        choices=[('T', 'Juntos'), ('A', 'Apartados')],
+        choices=[('T', 'Juntos'), ('S', 'Separados')],
         verbose_name="Estado de los Padres"
     )
     educacion_madre = models.IntegerField(
@@ -108,27 +108,45 @@ class Estudiante(models.Model):
         validators=[MinValueValidator(0)]
     )
     
-    # Calificaciones
-    calificacion_g1 = models.FloatField(
-        null=True,
-        blank=True,
-        verbose_name="Calificación G1",
-        validators=[MinValueValidator(0), MaxValueValidator(20)],
-        help_text="Calificación del primer período (0-20)"
+    # Información académica universitaria
+    horas_trabajo_sem = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Horas de Trabajo Semanales"
     )
-    calificacion_g2 = models.FloatField(
+    promedio_semestre_anterior = models.FloatField(
         null=True,
         blank=True,
-        verbose_name="Calificación G2",
-        validators=[MinValueValidator(0), MaxValueValidator(20)],
-        help_text="Calificación del segundo período (0-20)"
+        verbose_name="Promedio Semestre Anterior"
     )
-    calificacion_g3 = models.FloatField(
+    promedio_acumulado = models.FloatField(
         null=True,
         blank=True,
-        verbose_name="Calificación G3",
-        validators=[MinValueValidator(0), MaxValueValidator(20)],
-        help_text="Calificación del tercer período (0-20)"
+        verbose_name="Promedio Acumulado"
+    )
+    semestre_actual = models.PositiveIntegerField(
+        default=1,
+        verbose_name="Semestre Actual"
+    )
+    puntaje_icfes_global = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Puntaje ICFES Global"
+    )
+    estrato = models.IntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(6)],
+        verbose_name="Estrato"
+    )
+    programa_academico = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        verbose_name="Programa Académico"
+    )
+    trabaja_actualmente = models.BooleanField(
+        default=False,
+        verbose_name="Trabaja Actualmente"
     )
     
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
@@ -150,12 +168,88 @@ class Estudiante(models.Model):
         """Retorna el nombre completo del estudiante"""
         return f"{self.nombre} {self.apellido}"
     
-    def get_promedio(self):
-        """Calcula el promedio de las calificaciones disponibles"""
-        calificaciones = [c for c in [self.calificacion_g1, self.calificacion_g2, self.calificacion_g3] if c is not None]
-        if calificaciones:
-            return sum(calificaciones) / len(calificaciones)
-        return None
+    @property
+    def tendencia_rendimiento(self):
+        """Calcula la tendencia de rendimiento: (promedio_semestre_anterior - promedio_acumulado)"""
+        if self.promedio_semestre_anterior is not None and self.promedio_acumulado is not None:
+            return self.promedio_semestre_anterior - self.promedio_acumulado
+        return 0.0
+    
+    @property
+    def porcentaje_asistencia_sem_ant(self):
+        """Calcula el promedio de porcentaje_asistencia del semestre anterior"""
+        semestre_anterior = self.semestre_actual - 1
+        if semestre_anterior < 1:
+            return 1.0
+        
+        historiales = self.historial_academico.filter(semestre=semestre_anterior)
+        if not historiales.exists():
+            return 1.0
+        
+        porcentajes = [h.porcentaje_asistencia for h in historiales if h.porcentaje_asistencia is not None]
+        if not porcentajes:
+            return 1.0
+        
+        return sum(porcentajes) / len(porcentajes)
+
+
+class HistorialAcademico(models.Model):
+    """
+    Modelo para almacenar el historial académico por semestre de cada estudiante
+    """
+    estudiante = models.ForeignKey(
+        Estudiante,
+        on_delete=models.CASCADE,
+        related_name='historial_academico',
+        verbose_name="Estudiante"
+    )
+    semestre = models.IntegerField(
+        verbose_name="Semestre",
+        validators=[MinValueValidator(1)]
+    )
+    promedio = models.FloatField(
+        verbose_name="Promedio Ponderado",
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        help_text="Promedio ponderado del semestre (0-5)"
+    )
+    porcentaje_asistencia = models.FloatField(
+        default=1.0,
+        verbose_name="Porcentaje de Asistencia",
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text="Porcentaje de asistencia del semestre (0-1)"
+    )
+    materias_reprobadas = models.IntegerField(
+        default=0,
+        verbose_name="Materias Reprobadas",
+        validators=[MinValueValidator(0)]
+    )
+    creditos_inscritos = models.IntegerField(
+        default=0,
+        verbose_name="Créditos Inscritos",
+        validators=[MinValueValidator(0)]
+    )
+    
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de Creación"
+    )
+    fecha_actualizacion = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Fecha de Actualización"
+    )
+    
+    class Meta:
+        verbose_name = "Historial Académico"
+        verbose_name_plural = "Historiales Académicos"
+        ordering = ['estudiante', 'semestre']
+        unique_together = [['estudiante', 'semestre']]
+        indexes = [
+            models.Index(fields=['estudiante', 'semestre']),
+            models.Index(fields=['semestre']),
+        ]
+    
+    def __str__(self):
+        return f"{self.estudiante.nombre} - Semestre {self.semestre} - Promedio: {self.promedio:.2f}"
 
 
 class EntrenamientoMLP(models.Model):
@@ -225,8 +319,9 @@ class EntrenamientoMLP(models.Model):
     )
     columna_salida = models.CharField(
         max_length=50,
-        choices=[('G1', 'G1'), ('G2', 'G2'), ('G3', 'G3')],
-        verbose_name="Columna de Salida"
+        choices=[('Y_promedio_sem_siguiente', 'Y_promedio_sem_siguiente')],
+        verbose_name="Columna de Salida",
+        default='Y_promedio_sem_siguiente'
     )
     num_caracteristicas_finales = models.IntegerField(
         verbose_name="Número de Características Finales",

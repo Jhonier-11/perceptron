@@ -56,8 +56,10 @@ total_alertas = generar_alertas_todos_estudiantes()
 
 1. Ir a la vista de Estudiantes: `/estudiantes/`
 2. Hacer clic en "Cargar Estudiantes"
-3. Seleccionar el archivo `student-por.csv`
+3. Seleccionar el archivo `student-por.csv` (puedes descargar un ejemplo desde la misma página)
 4. Hacer clic en "Cargar"
+
+**Nota**: El archivo de ejemplo está disponible en `static/examples/estudiantes/student-por.csv` y también se puede descargar desde la página de carga de estudiantes.
 
 ### 2.2 Entrenar el Modelo MLP
 
@@ -129,8 +131,9 @@ El comando `probar_predicciones` muestra estadísticas detalladas:
 
 ```bash
 # 1. Ir a la interfaz web: http://localhost:8000/estudiantes/cargar/
-# 2. Cargar el archivo student-por.csv
-# 3. Verificar que los estudiantes se hayan cargado correctamente
+# 2. Descargar el archivo de ejemplo desde la misma página o usar el archivo en static/examples/estudiantes/student-por.csv
+# 3. Cargar el archivo student-por.csv
+# 4. Verificar que los estudiantes se hayan cargado correctamente
 ```
 
 ### Paso 2: Entrenar el Modelo

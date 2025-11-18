@@ -4,7 +4,7 @@ Formularios para la aplicación de Predicción del Rendimiento Académico
 
 from django import forms
 from django.core.validators import MinValueValidator, MaxValueValidator
-from .models import Estudiante
+from .models import Estudiante, HistorialAcademico
 
 
 class CargaEstudiantesForm(forms.Form):
@@ -54,7 +54,10 @@ class EstudianteForm(forms.ModelForm):
             'actividades_extra', 'guarderia', 'quiere_superior', 'internet',
             'relacion_romantica', 'relacion_familiar', 'tiempo_libre', 'salidas',
             'alcohol_semana', 'alcohol_fin_semana', 'salud', 'ausencias',
-            'calificacion_g1', 'calificacion_g2', 'calificacion_g3'
+            # Campos académicos universitarios nuevos
+            'semestre_actual', 'puntaje_icfes_global', 'estrato', 'programa_academico',
+            'trabaja_actualmente', 'horas_trabajo_sem', 'promedio_semestre_anterior', 
+            'promedio_acumulado'
         ]
         widgets = {
             'identificacion': forms.TextInput(attrs={
@@ -159,17 +162,37 @@ class EstudianteForm(forms.ModelForm):
                 'class': 'w-full px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-accent-800 bg-white',
                 'min': '0'
             }),
-            'calificacion_g1': forms.NumberInput(attrs={
+            # Campos académicos universitarios nuevos
+            'semestre_actual': forms.NumberInput(attrs={
                 'class': 'w-full px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-accent-800 bg-white',
-                'min': '0', 'max': '20', 'step': '0.1'
+                'min': '1'
             }),
-            'calificacion_g2': forms.NumberInput(attrs={
+            'puntaje_icfes_global': forms.NumberInput(attrs={
                 'class': 'w-full px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-accent-800 bg-white',
-                'min': '0', 'max': '20', 'step': '0.1'
+                'min': '0', 'max': '500'
             }),
-            'calificacion_g3': forms.NumberInput(attrs={
+            'estrato': forms.NumberInput(attrs={
                 'class': 'w-full px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-accent-800 bg-white',
-                'min': '0', 'max': '20', 'step': '0.1'
+                'min': '1', 'max': '6'
+            }),
+            'programa_academico': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-accent-800 bg-white',
+                'placeholder': 'Ej: Ing. Sistemas, Derecho, Medicina'
+            }),
+            'trabaja_actualmente': forms.CheckboxInput(attrs={
+                'class': 'w-4 h-4 text-primary-600 bg-white border-accent-300 rounded focus:ring-primary-500 focus:ring-2'
+            }),
+            'horas_trabajo_sem': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-accent-800 bg-white',
+                'min': '0'
+            }),
+            'promedio_semestre_anterior': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-accent-800 bg-white',
+                'min': '0', 'max': '5', 'step': '0.01'
+            }),
+            'promedio_acumulado': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-accent-800 bg-white',
+                'min': '0', 'max': '5', 'step': '0.01'
             }),
         }
 
@@ -327,12 +350,10 @@ class ConfiguracionEntrenamientoMLPForm(forms.Form):
     columna_salida = forms.ChoiceField(
         label='Variable Objetivo',
         choices=[
-            ('G1', 'G1 (Primer Período)'),
-            ('G2', 'G2 (Segundo Período)'),
-            ('G3', 'G3 (Tercer Período)'),
+            ('Y_promedio_sem_siguiente', 'Y_promedio_sem_siguiente (Promedio Semestre Siguiente)'),
         ],
         widget=forms.Select(attrs={'class': 'form-control'}),
-        help_text='Variable objetivo a predecir'
+        help_text='Variable objetivo a predecir: Promedio del semestre siguiente'
     )
     
     def __init__(self, *args, **kwargs):
@@ -341,8 +362,8 @@ class ConfiguracionEntrenamientoMLPForm(forms.Form):
         
         # Campo para seleccionar columnas de entrada
         if columnas_disponibles:
-            # Filtrar columnas G1, G2, G3 de las opciones de entrada
-            columnas_entrada = [col for col in columnas_disponibles if col not in ['G1', 'G2', 'G3']]
+            # Filtrar columna de salida Y_promedio_sem_siguiente de las opciones de entrada
+            columnas_entrada = [col for col in columnas_disponibles if col not in ['Y_promedio_sem_siguiente']]
             
             self.fields['columnas_entrada'] = forms.MultipleChoiceField(
                 label='Características de Entrada',
@@ -432,4 +453,41 @@ class PrediccionForm(forms.Form):
             )
         else:
             self.fields['entrenamiento'].queryset = EntrenamientoMLP.objects.all()
+
+
+class HistorialAcademicoForm(forms.ModelForm):
+    """
+    Formulario para crear/editar un historial académico
+    """
+    class Meta:
+        model = HistorialAcademico
+        fields = [
+            'estudiante', 'semestre', 'promedio', 'porcentaje_asistencia',
+            'materias_reprobadas', 'creditos_inscritos'
+        ]
+        widgets = {
+            'estudiante': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-accent-800 bg-white'
+            }),
+            'semestre': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-accent-800 bg-white',
+                'min': '1'
+            }),
+            'promedio': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-accent-800 bg-white',
+                'min': '0', 'max': '5', 'step': '0.01'
+            }),
+            'porcentaje_asistencia': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-accent-800 bg-white',
+                'min': '0', 'max': '1', 'step': '0.01'
+            }),
+            'materias_reprobadas': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-accent-800 bg-white',
+                'min': '0'
+            }),
+            'creditos_inscritos': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-2 border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-accent-800 bg-white',
+                'min': '0'
+            }),
+        }
 

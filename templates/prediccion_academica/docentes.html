@@ -55,7 +55,7 @@
             <thead class="bg-accent-50">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Estudiante</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Calificación G3</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Promedio Acumulado</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Última Predicción</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Alertas</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-accent-600 uppercase tracking-wider">Acciones</th>
@@ -68,7 +68,11 @@
                         {{ item.estudiante.get_nombre_completo }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">
-                        {{ item.estudiante.calificacion_g3|default:"-" }}
+                        {% if item.estudiante.promedio_acumulado %}
+                            {{ item.estudiante.promedio_acumulado|floatformat:2 }}
+                        {% else %}
+                            -
+                        {% endif %}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-accent-600">
                         {% if item.ultima_prediccion %}

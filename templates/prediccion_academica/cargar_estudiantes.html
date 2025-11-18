@@ -43,12 +43,22 @@
     <!-- Instrucciones -->
     <div class="mt-8 bg-blue-50 rounded-xl p-6 border border-blue-200">
         <h2 class="text-xl font-bold text-blue-800 mb-4">Instrucciones</h2>
-        <ul class="list-disc list-inside space-y-2 text-blue-700">
-            <li>El archivo CSV debe tener las siguientes columnas: school, sex, age, address, famsize, Pstatus, Medu, Fedu, Mjob, Fjob, reason, guardian, traveltime, studytime, failures, schoolsup, famsup, paid, activities, nursery, higher, internet, romantic, famrel, freetime, goout, Dalc, Walc, health, absences, G1, G2, G3</li>
+        <ul class="list-disc list-inside space-y-2 text-blue-700 mb-4">
+            <li>El archivo CSV debe tener las siguientes columnas: school, sex, age, address, famsize, Pstatus, Medu, Fedu, Mjob, Fjob, reason, guardian, traveltime, studytime, failures, schoolsup, famsup, paid, activities, nursery, higher, internet, romantic, famrel, freetime, goout, Dalc, Walc, health, absences, semestre_actual, puntaje_icfes_global, estrato, programa_academico, trabaja_actualmente, horas_trabajo_sem, promedio_semestre_anterior, promedio_acumulado</li>
             <li>El archivo debe estar en formato CSV con separador de punto y coma (;)</li>
             <li>El tamaño máximo del archivo es de 50MB</li>
             <li>Los estudiantes con la misma identificación serán actualizados en lugar de crear duplicados</li>
         </ul>
+        
+        <!-- Botón para descargar ejemplo -->
+        <div class="mt-6 pt-6 border-t border-blue-200">
+            <h3 class="text-lg font-semibold text-blue-800 mb-3">Archivo de Ejemplo</h3>
+            <p class="text-blue-700 mb-4">Descarga un archivo CSV de ejemplo para probar la funcionalidad:</p>
+            <a href="{% static 'examples/estudiantes/student-por.csv' %}" download="student-por.csv" class="inline-flex items-center bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors shadow-md hover:shadow-lg">
+                <i class="fas fa-download mr-2"></i>
+                Descargar Archivo de Ejemplo (student-por.csv)
+            </a>
+        </div>
     </div>
 </div>
 {% endblock %}

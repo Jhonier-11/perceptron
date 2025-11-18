@@ -18,6 +18,14 @@ urlpatterns = [
     path('estudiantes/<int:estudiante_id>/editar/', views.editar_estudiante, name='editar_estudiante'),
     path('estudiantes/cargar/', views.cargar_estudiantes, name='cargar_estudiantes'),
     
+    # Gestión de historiales académicos
+    path('historiales/', views.listar_historiales, name='listar_historiales'),
+    path('historiales/crear/', views.crear_historial, name='crear_historial'),
+    path('historiales/crear/<int:estudiante_id>/', views.crear_historial, name='crear_historial_estudiante'),
+    path('historiales/<int:historial_id>/editar/', views.editar_historial, name='editar_historial'),
+    path('historiales/<int:historial_id>/eliminar/', views.eliminar_historial, name='eliminar_historial'),
+    path('estudiantes/<int:estudiante_id>/historiales/', views.listar_historiales, name='historiales_estudiante'),
+    
     # Vista para docentes
     path('docentes/', views.vista_docentes, name='docentes'),
     
