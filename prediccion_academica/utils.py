@@ -445,3 +445,302 @@ def convertir_estudiante_a_caracteristicas(
     
     return X
 
+
+# ============================================================================
+# Funciones de Análisis para Dashboard de IA
+# ============================================================================
+
+def calcular_clustering_riesgo(estudiantes) -> Dict[str, Any]:
+    """
+    Calcula clustering de riesgo agrupando estudiantes por Sexo, Estrato y Zona
+    
+    Args:
+        estudiantes: QuerySet de estudiantes
+        
+    Returns:
+        Diccionario con datos para mapa de calor: matriz de riesgo por Estrato vs Zona
+    """
+    # Inicializar matriz de riesgo: Estrato (1-6) x Zona (Urbano/Rural)
+    matriz_riesgo = {}
+    conteos = {}
+    
+    # Valores por defecto para estratos y zonas
+    estratos = [1, 2, 3, 4, 5, 6]
+    zonas = ['U', 'R']  # Urbano, Rural
+    
+    # Inicializar matriz
+    for estrato in estratos:
+        matriz_riesgo[estrato] = {}
+        conteos[estrato] = {}
+        for zona in zonas:
+            matriz_riesgo[estrato][zona] = []
+            conteos[estrato][zona] = 0
+    
+    # Calcular riesgo para cada estudiante
+    for estudiante in estudiantes:
+        estrato = estudiante.estrato if estudiante.estrato else 3  # Default estrato 3
+        zona = estudiante.direccion if estudiante.direccion else 'U'  # Default Urbano
+        
+        # Calcular nivel de riesgo basado en promedio acumulado
+        if estudiante.promedio_acumulado is not None:
+            if estudiante.promedio_acumulado < 3.0:
+                riesgo = 3  # Alto
+            elif estudiante.promedio_acumulado < 3.5:
+                riesgo = 2  # Medio
+            else:
+                riesgo = 1  # Bajo
+        else:
+            # Si no hay promedio, usar otros indicadores
+            if estudiante.fallos_previos > 2:
+                riesgo = 3
+            elif estudiante.fallos_previos > 0:
+                riesgo = 2
+            else:
+                riesgo = 1
+        
+        if estrato in matriz_riesgo and zona in matriz_riesgo[estrato]:
+            matriz_riesgo[estrato][zona].append(riesgo)
+            conteos[estrato][zona] += 1
+    
+    # Calcular promedio de riesgo por celda
+    matriz_promedio = []
+    etiquetas_estrato = []
+    etiquetas_zona = ['Urbano', 'Rural']
+    
+    for estrato in estratos:
+        fila = []
+        for zona in zonas:
+            if conteos[estrato][zona] > 0:
+                promedio_riesgo = sum(matriz_riesgo[estrato][zona]) / len(matriz_riesgo[estrato][zona])
+                fila.append(promedio_riesgo)
+            else:
+                fila.append(0)
+        matriz_promedio.append(fila)
+        etiquetas_estrato.append(f'Estrato {estrato}')
+    
+    return {
+        'matriz': matriz_promedio,
+        'etiquetas_estrato': etiquetas_estrato,
+        'etiquetas_zona': etiquetas_zona,
+        'conteos': {str(e): {z: conteos[e][z] for z in zonas} for e in estratos}
+    }
+
+
+def analizar_rendimiento_por_edad(estudiantes) -> Dict[str, Any]:
+    """
+    Analiza el rendimiento académico por rangos de edad
+    
+    Args:
+        estudiantes: QuerySet de estudiantes
+        
+    Returns:
+        Diccionario con datos para gráfico de línea: edades y promedios
+    """
+    # Agrupar por edad
+    rendimiento_por_edad = {}
+    conteos_por_edad = {}
+    
+    for estudiante in estudiantes:
+        edad = estudiante.edad
+        if edad:
+            if edad not in rendimiento_por_edad:
+                rendimiento_por_edad[edad] = []
+                conteos_por_edad[edad] = 0
+            
+            if estudiante.promedio_acumulado is not None:
+                rendimiento_por_edad[edad].append(estudiante.promedio_acumulado)
+                conteos_por_edad[edad] += 1
+    
+    # Calcular promedios por edad
+    edades_ordenadas = sorted(rendimiento_por_edad.keys())
+    promedios = []
+    edades_finales = []
+    conteos = []
+    
+    for edad in edades_ordenadas:
+        if len(rendimiento_por_edad[edad]) > 0:
+            promedio = sum(rendimiento_por_edad[edad]) / len(rendimiento_por_edad[edad])
+            promedios.append(promedio)
+            edades_finales.append(edad)
+            conteos.append(conteos_por_edad[edad])
+    
+    # Identificar edades críticas (promedio < 3.0)
+    edades_criticas = [edad for edad, prom in zip(edades_finales, promedios) if prom < 3.0]
+    
+    return {
+        'edades': edades_finales,
+        'promedios': promedios,
+        'conteos': conteos,
+        'edades_criticas': edades_criticas
+    }
+
+
+def calcular_correlacion_icfes_promedio(estudiantes) -> Dict[str, Any]:
+    """
+    Calcula datos para scatter plot: ICFES vs Promedio, coloreado por riesgo
+    
+    Args:
+        estudiantes: QuerySet de estudiantes
+        
+    Returns:
+        Diccionario con datos para scatter plot
+    """
+    datos_icfes = []
+    datos_promedio = []
+    datos_riesgo = []
+    etiquetas = []
+    
+    for estudiante in estudiantes:
+        if estudiante.puntaje_icfes_global and estudiante.promedio_acumulado:
+            datos_icfes.append(estudiante.puntaje_icfes_global)
+            datos_promedio.append(estudiante.promedio_acumulado)
+            
+            # Calcular nivel de riesgo
+            if estudiante.promedio_acumulado < 3.0:
+                riesgo = 'Alto'
+            elif estudiante.promedio_acumulado < 3.5:
+                riesgo = 'Medio'
+            else:
+                riesgo = 'Bajo'
+            
+            datos_riesgo.append(riesgo)
+            etiquetas.append(f"{estudiante.nombre} {estudiante.apellido}")
+    
+    # Calcular correlación si hay suficientes datos
+    correlacion = 0.0
+    if len(datos_icfes) > 1:
+        try:
+            correlacion = float(np.corrcoef(datos_icfes, datos_promedio)[0, 1])
+        except:
+            correlacion = 0.0
+    
+    return {
+        'icfes': datos_icfes,
+        'promedios': datos_promedio,
+        'riesgo': datos_riesgo,
+        'etiquetas': etiquetas,
+        'correlacion': correlacion
+    }
+
+
+def agrupar_por_anos(historiales) -> Dict[str, Any]:
+    """
+    Agrupa datos semestrales en años académicos (Sem 1+2 = Año 1, Sem 3+4 = Año 2, etc.)
+    
+    Args:
+        historiales: QuerySet de HistorialAcademico
+        
+    Returns:
+        Diccionario con datos agrupados por años
+    """
+    # Agrupar por año académico
+    datos_por_ano = {}
+    
+    for historial in historiales:
+        semestre = historial.semestre
+        # Calcular año: (semestre - 1) // 2 + 1
+        # Sem 1,2 -> Año 1; Sem 3,4 -> Año 2; etc.
+        ano = (semestre - 1) // 2 + 1
+        
+        if ano not in datos_por_ano:
+            datos_por_ano[ano] = {
+                'promedios': [],
+                'asistencias': [],
+                'materias_reprobadas': [],
+                'semestres': []
+            }
+        
+        datos_por_ano[ano]['promedios'].append(historial.promedio)
+        datos_por_ano[ano]['asistencias'].append(historial.porcentaje_asistencia)
+        datos_por_ano[ano]['materias_reprobadas'].append(historial.materias_reprobadas)
+        datos_por_ano[ano]['semestres'].append(semestre)
+    
+    # Calcular promedios por año
+    anos_ordenados = sorted(datos_por_ano.keys())
+    anos = []
+    promedios_ano = []
+    asistencias_ano = []
+    materias_reprobadas_ano = []
+    
+    for ano in anos_ordenados:
+        datos = datos_por_ano[ano]
+        anos.append(f'Año {ano}')
+        promedios_ano.append(sum(datos['promedios']) / len(datos['promedios']))
+        asistencias_ano.append(sum(datos['asistencias']) / len(datos['asistencias']))
+        materias_reprobadas_ano.append(sum(datos['materias_reprobadas']) / len(datos['materias_reprobadas']))
+    
+    return {
+        'anos': anos,
+        'promedios': promedios_ano,
+        'asistencias': asistencias_ano,
+        'materias_reprobadas': materias_reprobadas_ano
+    }
+
+
+def calcular_feature_importance(entrenamiento) -> Dict[str, Any]:
+    """
+    Calcula la importancia de características usando los pesos del MLP
+    
+    Args:
+        entrenamiento: Objeto EntrenamientoMLP
+        
+    Returns:
+        Diccionario con nombres de características y sus importancias
+    """
+    if not entrenamiento:
+        # Valores dummy si no hay entrenamiento
+        caracteristicas_dummy = [
+            'Promedio Acumulado', 'Puntaje ICFES', 'Asistencia', 'Tiempo Estudio',
+            'Fallos Previos', 'Estrato', 'Edad', 'Ausencias', 'Tiempo Viaje',
+            'Relación Familiar', 'Apoyo Familia', 'Apoyo Escuela'
+        ]
+        importancias_dummy = [0.25, 0.20, 0.15, 0.12, 0.10, 0.08, 0.05, 0.03, 0.01, 0.005, 0.004, 0.001]
+        
+        return {
+            'caracteristicas': caracteristicas_dummy,
+            'importancias': importancias_dummy
+        }
+    
+    # Obtener pesos de la primera capa (conexión input -> hidden)
+    pesos_capas = entrenamiento.pesos_capas
+    columnas_entrada = entrenamiento.columnas_entrada
+    
+    if not pesos_capas or not columnas_entrada or len(pesos_capas) == 0:
+        # Valores dummy si no hay pesos
+        caracteristicas_dummy = columnas_entrada if columnas_entrada else [
+            'Promedio Acumulado', 'Puntaje ICFES', 'Asistencia', 'Tiempo Estudio'
+        ]
+        importancias_dummy = [1.0 / len(caracteristicas_dummy)] * len(caracteristicas_dummy)
+        
+        return {
+            'caracteristicas': caracteristicas_dummy,
+            'importancias': importancias_dummy
+        }
+    
+    # Calcular importancia como promedio absoluto de pesos por característica
+    # pesos_capas[0] es la matriz de pesos de la primera capa (input -> hidden)
+    pesos_primera_capa = np.array(pesos_capas[0])
+    
+    # Calcular importancia: promedio absoluto de pesos por característica (fila)
+    importancias = np.abs(pesos_primera_capa).mean(axis=1)
+    
+    # Normalizar importancias (suma = 1)
+    if importancias.sum() > 0:
+        importancias = importancias / importancias.sum()
+    
+    # Mapear a nombres de características
+    # Si hay one-hot encoding, las columnas pueden haber cambiado
+    # Usar columnas_entrada originales si están disponibles
+    caracteristicas = columnas_entrada[:len(importancias)] if len(columnas_entrada) >= len(importancias) else [
+        f'Característica {i+1}' for i in range(len(importancias))
+    ]
+    
+    # Ordenar por importancia descendente
+    indices_ordenados = np.argsort(importancias)[::-1]
+    caracteristicas_ordenadas = [caracteristicas[i] for i in indices_ordenados]
+    importancias_ordenadas = [float(importancias[i]) for i in indices_ordenados]
+    
+    return {
+        'caracteristicas': caracteristicas_ordenadas,
+        'importancias': importancias_ordenadas
+    }

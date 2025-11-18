@@ -33,7 +33,12 @@ from .utils import (
     convertir_a_tipos_nativos,
     leer_csv_auto,
     preprocesar_datos_estudiantes,
-    convertir_estudiante_a_caracteristicas
+    convertir_estudiante_a_caracteristicas,
+    calcular_clustering_riesgo,
+    analizar_rendimiento_por_edad,
+    calcular_correlacion_icfes_promedio,
+    agrupar_por_anos,
+    calcular_feature_importance
 )
 import os
 from django.conf import settings
@@ -130,6 +135,112 @@ def dashboard(request):
     }
     
     return render(request, 'prediccion_academica/dashboard.html', context)
+
+
+def dashboard_analisis_ia(request):
+    """
+    Vista para el Dashboard Principal de Análisis de IA
+    Incluye visualizaciones avanzadas con Chart.js
+    """
+    import random
+    from django.db.models import Avg
+    
+    # Obtener estudiantes
+    estudiantes = Estudiante.objects.all()
+    total_estudiantes = estudiantes.count()
+    
+    # Generar datos dummy si hay menos de 10 estudiantes
+    usar_datos_dummy = total_estudiantes < 10
+    
+    if usar_datos_dummy:
+        # Generar datos dummy realistas
+        estudiantes_dummy = []
+        for i in range(50):
+            edad = random.randint(17, 25)
+            estrato = random.choice([1, 2, 3, 4, 5, 6])
+            zona = random.choice(['U', 'R'])
+            sexo = random.choice(['M', 'F'])
+            promedio = round(random.uniform(2.0, 5.0), 2)
+            icfes = random.randint(200, 500) if random.random() > 0.2 else None
+            
+            estudiantes_dummy.append({
+                'edad': edad,
+                'estrato': estrato,
+                'direccion': zona,
+                'sexo': sexo,
+                'promedio_acumulado': promedio,
+                'puntaje_icfes_global': icfes,
+                'fallos_previos': random.randint(0, 3) if promedio < 3.0 else random.randint(0, 1),
+            })
+        
+        # Crear objetos mock para las funciones de análisis
+        class EstudianteMock:
+            def __init__(self, datos):
+                self.edad = datos['edad']
+                self.estrato = datos['estrato']
+                self.direccion = datos['direccion']
+                self.sexo = datos['sexo']
+                self.promedio_acumulado = datos['promedio_acumulado']
+                self.puntaje_icfes_global = datos['puntaje_icfes_global']
+                self.fallos_previos = datos['fallos_previos']
+                self.nombre = f"Estudiante {random.randint(1, 100)}"
+                self.apellido = f"Apellido {random.randint(1, 50)}"
+        
+        estudiantes_mock = [EstudianteMock(d) for d in estudiantes_dummy]
+        
+        # Calcular análisis con datos dummy
+        clustering_data = calcular_clustering_riesgo(estudiantes_mock)
+        edad_data = analizar_rendimiento_por_edad(estudiantes_mock)
+        correlacion_data = calcular_correlacion_icfes_promedio(estudiantes_mock)
+    else:
+        # Usar datos reales
+        clustering_data = calcular_clustering_riesgo(estudiantes)
+        edad_data = analizar_rendimiento_por_edad(estudiantes)
+        correlacion_data = calcular_correlacion_icfes_promedio(estudiantes)
+    
+    # Agrupar historiales por años
+    historiales = HistorialAcademico.objects.all()
+    if historiales.count() < 10:
+        # Generar historiales dummy
+        historiales_dummy = []
+        for semestre in range(1, 9):
+            for _ in range(10):
+                historiales_dummy.append({
+                    'semestre': semestre,
+                    'promedio': round(random.uniform(2.5, 5.0), 2),
+                    'porcentaje_asistencia': round(random.uniform(0.7, 1.0), 2),
+                    'materias_reprobadas': random.randint(0, 2) if random.random() > 0.7 else 0,
+                })
+        
+        class HistorialMock:
+            def __init__(self, datos):
+                self.semestre = datos['semestre']
+                self.promedio = datos['promedio']
+                self.porcentaje_asistencia = datos['porcentaje_asistencia']
+                self.materias_reprobadas = datos['materias_reprobadas']
+        
+        historiales_mock = [HistorialMock(d) for d in historiales_dummy]
+        evolucion_data = agrupar_por_anos(historiales_mock)
+    else:
+        evolucion_data = agrupar_por_anos(historiales)
+    
+    # Obtener entrenamiento más reciente para feature importance
+    entrenamiento_reciente = EntrenamientoMLP.objects.order_by('-fecha_creacion').first()
+    feature_importance_data = calcular_feature_importance(entrenamiento_reciente)
+    
+    # Convertir a JSON para Chart.js
+    import json
+    context = {
+        'clustering_data': json.dumps(clustering_data),
+        'edad_data': json.dumps(edad_data),
+        'correlacion_data': json.dumps(correlacion_data),
+        'evolucion_data': json.dumps(evolucion_data),
+        'feature_importance_data': json.dumps(feature_importance_data),
+        'usar_datos_dummy': usar_datos_dummy,
+        'total_estudiantes': total_estudiantes,
+    }
+    
+    return render(request, 'prediccion_academica/dashboard/analisis_ia.html', context)
 
 
 def gestionar_estudiantes(request):

@@ -13,6 +13,7 @@ urlpatterns = [
     
     # Dashboard
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/analisis-ia/', views.dashboard_analisis_ia, name='dashboard_analisis_ia'),
     
     # Gestión de estudiantes
     path('estudiantes/', views.gestionar_estudiantes, name='estudiantes'),

@@ -83,6 +83,26 @@
     </div>
     {% endif %}
     
+    <!-- Dashboard de Análisis IA -->
+    <div class="mb-8">
+        <a href="{% url 'prediccion_academica:dashboard_analisis_ia' %}" class="block bg-gradient-to-r from-primary-500 to-blue-500 rounded-xl shadow-lg p-6 border border-primary-200 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                        <i class="fas fa-chart-bar text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Dashboard de Análisis IA</h3>
+                        <p class="text-sm text-white/90">Visualizaciones avanzadas con clustering, correlaciones y feature importance</p>
+                    </div>
+                </div>
+                <div class="text-white">
+                    <i class="fas fa-arrow-right text-2xl"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+    
     <!-- Accesos Rápidos -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <a href="{% url 'prediccion_academica:estudiantes' %}" class="bg-white rounded-xl shadow-lg p-6 border border-primary-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105">

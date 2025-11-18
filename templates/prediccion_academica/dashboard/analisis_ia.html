@@ -1,0 +1,479 @@
+{% extends 'base_app.html' %}
+{% load static %}
+
+{% block title %}Dashboard de Análisis IA - Predicción del Rendimiento Académico{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-accent-50 via-white to-primary-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold bg-gradient-to-r from-primary-600 to-blue-600 bg-clip-text text-transparent mb-2">
+                        Dashboard de Análisis IA
+                    </h1>
+                    <p class="text-lg text-accent-600">Análisis avanzado de rendimiento académico con Machine Learning</p>
+                </div>
+                {% if usar_datos_dummy %}
+                <div class="px-4 py-2 bg-yellow-100 border border-yellow-300 rounded-lg">
+                    <p class="text-sm text-yellow-800 font-semibold">
+                        <i class="fas fa-info-circle mr-2"></i>Mostrando datos de demostración
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Grid de Gráficos -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Mapa de Calor - Riesgo Socioeconómico -->
+            <div class="lg:col-span-2">
+                <div class="bg-white/70 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300">
+                    <h2 class="text-2xl font-bold text-accent-800 mb-4 flex items-center">
+                        <i class="fas fa-fire text-red-500 mr-3"></i>
+                        Mapa de Calor - Riesgo Socioeconómico
+                    </h2>
+                    <p class="text-sm text-accent-600 mb-4">Intensidad de riesgo de deserción por Estrato y Zona</p>
+                    <div class="relative h-80">
+                        <canvas id="heatmapChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Curva de Rendimiento por Edad -->
+            <div class="bg-white/70 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300">
+                <h2 class="text-2xl font-bold text-accent-800 mb-4 flex items-center">
+                    <i class="fas fa-chart-line text-blue-500 mr-3"></i>
+                    Rendimiento por Edad
+                </h2>
+                <p class="text-sm text-accent-600 mb-4">Promedio académico según edad (edades críticas destacadas)</p>
+                <div class="relative h-64">
+                    <canvas id="edadChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Scatter Plot - ICFES vs Promedio -->
+            <div class="bg-white/70 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300">
+                <h2 class="text-2xl font-bold text-accent-800 mb-4 flex items-center">
+                    <i class="fas fa-bullseye text-green-500 mr-3"></i>
+                    Correlación ICFES vs Promedio
+                </h2>
+                <p class="text-sm text-accent-600 mb-4">Relación entre puntaje ICFES y rendimiento universitario</p>
+                <div class="relative h-64">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Evolución Temporal por Años -->
+            <div class="lg:col-span-2 bg-white/70 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300">
+                <h2 class="text-2xl font-bold text-accent-800 mb-4 flex items-center">
+                    <i class="fas fa-calendar-alt text-purple-500 mr-3"></i>
+                    Evolución Temporal del Rendimiento
+                </h2>
+                <p class="text-sm text-accent-600 mb-4">Rendimiento agrupado por años académicos (Sem 1+2 = Año 1, Sem 3+4 = Año 2, etc.)</p>
+                <div class="relative h-80">
+                    <canvas id="evolucionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Feature Importance -->
+            <div class="lg:col-span-2 bg-white/70 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300">
+                <h2 class="text-2xl font-bold text-accent-800 mb-4 flex items-center">
+                    <i class="fas fa-weight-hanging text-orange-500 mr-3"></i>
+                    Importancia de Características
+                </h2>
+                <p class="text-sm text-accent-600 mb-4">Variables más influyentes en la predicción del modelo MLP</p>
+                <div class="relative h-96">
+                    <canvas id="featureImportanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
+<script>
+    // Parsear datos JSON
+    const clusteringData = {{ clustering_data|safe }};
+    const edadData = {{ edad_data|safe }};
+    const correlacionData = {{ correlacion_data|safe }};
+    const evolucionData = {{ evolucion_data|safe }};
+    const featureImportanceData = {{ feature_importance_data|safe }};
+
+    // Configuración común de Chart.js
+    Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+    Chart.defaults.color = '#475569';
+
+    // 1. Mapa de Calor (Matriz de Riesgo)
+    const heatmapCtx = document.getElementById('heatmapChart').getContext('2d');
+    
+    // Preparar datos para el mapa de calor
+    const heatmapLabels = clusteringData.etiquetas_zona;
+    const heatmapDatasets = clusteringData.etiquetas_estrato.map((estrato, idx) => {
+        return {
+            label: estrato,
+            data: clusteringData.matriz[idx],
+            backgroundColor: clusteringData.matriz[idx].map(val => {
+                // Color basado en intensidad: verde (bajo) -> amarillo (medio) -> rojo (alto)
+                if (val < 1.5) return 'rgba(34, 197, 94, 0.7)'; // Verde
+                if (val < 2.5) return 'rgba(234, 179, 8, 0.7)'; // Amarillo
+                return 'rgba(239, 68, 68, 0.7)'; // Rojo
+            }),
+            borderColor: clusteringData.matriz[idx].map(val => {
+                if (val < 1.5) return 'rgba(34, 197, 94, 1)';
+                if (val < 2.5) return 'rgba(234, 179, 8, 1)';
+                return 'rgba(239, 68, 68, 1)';
+            }),
+            borderWidth: 2
+        };
+    });
+
+    new Chart(heatmapCtx, {
+        type: 'bar',
+        data: {
+            labels: heatmapLabels,
+            datasets: heatmapDatasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const valor = context.parsed.y;
+                            const riesgo = valor < 1.5 ? 'Bajo' : (valor < 2.5 ? 'Medio' : 'Alto');
+                            return `${context.dataset.label}: ${valor.toFixed(2)} (${riesgo})`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 3,
+                    title: {
+                        display: true,
+                        text: 'Nivel de Riesgo'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Zona'
+                    }
+                }
+            }
+        }
+    });
+
+    // 2. Curva de Rendimiento por Edad
+    const edadCtx = document.getElementById('edadChart').getContext('2d');
+    const edadesCriticas = edadData.edades_criticas || [];
+
+    new Chart(edadCtx, {
+        type: 'line',
+        data: {
+            labels: edadData.edades,
+            datasets: [{
+                label: 'Promedio Académico',
+                data: edadData.promedios,
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: edadData.edades.map(edad => 
+                    edadesCriticas.includes(edad) ? 8 : 5
+                ),
+                pointBackgroundColor: edadData.edades.map(edad => 
+                    edadesCriticas.includes(edad) ? 'rgb(239, 68, 68)' : 'rgb(59, 130, 246)'
+                ),
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const idx = context.dataIndex;
+                            return `Estudiantes: ${edadData.conteos[idx]}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: 0,
+                    max: 5,
+                    title: {
+                        display: true,
+                        text: 'Promedio (0-5)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Edad'
+                    }
+                }
+            }
+        }
+    });
+
+    // 3. Scatter Plot - ICFES vs Promedio
+    const scatterCtx = document.getElementById('scatterChart').getContext('2d');
+    
+    // Separar datos por nivel de riesgo
+    const datosAlto = [];
+    const datosMedio = [];
+    const datosBajo = [];
+
+    correlacionData.icfes.forEach((icfes, idx) => {
+        const punto = {
+            x: icfes,
+            y: correlacionData.promedios[idx]
+        };
+        
+        if (correlacionData.riesgo[idx] === 'Alto') {
+            datosAlto.push(punto);
+        } else if (correlacionData.riesgo[idx] === 'Medio') {
+            datosMedio.push(punto);
+        } else {
+            datosBajo.push(punto);
+        }
+    });
+
+    new Chart(scatterCtx, {
+        type: 'scatter',
+        data: {
+            datasets: [
+                {
+                    label: 'Riesgo Alto',
+                    data: datosAlto,
+                    backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    pointRadius: 6
+                },
+                {
+                    label: 'Riesgo Medio',
+                    data: datosMedio,
+                    backgroundColor: 'rgba(234, 179, 8, 0.6)',
+                    borderColor: 'rgba(234, 179, 8, 1)',
+                    pointRadius: 6
+                },
+                {
+                    label: 'Riesgo Bajo',
+                    data: datosBajo,
+                    backgroundColor: 'rgba(34, 197, 94, 0.6)',
+                    borderColor: 'rgba(34, 197, 94, 1)',
+                    pointRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `ICFES: ${context.parsed.x}, Promedio: ${context.parsed.y.toFixed(2)}`;
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: `Correlación: ${correlacionData.correlacion.toFixed(3)}`
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Puntaje ICFES'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Promedio Acumulado'
+                    },
+                    min: 0,
+                    max: 5
+                }
+            }
+        }
+    });
+
+    // 4. Evolución Temporal por Años
+    const evolucionCtx = document.getElementById('evolucionChart').getContext('2d');
+
+    new Chart(evolucionCtx, {
+        type: 'bar',
+        data: {
+            labels: evolucionData.anos,
+            datasets: [
+                {
+                    label: 'Promedio',
+                    data: evolucionData.promedios,
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 2,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Asistencia (%)',
+                    data: evolucionData.asistencias.map(a => a * 100),
+                    backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                    borderColor: 'rgba(34, 197, 94, 1)',
+                    borderWidth: 2,
+                    yAxisID: 'y1'
+                },
+                {
+                    label: 'Materias Reprobadas',
+                    data: evolucionData.materias_reprobadas,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    borderWidth: 2,
+                    yAxisID: 'y2'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Año Académico'
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Promedio'
+                    },
+                    min: 0,
+                    max: 5
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Asistencia (%)'
+                    },
+                    min: 0,
+                    max: 100,
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                },
+                y2: {
+                    type: 'linear',
+                    display: false
+                }
+            }
+        }
+    });
+
+    // 5. Feature Importance (Barras Horizontales)
+    const featureCtx = document.getElementById('featureImportanceChart').getContext('2d');
+
+    new Chart(featureCtx, {
+        type: 'bar',
+        data: {
+            labels: featureImportanceData.caracteristicas,
+            datasets: [{
+                label: 'Importancia',
+                data: featureImportanceData.importancias,
+                backgroundColor: featureImportanceData.importancias.map(imp => {
+                    // Gradiente de color según importancia
+                    if (imp > 0.15) return 'rgba(239, 68, 68, 0.8)';
+                    if (imp > 0.10) return 'rgba(234, 179, 8, 0.8)';
+                    if (imp > 0.05) return 'rgba(59, 130, 246, 0.8)';
+                    return 'rgba(148, 163, 184, 0.8)';
+                }),
+                borderColor: featureImportanceData.importancias.map(imp => {
+                    if (imp > 0.15) return 'rgba(239, 68, 68, 1)';
+                    if (imp > 0.10) return 'rgba(234, 179, 8, 1)';
+                    if (imp > 0.05) return 'rgba(59, 130, 246, 1)';
+                    return 'rgba(148, 163, 184, 1)';
+                }),
+                borderWidth: 2
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Importancia: ${(context.parsed.x * 100).toFixed(2)}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 1,
+                    title: {
+                        display: true,
+                        text: 'Importancia Normalizada'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return (value * 100).toFixed(0) + '%';
+                        }
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Características'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+
